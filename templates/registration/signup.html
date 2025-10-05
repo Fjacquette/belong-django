@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Join Belong{% endblock %}
+{% block body_class %}bg-gradient-to-br from-belong-purple via-belong-purpleDark to-belong-pink text-white{% endblock %}
+{% block content %}
+  <div class="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] items-center">
+    <div class="space-y-6">
+      <span class="inline-flex items-center gap-3 bg-white/15 rounded-full px-4 py-2 text-sm uppercase tracking-wide font-semibold">
+        <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-belong-teal/80 text-white font-display">🚀</span>
+        A softer social universe, made for humans.
+      </span>
+      <div class="space-y-4">
+        <h1 class="text-4xl md:text-5xl font-display leading-tight">Create your Belong profile</h1>
+        <p class="text-white/80 text-lg max-w-xl">
+          Belong is a welcoming space to host gatherings, find collaborators, and cheer on your
+          people. Choose a username, set your vibe, and we’ll line up activities that feel like home.
+        </p>
+      </div>
+      <div class="grid sm:grid-cols-2 gap-4 text-sm text-white/80">
+        <div class="rounded-2xl bg-white/10 p-4 shadow-lg shadow-black/10">
+          <p class="font-semibold text-white">Custom-fit matches</p>
+          <p>Tell us what you’re into and Belong curates gatherings and circles just for you.</p>
+        </div>
+        <div class="rounded-2xl bg-white/10 p-4 shadow-lg shadow-black/10">
+          <p class="font-semibold text-white">People-first tools</p>
+          <p>Manage RSVPs, messages, and updates without ever leaving your flow.</p>
+        </div>
+      </div>
+    </div>
+    <div class="bg-white text-belong-slate rounded-3xl border border-white/70 p-8 md:p-10 space-y-6">
+      <div class="flex items-center gap-3">
+        <img src="{% static 'img/logo192.png' %}" alt="Belong" class="h-12 w-12 object-contain">
+        <div>
+          <p class="text-xs uppercase tracking-[0.25em] text-belong-pink font-semibold">Get started</p>
+          <h2 class="text-2xl font-semibold text-belong-purpleDark">Set up your account</h2>
+        </div>
+      </div>
+      <form method="post" class="space-y-5">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+          <div class="rounded-lg border border-belong-pink/30 bg-belong-pink/10 text-sm text-belong-pink px-4 py-3">
+            {% for error in form.non_field_errors %}
+              <p>{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
+        {% for field in form %}
+          <div class="space-y-1.5">
+            <label for="{{ field.id_for_label }}" class="block text-sm font-semibold text-belong-purpleDark/90">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}
+              <p class="text-xs text-slate-500">{{ field.help_text }}</p>
+            {% endif %}
+            {% for error in field.errors %}
+              <p class="text-sm text-belong-pink">{{ error }}</p>
+            {% endfor %}
+          </div>
+        {% endfor %}
+        <button type="submit" class="w-full bg-gradient-to-r from-belong-teal via-belong-pink to-belong-purple text-white py-3 rounded-full font-semibold transition hover:opacity-95">Create my profile</button>
+      </form>
+      <p class="text-sm text-slate-600 text-center">Already part of the crew? <a href="{% url 'login' %}" class="text-belong-pink font-semibold hover:text-belong-purple">Sign in</a>.</p>
+    </div>
+  </div>
+{% endblock %}

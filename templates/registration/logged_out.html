@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block title %}Signed out · Belong{% endblock %}
+{% block content %}
+  <div class="max-w-md mx-auto text-center bg-white rounded-xl shadow p-6">
+    <h1 class="text-2xl font-semibold mb-3">You’re signed out</h1>
+    <p class="text-sm text-slate-600 mb-4">Come back soon! You can sign in again whenever you’re ready.</p>
+    <a href="{% url 'login' %}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Sign in</a>
+  </div>
+{% endblock %}

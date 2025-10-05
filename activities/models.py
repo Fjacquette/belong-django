@@ -1,0 +1,156 @@
+from django.conf import settings
+from django.core.validators import MinValueValidator
+from django.db import models
+from django.utils import timezone
+
+
+class ActivityCategory(models.Model):
+    name = models.CharField(max_length=80)
+    slug = models.SlugField(unique=True)
+    tagline = models.CharField(max_length=160, blank=True)
+    hero_image = models.CharField(max_length=255, blank=True)
+    color_primary = models.CharField(max_length=7, default="#5b1fa6")
+    color_secondary = models.CharField(max_length=7, default="#311b92")
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self) -> str:  # pragma: no cover
+        return self.name
+
+
+class ActivityVisibility(models.TextChoices):
+    EVERYONE = "everyone", "Everyone"
+    FRIENDS = "friends", "Friends"
+    EXTENDED_FRIENDS = "extended_friends", "Friends of friends"
+    GROUP = "group", "Group members"
+    CUSTOM = "custom", "Selected friends"
+
+
+class ActivityLocationType(models.TextChoices):
+    IN_PERSON = "in_person", "In person"
+    ONLINE = "online", "Online"
+    HYBRID = "hybrid", "Hybrid"
+    TBD = "tbd", "TBD"
+
+
+class ActivityResponseStatus(models.TextChoices):
+    INTERESTED = "interested", "Interested"
+    COMMITTED = "committed", "Count me in"
+    QUESTION = "question", "I have a question"
+    DECLINED = "declined", "Cannot make it"
+
+
+DEFAULT_RESPONSE_CHOICES = [
+    ActivityResponseStatus.INTERESTED,
+    ActivityResponseStatus.COMMITTED,
+    ActivityResponseStatus.QUESTION,
+]
+
+
+class Activity(models.Model):
+    host = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="hosted_activities",
+    )
+    title = models.CharField(max_length=160)
+    headline = models.CharField(max_length=160, blank=True)
+    description = models.TextField()
+    summary = models.TextField(blank=True)
+    category = models.ForeignKey(
+        ActivityCategory,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="activities",
+    )
+    starts_at = models.DateTimeField(null=True, blank=True)
+    ends_at = models.DateTimeField(null=True, blank=True)
+    multiple_events = models.BooleanField(default=False)
+    freetext_when = models.CharField(max_length=160, blank=True)
+    post_until = models.DateTimeField(null=True, blank=True)
+    location_type = models.CharField(
+        max_length=20,
+        choices=ActivityLocationType.choices,
+        default=ActivityLocationType.TBD,
+    )
+    location_url = models.URLField(blank=True)
+    location_name = models.CharField(max_length=200, blank=True)
+    location_address1 = models.CharField(max_length=200, blank=True)
+    location_address2 = models.CharField(max_length=200, blank=True)
+    location_city = models.CharField(max_length=120, blank=True)
+    location_state = models.CharField(max_length=120, blank=True)
+    location_zip = models.CharField(max_length=20, blank=True)
+    location_phone = models.CharField(max_length=40, blank=True)
+    location_gps = models.CharField(max_length=120, blank=True)
+    location_instructions = models.TextField(blank=True)
+    organizer_image = models.CharField(max_length=255, blank=True)
+    organizer_name = models.CharField(max_length=160, blank=True)
+    audience = models.CharField(
+        max_length=40,
+        choices=ActivityVisibility.choices,
+        default=ActivityVisibility.EVERYONE,
+    )
+    allow_friend_invites = models.BooleanField(default=True)
+    allow_friend_of_friend_invites = models.BooleanField(default=False)
+    is_personal_invitation = models.BooleanField(default=False)
+    cost_display = models.CharField(max_length=120, blank=True)
+    cost_has_details = models.BooleanField(default=False)
+    accommodations = models.TextField(blank=True)
+    restrictions = models.TextField(blank=True)
+    header_image = models.CharField(max_length=255, blank=True)
+    color_primary = models.CharField(max_length=7, blank=True)
+    color_secondary = models.CharField(max_length=7, blank=True)
+    action1_label = models.CharField(max_length=80, blank=True)
+    action1_url = models.CharField(max_length=255, blank=True)
+    action2_label = models.CharField(max_length=80, blank=True)
+    action2_url = models.CharField(max_length=255, blank=True)
+    action3_label = models.CharField(max_length=80, blank=True)
+    action3_url = models.CharField(max_length=255, blank=True)
+    available_responses = models.JSONField(default=list, blank=True)
+    capacity = models.PositiveIntegerField(null=True, blank=True, validators=[MinValueValidator(1)])
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-starts_at", "-created_at"]
+
+    def __str__(self) -> str:  # pragma: no cover
+        return self.title
+
+    def active_responses(self):  # pragma: no cover - helper for templates later
+        if not self.available_responses:
+            return [status.value for status in DEFAULT_RESPONSE_CHOICES]
+        return self.available_responses
+
+    def visible_until(self):  # pragma: no cover
+        if self.post_until:
+            return self.post_until
+        if self.starts_at:
+            return self.starts_at
+        return timezone.now() + timezone.timedelta(hours=24)
+
+
+class ActivityResponse(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    activity = models.ForeignKey(
+        Activity,
+        on_delete=models.CASCADE,
+        related_name="responses",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=ActivityResponseStatus.choices,
+        default=ActivityResponseStatus.INTERESTED,
+    )
+    note = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("user", "activity")
+        ordering = ["-updated_at"]
+
+    def __str__(self) -> str:  # pragma: no cover
+        return f"{self.user} -> {self.activity} ({self.status})"

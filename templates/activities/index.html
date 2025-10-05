@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load static ui_extras %}
+{% block title %}Discover Activities · Belong{% endblock %}
+{% block content %}
+  <div class="flex gap-12">
+    <aside class="flex-shrink-0">
+      {% include 'includes/friend_list.html' with friends=friends %}
+    </aside>
+    <section class="flex-1 flex flex-col gap-8">
+      <form method="get" class="w-full flex items-center gap-4 bg-white/85 border border-white/60 rounded-[24px] px-6 py-3">
+        {% if active_category %}
+          <input type="hidden" name="category" value="{{ active_category }}">
+        {% endif %}
+        <div class="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.35em] text-belong-slate/60">
+          Arrange
+          <select name="arrange" class="rounded-full border border-white/70 bg-white px-4 py-2 text-sm text-belong-slate focus:border-belong-purple focus:ring-1 focus:ring-belong-purple/30">
+            {% for value, label in arrange_options %}
+              <option value="{{ value }}" {% if request.GET.arrange == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.35em] text-belong-slate/60">
+          Sort
+          <select name="sort" class="rounded-full border border-white/70 bg-white px-4 py-2 text-sm text-belong-slate focus:border-belong-purple focus:ring-1 focus:ring-belong-purple/30">
+            {% for value, label in sort_options %}
+              <option value="{{ value }}" {% if request.GET.sort == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="ml-auto relative w-full max-w-md">
+          <input type="search" name="q" value="{{ query }}" placeholder="Search activities" class="w-full rounded-full border border-white/70 bg-white px-5 py-2 pl-11 text-sm text-belong-slate focus:border-belong-purple focus:ring-2 focus:ring-belong-purple/25" />
+          <span class="absolute left-4 top-1/2 -translate-y-1/2 text-belong-slate/50">🔍</span>
+        </div>
+        <button type="submit" class="inline-flex items-center gap-2 rounded-full bg-belong-purple px-5 py-2 text-sm font-semibold text-white hover:bg-belong-purpleDark transition">Search</button>
+        <a href="{% url 'activities:categories' %}" class="inline-flex items-center gap-2 rounded-full bg-belong-teal/15 text-belong-teal px-5 py-2 text-sm font-semibold hover:bg-belong-teal/25 transition">Explore categories ↗</a>
+        <button type="button" class="inline-flex items-center gap-2 rounded-full border border-belong-purple/40 px-5 py-2 text-sm font-semibold text-belong-purple cursor-not-allowed">Advanced filter (soon)</button>
+      </form>
+
+      <div class="flex items-start justify-between w-full gap-6 flex-nowrap">
+        {% for column in columns %}
+          {% with column.activities|length as column_count %}
+            <div class="relative" style="width: {{ card_layout.width }}px; height: {{ column_count|stack_height:card_layout }}px;">
+              {% for activity in column.activities %}
+                <div class="absolute left-0 w-full" style="top: {{ forloop.counter0|stack_offset:card_layout }}px; z-index: {{ forloop.counter }};">
+                  {% include 'activities/_card.html' with activity=activity attendee_count=activity.j_attendee_count response_options=activity.j_response_options current_status=activity.j_current_status current_status_label=activity.j_current_status_label %}
+                </div>
+              {% endfor %}
+            </div>
+          {% endwith %}
+        {% empty %}
+          <p class="text-belong-slate">No activities yet. Create one to get things started!</p>
+        {% endfor %}
+      </div>
+
+      {% if page_obj.has_other_pages %}
+        <div class="flex justify-center">
+          <div class="inline-flex overflow-hidden rounded-full border border-white/70 bg-white/70">
+            {% if page_obj.has_previous %}
+              <a href="?page={{ page_obj.previous_page_number }}" class="px-4 py-2 text-sm text-belong-purple hover:bg-belong-purple/10">Previous</a>
+            {% endif %}
+            <span class="px-4 py-2 text-sm text-belong-slate/70">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+              <a href="?page={{ page_obj.next_page_number }}" class="px-4 py-2 text-sm text-belong-purple hover:bg-belong-purple/10">Next</a>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}

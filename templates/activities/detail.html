@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ activity.title }} · Belong{% endblock %}
+{% block content %}
+  <div class="flex flex-col lg:flex-row gap-10">
+    <aside class="w-full lg:w-72 flex-shrink-0 space-y-6">
+      {% include 'includes/friend_list.html' with friends=friends %}
+    </aside>
+    <section class="flex-1">
+      <a href="{% url 'activities:index' %}" class="text-sm text-belong-purple hover:text-belong-purpleDark">← Back to activities</a>
+      <div class="rounded-[36px] border border-white/60 bg-white/95 mt-4 overflow-hidden shadow-soft">
+        <div class="p-8 text-white" style="background: linear-gradient(135deg, {{ activity.display_color_primary }} 0%, {{ activity.display_color_secondary }} 100%);">
+          <h1 class="text-4xl font-display leading-tight">{{ activity.title }}</h1>
+          {% if activity.headline %}
+            <p class="text-lg text-white/85 mt-2 max-w-2xl">{{ activity.headline }}</p>
+          {% elif activity.summary %}
+            <p class="text-lg text-white/80 mt-2 max-w-2xl">{{ activity.summary|truncatewords:16 }}</p>
+          {% endif %}
+        </div>
+        {% if activity.header_image %}
+          <div class="h-56 bg-cover bg-center" style="background-image: url('{% static activity.header_image %}')"></div>
+        {% endif %}
+        <div class="p-8 space-y-6">
+          <div class="grid gap-5 md:grid-cols-2 text-sm text-belong-slate">
+            <div>
+              <p class="text-xs uppercase tracking-[0.3em] text-belong-slate/60">Organizer</p>
+              <p class="text-base font-semibold">{{ activity.organizer_name|default:activity.host.get_full_name|default:activity.host.username }}</p>
+              {% if activity.location_phone %}
+                <p class="mt-2 text-xs text-belong-slate/60">Day-of contact: {{ activity.location_phone }}</p>
+              {% endif %}
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.3em] text-belong-slate/60">Schedule</p>
+              {% if activity.freetext_when %}
+                <p class="text-base font-semibold">{{ activity.freetext_when }}</p>
+              {% elif activity.starts_at %}
+                <p class="text-base font-semibold">{{ activity.starts_at|date:'l, F j, g:i a' }}</p>
+                {% if activity.ends_at %}
+                  <p class="text-xs text-belong-slate/60">Ends {{ activity.ends_at|date:'g:i a' }}</p>
+                {% endif %}
+              {% else %}
+                <p class="text-base font-semibold">Timing TBA</p>
+              {% endif %}
+              {% if activity.multiple_events %}
+                <p class="text-xs text-belong-purple mt-1">Series or multiple events</p>
+              {% endif %}
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-[0.3em] text-belong-slate/60">Location</p>
+              {% if activity.location_type == 'online' and activity.location_url %}
+                <p class="text-base font-semibold"><a href="{{ activity.location_url }}" class="text-belong-purple hover:text-belong-purpleDark">Join online</a></p>
+              {% endif %}
+              {% if activity.location_name %}
+                <p class="text-base font-semibold">{{ activity.location_name }}</p>
+              {% endif %}
+              {% if activity.location_address1 %}
+                <p>{{ activity.location_address1 }}</p>
+                {% if activity.location_address2 %}<p>{{ activity.location_address2 }}</p>{% endif %}
+              {% endif %}
+              {% if activity.location_city %}
+                <p>{{ activity.location_city }}{% if activity.location_state %}, {{ activity.location_state }}{% endif %} {% if activity.location_zip %}{{ activity.location_zip }}{% endif %}</p>
+              {% endif %}
+              {% if activity.location_instructions %}
+                <p class="text-xs text-belong-slate/60 mt-1">{{ activity.location_instructions }}</p>
+              {% endif %}
+            </div>
+            <div>
+              {% if activity.cost_display %}
+                <p class="text-xs uppercase tracking-[0.3em] text-belong-slate/60">Cost</p>
+                <p class="text-base font-semibold">{{ activity.cost_display }}</p>
+              {% endif %}
+              {% if activity.capacity %}
+                <p class="text-xs uppercase tracking-[0.3em] text-belong-slate/60 mt-4">Capacity</p>
+                <p class="text-base font-semibold">{{ activity.capacity }}</p>
+              {% endif %}
+              <p class="text-xs uppercase tracking-[0.3em] text-belong-slate/60 mt-4">Audience</p>
+              <p class="text-base font-semibold">{{ activity.audience|title }}</p>
+            </div>
+          </div>
+
+          {% if activity.accommodations %}
+            <div class="bg-belong-teal/10 text-sm text-belong-teal px-4 py-3 rounded-xl">
+              <p class="font-semibold">Accommodations</p>
+              <p>{{ activity.accommodations }}</p>
+            </div>
+          {% endif %}
+          {% if activity.restrictions %}
+            <div class="bg-belong-pink/15 text-sm text-belong-pink px-4 py-3 rounded-xl">
+              <p class="font-semibold">Requirements</p>
+              <p>{{ activity.restrictions }}</p>
+            </div>
+          {% endif %}
+
+          <p class="text-base text-belong-slate leading-relaxed whitespace-pre-line">{{ activity.description }}</p>
+
+          {% if activity.action1_label or activity.action2_label or activity.action3_label %}
+            <div class="flex flex-wrap gap-3">
+              {% if activity.action1_label %}
+                <a href="{{ activity.action1_url|default:'#' }}" class="px-5 py-3 rounded-full bg-belong-purple text-white font-semibold hover:bg-belong-purpleDark transition">{{ activity.action1_label }}</a>
+              {% endif %}
+              {% if activity.action2_label %}
+                <a href="{{ activity.action2_url|default:'#' }}" class="px-5 py-3 rounded-full bg-belong-pink text-white font-semibold hover:opacity-90 transition">{{ activity.action2_label }}</a>
+              {% endif %}
+              {% if activity.action3_label %}
+                <a href="{{ activity.action3_url|default:'#' }}" class="px-5 py-3 rounded-full bg-belong-teal text-white font-semibold hover:opacity-90 transition">{{ activity.action3_label }}</a>
+              {% endif %}
+            </div>
+          {% endif %}
+
+          <div class="rounded-2xl border border-white/60 px-5 py-4 bg-white/80">
+            {% include 'activities/_join_region.html' with activity=activity attendee_count=join_context.attendee_count joined=join_context.joined response_options=join_context.response_options current_status=join_context.current_status current_status_label=join_context.current_status_label %}
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+{% endblock %}

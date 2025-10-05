@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="grad" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#dad8ff" />
+      <stop offset="100%" stop-color="#f3f5ff" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="200" fill="url(#grad)" />
+  <g font-family="Inter, Arial" fill="#7f8bb6" font-size="28" text-anchor="middle">
+    <text x="200" y="110">Activity image</text>
+  </g>
+</svg>

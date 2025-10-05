@@ -1,0 +1,5 @@
+{% with activity.action1_label|default:'Tell me more' as label %}
+{% with activity.action1_url|default:'#' as url %}
+  <a href="{{ url }}" class="inline-flex justify-center items-center rounded-full bg-gradient-to-r from-belong-teal to-belong-tealDark px-5 py-[4px] text-sm font-semibold text-white hover:opacity-90 transition">{{ label|truncatechars:24 }}</a>
+{% endwith %}
+{% endwith %}
