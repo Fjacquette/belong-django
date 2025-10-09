@@ -130,10 +130,23 @@ LOGOUT_REDIRECT_URL = 'activities:index'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
+CARD_HEIGHT = 460            # example height in px
+CARD_WIDTH_RATIO = 0.56      # width = height * ratio
+CARD_BANDS = [0.22, 0.14, 0.32, 0.20, 0.12]
+
+STACK_OFFSET = round(CARD_HEIGHT * CARD_BANDS[0])
+BASE_FONT = round(CARD_HEIGHT * 0.04)   # ≈4% of height
+CARD_MIN_WIDTH = round(CARD_HEIGHT * CARD_WIDTH_RATIO)
+
+
+
 CARD_LAYOUT = {
-    'height': 336,           # px
-    'width_ratio': 0.75,     # width = height * ratio
-    'bands': [0.16, 0.16, 0.32, 0.24, 0.12],
-    'stack_offset': 54,
-    'base_font': 16,
+    "height": CARD_HEIGHT,
+    "width_ratio": CARD_WIDTH_RATIO,
+    "bands": CARD_BANDS,
+    "stack_offset": STACK_OFFSET,
+    "base_font": BASE_FONT,
+    "min_width": CARD_MIN_WIDTH,
+    "max_stack_size": 3,
+    "max_stack_columns": 5,
 }

@@ -10,21 +10,38 @@
   </head>
   <body class="min-h-screen text-belong-slate bg-belong-background font-body {% block body_class %}{% endblock %}">
     <header class="bg-belong-purple text-white">
-      <div class="w-full px-10 py-4 flex items-center justify-between">
-        <a href="{% url 'activities:index' %}" class="flex items-center gap-3">
-          <span class="inline-flex items-center justify-center bg-white/15 rounded-full p-1.5">
-            <img src="{% static 'img/logo64.png' %}" alt="Belong" class="h-8 w-8 object-contain" loading="lazy">
-          </span>
-          <span class="text-2xl font-display tracking-wide">Belong</span>
-        </a>
-        <nav class="flex items-center gap-6 text-sm font-semibold tracking-wide">
+      <div class="w-full px-6 py-4 lg:px-10">
+        <div class="flex items-center justify-between">
+          <a href="{% url 'activities:index' %}" class="flex items-center gap-3">
+            <span class="inline-flex items-center justify-center bg-white/15 rounded-full p-1.5">
+              <img src="{% static 'img/logo64.png' %}" alt="Belong" class="h-8 w-8 object-contain" loading="lazy">
+            </span>
+            <span class="text-2xl font-display tracking-wide">Belong</span>
+          </a>
+          <button type="button"
+                  class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-white/10 text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60 lg:hidden"
+                  data-menu-toggle
+                  aria-expanded="false"
+                  aria-controls="primary-navigation">
+            <span class="sr-only">Toggle navigation</span>
+            <svg data-menu-icon-open xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+            <svg data-menu-icon-close xmlns="http://www.w3.org/2000/svg" class="hidden h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <nav id="primary-navigation"
+             class="hidden mt-4 flex-col gap-4 text-sm font-semibold tracking-wide lg:mt-0 lg:flex lg:flex-row lg:items-center lg:justify-end lg:gap-6"
+             data-mobile-menu>
           <a href="{% url 'activities:index' %}" class="hover:text-white/80 transition-colors">Discover</a>
           <a href="{% url 'activities:categories' %}" class="hover:text-white/80 transition-colors">Categories</a>
           {% if user.is_authenticated %}
             <a href="{% url 'activities:create' %}" class="hover:text-white/80 transition-colors">Create Activity</a>
             <form action="{% url 'logout' %}" method="post" class="inline">
               {% csrf_token %}
-              <button type="submit" class="hover:text-white/80 transition-colors">Logout</button>
+              <button type="submit" class="hover:text-white/80 transition-colors text-left lg:text-center">Logout</button>
             </form>
           {% else %}
             <a href="{% url 'login' %}" class="hover:text-white/80 transition-colors">Log in</a>
@@ -34,7 +51,7 @@
       </div>
     </header>
 
-    <main class="w-full px-10 py-10">
+    <main class="w-full px-6 py-10 sm:px-8 lg:px-10">
       {% if messages %}
         <div class="space-y-2 mb-6">
           {% for message in messages %}
@@ -44,5 +61,59 @@
       {% endif %}
       {% block content %}{% endblock %}
     </main>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        var toggle = document.querySelector("[data-menu-toggle]");
+        var menu = document.querySelector("[data-mobile-menu]");
+        if (!toggle || !menu) {
+          return;
+        }
+
+        var openIcon = toggle.querySelector("[data-menu-icon-open]");
+        var closeIcon = toggle.querySelector("[data-menu-icon-close]");
+        var lgBreakpoint = window.matchMedia("(min-width: 1024px)");
+
+        function setIcons(menuHidden) {
+          if (openIcon) {
+            openIcon.classList.toggle("hidden", !menuHidden);
+          }
+          if (closeIcon) {
+            closeIcon.classList.toggle("hidden", menuHidden);
+          }
+        }
+
+        function closeMenu() {
+          if (!menu.classList.contains("hidden")) {
+            menu.classList.add("hidden");
+          }
+          toggle.setAttribute("aria-expanded", "false");
+          setIcons(true);
+        }
+
+        toggle.addEventListener("click", function () {
+          var menuHidden = menu.classList.toggle("hidden");
+          toggle.setAttribute("aria-expanded", String(!menuHidden));
+          setIcons(menuHidden);
+        });
+
+        function handleBreakpoint(event) {
+          if (event.matches) {
+            menu.classList.remove("hidden");
+            toggle.setAttribute("aria-expanded", "true");
+            setIcons(false);
+          } else {
+            closeMenu();
+          }
+        }
+
+        if (typeof lgBreakpoint.addEventListener === "function") {
+          lgBreakpoint.addEventListener("change", handleBreakpoint);
+        } else if (typeof lgBreakpoint.addListener === "function") {
+          lgBreakpoint.addListener(handleBreakpoint);
+        }
+
+        handleBreakpoint(lgBreakpoint);
+      });
+    </script>
   </body>
 </html>

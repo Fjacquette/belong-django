@@ -178,16 +178,9 @@ def index(request: HttpRequest) -> HttpResponse:
     activities = list(page_obj.object_list)
     _annotate_join_data(request, activities)
 
-    column_count = 5 if len(activities) >= 5 else max(1, len(activities))
-    columns_data: List[List[Activity]] = [[] for _ in range(column_count)]
-    for index, activity in enumerate(activities):
-        columns_data[index % column_count].append(activity)
-
-    columns_data = [col for col in columns_data if col] or [[]]
-
     context = {
         "page_obj": page_obj,
-        "columns": [{"activities": col} for col in columns_data],
+        "activities": activities,
         "friends": _friend_context(request.user),
         "arrange_options": [
             ("title", "Show title & summary"),

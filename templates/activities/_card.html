@@ -1,34 +1,35 @@
 {% load static %}
-{% with layout=card_layout primary=activity.display_color_primary secondary=activity.display_color_secondary %}
-<div class="relative rounded-[22px] border border-white/60 shadow-soft overflow-hidden" style="width: {{ layout.width }}px; height: {{ layout.height }}px; background: linear-gradient(135deg, {{ primary }} 0%, {{ secondary }} 100%);">
-  <div class="flex flex-col justify-between items-center text-center text-white font-body px-[11px] pt-[4px] pb-[4px]" style="height: {{ layout.bands_px.0 }}px;">
-    <h2 class="text-[18px] font-semibold leading-snug truncate w-full">{{ activity.title }}</h2>
+{% with primary=activity.display_color_primary secondary=activity.display_color_secondary %}
+<div class="activity-card relative rounded-[22px] border border-white/60 shadow-soft overflow-hidden"
+     style="--card-primary: {{ primary }}; --card-secondary: {{ secondary }};">
+  <div class="activity-card__band-1 flex flex-col justify-between items-center text-center text-white font-body" style="padding: 8px 11px;">
+    <h2 class="activity-card__headline font-body font-semibold w-full">{{ activity.title }}</h2>
     {% if activity.display_subline %}
-      <p class="text-[11px] truncate w-full">{{ activity.display_subline }}</p>
+      <p class="activity-card__subtitle font-body text-white truncate w-full">{{ activity.display_subline }}</p>
     {% endif %}
   </div>
-  <div class="relative px-[11px] py-[4px] text-black" style="height: {{ layout.bands_px.1 }}px;">
+  <div class="activity-card__band-2 relative text-black font-body activity-card__meta" style="padding: 8px 11px;">
     <div class="absolute inset-0 bg-white/70"></div>
     <div class="relative h-full flex items-center gap-[10px]">
       <div class="h-10 w-10 rounded-full overflow-hidden bg-white border border-white/80">
         <img src="{% static activity.organizer_image|default:'img/placeholders/avatar.svg' %}" alt="{{ activity.organizer_name|default:activity.host.get_full_name|default:activity.host.username }}" class="h-full w-full object-cover">
       </div>
-      <div class="min-w-0 text-left text-[10px]">
-        <p class="truncate"><span>Organized by </span><strong class="font-semibold">{{ activity.organizer_name|default:activity.host.get_full_name|default:activity.host.username }}</strong></p>
-        <p class="truncate">{{ activity.audience|title }}{% if activity.cost_display %} • {{ activity.cost_display }}{% endif %}</p>
+      <div class="min-w-0 text-left">
+        <p class="truncate font-body activity-card__meta"><span>Organized by </span><strong class="font-semibold">{{ activity.organizer_name|default:activity.host.get_full_name|default:activity.host.username }}</strong></p>
+        <p class="truncate activity-card__meta">{{ activity.audience|title }}{% if activity.cost_display %} • {{ activity.cost_display }}{% endif %}</p>
       </div>
     </div>
   </div>
-  <div class="relative" style="height: {{ layout.bands_px.2 }}px;">
+  <div class="activity-card__band-3 relative">
     <img src="{% static activity.header_image|default:'img/placeholders/activity-card.svg' %}" alt="Activity image" class="h-full w-full object-cover">
   </div>
-  <div class="relative px-[11px] py-[4px] text-[10px] text-black" style="height: {{ layout.bands_px.3 }}px;">
+  <div class="activity-card__band-4 relative text-black font-body activity-card__body" style="padding: 8px 11px;">
     <div class="absolute inset-0 bg-white/70"></div>
     <div class="relative h-full overflow-hidden" style="display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;">
       {{ activity.description|truncatechars:320 }}
     </div>
   </div>
-  <div class="flex items-center justify-center px-[11px] py-[4px]" style="height: {{ layout.bands_px.4 }}px;">
+  <div class="activity-card__band-5 flex items-center justify-center activity-card__cta" style="padding: 8px 11px;">
     {% include 'activities/_join_region.html' with activity=activity %}
   </div>
 </div>
