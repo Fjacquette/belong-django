@@ -1,5 +1,4 @@
 {% extends 'base.html' %}
-{% load static %}
 {% block title %}{{ activity.title }} · Belong{% endblock %}
 {% block content %}
   <div class="flex flex-col lg:flex-row gap-10">
@@ -17,8 +16,12 @@
             <p class="text-lg text-white/80 mt-2 max-w-2xl">{{ activity.summary|truncatewords:16 }}</p>
           {% endif %}
         </div>
-        {% if activity.header_image %}
-          <div class="h-56 bg-cover bg-center" style="background-image: url('{% static activity.header_image %}')"></div>
+        {% if activity.header_image_url %}
+          <div class="h-56 bg-cover bg-center" style="background-image: url('{{ activity.header_image_url }}')"></div>
+        {% else %}
+          <div class="h-56 flex items-center justify-center bg-gradient-to-br from-[{{ activity.display_color_primary }}] via-white/30 to-[{{ activity.display_color_secondary }}]">
+            <p class="text-white/85 text-lg font-semibold tracking-wide px-6 text-center">{{ activity.summary|default:activity.title }}</p>
+          </div>
         {% endif %}
         <div class="p-8 space-y-6">
           <div class="grid gap-5 md:grid-cols-2 text-sm text-belong-slate">

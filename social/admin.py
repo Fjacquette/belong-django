@@ -8,6 +8,7 @@ class UserProfileAdmin(admin.ModelAdmin):
     list_display = ("user", "status_text", "is_visible", "last_active_at")
     search_fields = ("user__username", "status_text")
     list_filter = ("is_visible",)
+    autocomplete_fields = ("user", "avatar_image")
 
 
 @admin.register(FriendRequest)

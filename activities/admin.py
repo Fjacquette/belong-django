@@ -22,6 +22,7 @@ class ActivityAdmin(admin.ModelAdmin):
     list_filter = ("audience", "category", "multiple_events", "starts_at")
     search_fields = ("title", "headline", "description", "summary")
     ordering = ("-starts_at", "-created_at")
+    autocomplete_fields = ("host", "category", "organizer_image", "header_image")
 
 
 @admin.register(ActivityResponse)

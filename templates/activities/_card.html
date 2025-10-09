@@ -1,4 +1,3 @@
-{% load static %}
 {% with primary=activity.display_color_primary secondary=activity.display_color_secondary %}
 <div class="activity-card relative rounded-[22px] border border-white/60 shadow-soft overflow-hidden"
      style="--card-primary: {{ primary }}; --card-secondary: {{ secondary }};">
@@ -12,7 +11,13 @@
     <div class="absolute inset-0 bg-white/70"></div>
     <div class="relative h-full flex items-center gap-[10px]">
       <div class="h-10 w-10 rounded-full overflow-hidden bg-white border border-white/80">
-        <img src="{% static activity.organizer_image|default:'img/placeholders/avatar.svg' %}" alt="{{ activity.organizer_name|default:activity.host.get_full_name|default:activity.host.username }}" class="h-full w-full object-cover">
+        {% if activity.organizer_image_url %}
+          <img src="{{ activity.organizer_image_url }}" alt="{{ activity.organizer_name|default:activity.host.get_full_name|default:activity.host.username }}" class="h-full w-full object-cover">
+        {% else %}
+          <div class="h-full w-full flex items-center justify-center bg-belong-purple/10 text-belong-purple font-semibold">
+            {{ activity.organizer_name|default:activity.host.get_full_name|default:activity.host.username|slice:":1"|upper }}
+          </div>
+        {% endif %}
       </div>
       <div class="min-w-0 text-left">
         <p class="truncate font-body activity-card__meta"><span>Organized by </span><strong class="font-semibold">{{ activity.organizer_name|default:activity.host.get_full_name|default:activity.host.username }}</strong></p>
@@ -21,7 +26,13 @@
     </div>
   </div>
   <div class="activity-card__band-3 relative">
-    <img src="{% static activity.header_image|default:'img/placeholders/activity-card.svg' %}" alt="Activity image" class="h-full w-full object-cover">
+    {% if activity.header_image_url %}
+      <img src="{{ activity.header_image_url }}" alt="Activity image" class="h-full w-full object-cover">
+    {% else %}
+      <div class="h-full w-full flex items-center justify-center bg-gradient-to-br from-[{{ primary }}] via-white/40 to-[{{ secondary }}] text-belong-slate/80 text-sm font-semibold px-6 text-center">
+        {{ activity.summary|default:activity.title|truncatechars:60 }}
+      </div>
+    {% endif %}
   </div>
   <div class="activity-card__band-4 relative text-black font-body activity-card__body" style="padding: 8px 11px;">
     <div class="absolute inset-0 bg-white/70"></div>

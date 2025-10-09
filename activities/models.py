@@ -3,6 +3,7 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
 
+from media_assets.models import ImageAssetPurpose
 
 class ActivityCategory(models.Model):
     name = models.CharField(max_length=80)
@@ -85,7 +86,14 @@ class Activity(models.Model):
     location_phone = models.CharField(max_length=40, blank=True)
     location_gps = models.CharField(max_length=120, blank=True)
     location_instructions = models.TextField(blank=True)
-    organizer_image = models.CharField(max_length=255, blank=True)
+    organizer_image = models.ForeignKey(
+        "media_assets.ImageAsset",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="organizer_activities",
+        limit_choices_to={"purpose": ImageAssetPurpose.ORGANIZER},
+    )
     organizer_name = models.CharField(max_length=160, blank=True)
     audience = models.CharField(
         max_length=40,
@@ -99,7 +107,14 @@ class Activity(models.Model):
     cost_has_details = models.BooleanField(default=False)
     accommodations = models.TextField(blank=True)
     restrictions = models.TextField(blank=True)
-    header_image = models.CharField(max_length=255, blank=True)
+    header_image = models.ForeignKey(
+        "media_assets.ImageAsset",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="header_activities",
+        limit_choices_to={"purpose": ImageAssetPurpose.ACTIVITY_HEADER},
+    )
     color_primary = models.CharField(max_length=7, blank=True)
     color_secondary = models.CharField(max_length=7, blank=True)
     action1_label = models.CharField(max_length=80, blank=True)
@@ -130,6 +145,16 @@ class Activity(models.Model):
         if self.starts_at:
             return self.starts_at
         return timezone.now() + timezone.timedelta(hours=24)
+
+    def organizer_image_url(self) -> str | None:
+        if self.organizer_image:
+            return self.organizer_image.get_absolute_url()
+        return None
+
+    def header_image_url(self) -> str | None:
+        if self.header_image:
+            return self.header_image.get_absolute_url()
+        return None
 
 
 class ActivityResponse(models.Model):

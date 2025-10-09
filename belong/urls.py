@@ -24,5 +24,6 @@ urlpatterns = [
     path('accounts/login/', views.BrandLoginView.as_view(), name='login'),
     path('accounts/signup/', views.signup, name='signup'),
     path('accounts/', include('django.contrib.auth.urls')),
+    path('', include('media_assets.urls')),
     path('', include('activities.urls')),
 ]

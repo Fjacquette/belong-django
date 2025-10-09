@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import mimetypes
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Iterable
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.utils import timezone
@@ -16,6 +19,7 @@ from activities.models import (
     ActivityResponseStatus,
     ActivityVisibility,
 )
+from media_assets.models import ImageAsset, ImageAssetPurpose
 from social.models import FriendGroup, FriendGroupMembership, Friendship, UserProfile
 
 User = get_user_model()
@@ -55,6 +59,47 @@ CATEGORIES: list[CategorySeed] = [
 ]
 
 
+def load_image_asset(relative_path: str | None, *, purpose: str, name: str) -> ImageAsset | None:
+    if not relative_path:
+        return None
+
+    asset_path = Path(settings.BASE_DIR, "static", relative_path)
+    if not asset_path.exists():
+        return None
+
+    payload = asset_path.read_bytes()
+    content_type = mimetypes.guess_type(asset_path.name)[0] or "application/octet-stream"
+
+    asset, created = ImageAsset.objects.get_or_create(
+        purpose=purpose,
+        filename=relative_path,
+        defaults={
+            "name": name,
+            "data": payload,
+            "content_type": content_type,
+            "size": len(payload),
+        },
+    )
+
+    updates: list[str] = []
+    if not created:
+        if asset.name != name:
+            asset.name = name
+            updates.append("name")
+        if asset.size != len(payload):
+            asset.data = payload
+            asset.size = len(payload)
+            updates.extend(["data", "size"])
+        if asset.content_type != content_type:
+            asset.content_type = content_type
+            updates.append("content_type")
+
+        if updates:
+            asset.save(update_fields=list(dict.fromkeys(updates)))
+
+    return asset
+
+
 def ensure_users(users: Iterable[dict[str, str]]):
     created_users = {}
     for data in users:
@@ -72,7 +117,15 @@ def ensure_users(users: Iterable[dict[str, str]]):
         else:
             profile.last_active_at = timezone.now()
         profile.status_updated_at = timezone.now()
-        profile.avatar_image = data.get("avatar", profile.avatar_image)
+
+        avatar_asset = load_image_asset(
+            data.get("avatar"),
+            purpose=ImageAssetPurpose.PROFILE_AVATAR,
+            name=f"{username} avatar",
+        )
+        if avatar_asset:
+            profile.avatar_image = avatar_asset
+
         profile.save()
         created_users[username] = user
     return created_users
@@ -325,57 +378,69 @@ class Command(BaseCommand):
         # Activities
         Activity.objects.all().delete()
         for index, payload in enumerate(ACTIVITY_DATA):
-            organizer_name = payload.get("organizer") or "Belong Host"
-            organizer_username = organizer_name.lower().replace(" ", "")
-            organizer_user = base_users.get(organizer_username)
-            if not organizer_user:
-                organizer_user = ensure_users([{"username": organizer_username, "status_text": ""}])[organizer_username]
-            activity = Activity.objects.create(
-                host=organizer_user,
-                title=payload["title"],
-                headline=payload.get("headline", ""),
-                summary=payload.get("summary", ""),
-                description=payload["description"],
-                category=category_map.get(payload.get("category")),
-                starts_at=aware(payload.get("starts_at")),
-                multiple_events=payload.get("multiple_events", False),
-                freetext_when=payload.get("freetext_when", ""),
-                location_type=payload.get("location_type", ActivityLocationType.TBD),
-                location_url=payload.get("location_url", ""),
-                location_name=payload.get("location_name", ""),
-                location_address1=payload.get("location_address1", ""),
-                location_address2=payload.get("location_address2", ""),
-                location_city=payload.get("location_city", ""),
-                location_state=payload.get("location_state", ""),
-                location_zip=payload.get("location_zip", ""),
-                location_phone=payload.get("location_phone", ""),
-                location_gps=payload.get("location_gps", ""),
-                location_instructions=payload.get("location_instructions", ""),
-                organizer_image=payload.get("organizer_image", ""),
-                organizer_name=organizer_name,
-                audience=payload.get("audience", ActivityVisibility.EVERYONE),
-                allow_friend_invites=payload.get("allow_friend_invites", True),
-                allow_friend_of_friend_invites=payload.get("allow_friend_of_friend_invites", False),
-                is_personal_invitation=payload.get("is_personal_invitation", False),
-                cost_display=payload.get("cost_display", ""),
-                cost_has_details=payload.get("cost_has_details", False),
-                accommodations=payload.get("accommodations", ""),
-                restrictions=payload.get("restrictions", ""),
-                header_image=payload.get("header_image", ""),
-                color_primary=payload.get("color_primary", ""),
-                color_secondary=payload.get("color_secondary", ""),
-                action1_label=payload.get("action1_label", ""),
-                action1_url=payload.get("action1_url", ""),
-                action2_label=payload.get("action2_label", ""),
-                action2_url=payload.get("action2_url", ""),
-                action3_label=payload.get("action3_label", ""),
-                action3_url=payload.get("action3_url", ""),
-                available_responses=payload.get(
-                    "available_responses",
-                    [choice[0] for choice in ActivityResponseStatus.choices],
-                ),
-                post_until=aware(payload.get("post_until")) or aware(payload.get("starts_at")) or timezone.now() + timedelta(days=30),
-            )
+        organizer_name = payload.get("organizer") or "Belong Host"
+        organizer_username = organizer_name.lower().replace(" ", "")
+        organizer_user = base_users.get(organizer_username)
+        if not organizer_user:
+            organizer_user = ensure_users([{"username": organizer_username, "status_text": ""}])[organizer_username]
+
+        organizer_asset = load_image_asset(
+            payload.get("organizer_image"),
+            purpose=ImageAssetPurpose.ORGANIZER,
+            name=f"{organizer_name} organizer",
+        )
+        header_asset = load_image_asset(
+            payload.get("header_image"),
+            purpose=ImageAssetPurpose.ACTIVITY_HEADER,
+            name=f"{payload['title']} header",
+        )
+
+        activity = Activity.objects.create(
+            host=organizer_user,
+            title=payload["title"],
+            headline=payload.get("headline", ""),
+            summary=payload.get("summary", ""),
+            description=payload["description"],
+            category=category_map.get(payload.get("category")),
+            starts_at=aware(payload.get("starts_at")),
+            multiple_events=payload.get("multiple_events", False),
+            freetext_when=payload.get("freetext_when", ""),
+            location_type=payload.get("location_type", ActivityLocationType.TBD),
+            location_url=payload.get("location_url", ""),
+            location_name=payload.get("location_name", ""),
+            location_address1=payload.get("location_address1", ""),
+            location_address2=payload.get("location_address2", ""),
+            location_city=payload.get("location_city", ""),
+            location_state=payload.get("location_state", ""),
+            location_zip=payload.get("location_zip", ""),
+            location_phone=payload.get("location_phone", ""),
+            location_gps=payload.get("location_gps", ""),
+            location_instructions=payload.get("location_instructions", ""),
+            organizer_image=organizer_asset,
+            organizer_name=organizer_name,
+            audience=payload.get("audience", ActivityVisibility.EVERYONE),
+            allow_friend_invites=payload.get("allow_friend_invites", True),
+            allow_friend_of_friend_invites=payload.get("allow_friend_of_friend_invites", False),
+            is_personal_invitation=payload.get("is_personal_invitation", False),
+            cost_display=payload.get("cost_display", ""),
+            cost_has_details=payload.get("cost_has_details", False),
+            accommodations=payload.get("accommodations", ""),
+            restrictions=payload.get("restrictions", ""),
+            header_image=header_asset,
+            color_primary=payload.get("color_primary", ""),
+            color_secondary=payload.get("color_secondary", ""),
+            action1_label=payload.get("action1_label", ""),
+            action1_url=payload.get("action1_url", ""),
+            action2_label=payload.get("action2_label", ""),
+            action2_url=payload.get("action2_url", ""),
+            action3_label=payload.get("action3_label", ""),
+            action3_url=payload.get("action3_url", ""),
+            available_responses=payload.get(
+                "available_responses",
+                [choice[0] for choice in ActivityResponseStatus.choices],
+            ),
+            post_until=aware(payload.get("post_until")) or aware(payload.get("starts_at")) or timezone.now() + timedelta(days=30),
+        )
 
             # Seed sample interest from demo user
             ActivityResponse.objects.update_or_create(

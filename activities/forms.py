@@ -1,5 +1,7 @@
 from django import forms
 
+from media_assets.models import ImageAsset, ImageAssetPurpose
+
 from .models import (
     Activity,
     ActivityLocationType,
@@ -53,6 +55,8 @@ class ActivityForm(forms.ModelForm):
             "location_phone",
             "location_gps",
             "location_instructions",
+            "organizer_name",
+            "organizer_image",
             "audience",
             "allow_friend_invites",
             "allow_friend_of_friend_invites",
@@ -97,6 +101,12 @@ class ActivityForm(forms.ModelForm):
 
         if self.instance and self.instance.pk and self.instance.available_responses:
             self.fields["available_responses"].initial = self.instance.available_responses
+        self.fields["header_image"].queryset = ImageAsset.objects.filter(
+            purpose=ImageAssetPurpose.ACTIVITY_HEADER
+        )
+        self.fields["organizer_image"].queryset = ImageAsset.objects.filter(
+            purpose=ImageAssetPurpose.ORGANIZER
+        )
 
     def clean_available_responses(self):
         responses = self.cleaned_data.get("available_responses") or []

@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'activities',
     'social.apps.SocialConfig',
+    'media_assets.apps.MediaAssetsConfig',
 ]
 
 MIDDLEWARE = [

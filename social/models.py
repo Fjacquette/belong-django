@@ -4,6 +4,8 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
+from media_assets.models import ImageAssetPurpose
+
 User = settings.AUTH_USER_MODEL
 
 
@@ -13,7 +15,14 @@ class UserProfile(models.Model):
     is_visible = models.BooleanField(default=True)
     last_active_at = models.DateTimeField(default=timezone.now)
     status_updated_at = models.DateTimeField(default=timezone.now)
-    avatar_image = models.CharField(max_length=255, blank=True)
+    avatar_image = models.ForeignKey(
+        "media_assets.ImageAsset",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="profiles",
+        limit_choices_to={"purpose": ImageAssetPurpose.PROFILE_AVATAR},
+    )
 
     class Meta:
         verbose_name = "User profile"
@@ -25,6 +34,11 @@ class UserProfile(models.Model):
     def mark_active(self):  # pragma: no cover helper
         self.last_active_at = timezone.now()
         self.save(update_fields=["last_active_at"])
+
+    def avatar_url(self) -> str | None:
+        if self.avatar_image:
+            return self.avatar_image.get_absolute_url()
+        return None
 
 
 class FriendRequestStatus(models.TextChoices):
