@@ -42,7 +42,7 @@
         {% csrf_token %}
         <input type="hidden" name="variant" value="{{ variant|default:'card' }}">
         <input type="hidden" name="next" value="{{ next_path }}">
-        <button type="submit" class="participation__remove underline whitespace-nowrap" aria-label="Remove your response">{% if variant == 'detail' %}Remove response{% else %}×{% endif %}</button>
+        <button type="submit" class="participation__remove whitespace-nowrap" aria-label="Remove your response">{% if variant == 'detail' %}Remove response{% else %}×{% endif %}</button>
       </form>
     {% endif %}
     {% if variant != 'detail' %}

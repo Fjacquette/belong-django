@@ -79,14 +79,19 @@
   .participation--card .participation__counts { flex-wrap: nowrap; }
   .participation--card .participation__counts form { flex-shrink: 0; }
   .participation--card .participation__counts { min-height: 24px; }
-  .participation--card .participation__remove { min-height: 24px; padding: 0 2px; }
+  .participation--card .participation__remove { min-height: 24px; padding: 0 5px; }
   .participation--card .participation__counts p {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .participation__remove { border-radius: 9999px; padding: 0 3px; }
+  .participation__remove {
+    border: 1px solid currentColor;
+    border-radius: 9999px;
+    min-height: 32px;
+    padding: 0 8px;
+  }
   .participation__remove:hover { background: rgb(255 255 255 / 0.15); }
   html { scroll-padding-bottom: 5rem; }
   .activity-card button, .activity-card a { scroll-margin-bottom: 5rem; }

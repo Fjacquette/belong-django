@@ -77,7 +77,6 @@
             <button type="submit" class="rounded-full border border-belong-purple text-belong-purple px-4 min-h-10 self-end">Apply filters</button>
           </div>
         </details>
-        <button type="button" id="card-view-toggle" aria-pressed="false" class="absolute top-0 right-0 text-sm text-belong-purple min-h-10 shrink-0" hidden>Show all</button>
         </div>
       </form>
       <script src="{% static 'js/discovery.js' %}" defer></script>
@@ -85,6 +84,19 @@
       <script src="{% static 'js/card-view.js' %}" defer></script>
 
       <div data-activity-results>
+        <fieldset id="card-view-selector" class="mb-3 w-fit" hidden>
+          <legend class="sr-only">Card view</legend>
+          <div class="inline-flex rounded-full border border-belong-purple bg-white p-0.5 text-sm text-belong-purple">
+            <label class="cursor-pointer">
+              <input type="radio" name="card-view" value="stacked" class="peer sr-only" checked>
+              <span class="block rounded-full px-3 py-2 peer-checked:bg-belong-purple peer-checked:text-white peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2">Stacked</span>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="card-view" value="all" class="peer sr-only">
+              <span class="block rounded-full px-3 py-2 peer-checked:bg-belong-purple peer-checked:text-white peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2">All cards</span>
+            </label>
+          </div>
+        </fieldset>
       {% if activities %}
         <div class="activity-grid w-full"
              data-stack-root

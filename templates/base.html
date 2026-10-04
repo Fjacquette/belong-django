@@ -19,8 +19,8 @@
           <nav aria-label="Main navigation" class="flex items-center gap-3 sm:gap-6">
             <a href="{% url 'activities:index' %}" class="hidden lg:inline-flex items-center min-h-11 text-sm font-semibold hover:underline">Discover</a>
             <details class="account-menu relative">
-              <summary class="flex items-center min-h-11 cursor-pointer text-sm font-semibold" aria-label="Account and discovery menu">
-                <span class="lg:hidden">Menu</span><span class="hidden lg:inline">Account</span>
+              <summary class="flex items-center gap-1 min-h-11 cursor-pointer rounded-full border border-white/50 px-3 text-sm font-semibold" aria-label="Account and discovery menu">
+                <span class="lg:hidden">Menu</span><span class="hidden lg:inline">Account</span><span aria-hidden="true">▾</span>
               </summary>
               <div class="absolute right-0 top-full z-[200] mt-2 w-56 max-w-[calc(100vw-2rem)] rounded-xl bg-white p-3 text-belong-slate shadow-soft">
                 <div class="lg:hidden border-b border-belong-slate/10 pb-2 mb-2">

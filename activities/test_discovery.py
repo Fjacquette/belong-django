@@ -127,7 +127,7 @@ class DiscoveryTests(TestCase):
         self.assertNotContains(response, 'name="today"')
         self.assertNotContains(response, 'name="free"')
         self.assertNotContains(response, 'name="online"')
-        self.assertContains(response, 'id="card-view-toggle"')
+        self.assertContains(response, 'id="card-view-selector"')
 
     def test_explicit_advanced_dimensions_override_conflicting_old_quick_state(self):
         response = self.discover({'today': '1', 'timing': 'dateless', 'online': '1',
@@ -181,6 +181,20 @@ class DiscoveryTests(TestCase):
         self.assertContains(empty, 'js/discovery-layout.js')
         self.assertContains(empty, 'js/discovery.js')
         self.assertNotContains(empty, 'class="activity-grid w-full"')
+
+    def test_view_selector_is_explicit_and_belongs_to_results_not_filters(self):
+        response = self.discover()
+        self.assertContains(response, '<legend class="sr-only">Card view</legend>', html=True)
+        self.assertContains(response, 'type="radio" name="card-view" value="stacked"')
+        self.assertContains(response, 'type="radio" name="card-view" value="all"')
+        self.assertContains(response, '>Stacked</span>')
+        self.assertContains(response, '>All cards</span>')
+        markup = response.content.decode()
+        filter_form = markup.split('id="discovery-filters"', 1)[1].split('</form>', 1)[0]
+        self.assertNotIn('card-view-selector', filter_form)
+        results = markup.split('data-activity-results', 1)[1]
+        self.assertIn('card-view-selector', results)
+        self.assertLess(results.index('card-view-selector'), results.index('data-stack-root'))
 
     def test_card_tooltips_details_private_buttons_and_floating_create(self):
         self.near.title = 'Long activity title ' * 8

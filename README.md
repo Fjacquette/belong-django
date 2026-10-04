@@ -206,8 +206,9 @@ compact bar keeps Search beside the text field, separate from direct quick toggl
 Today, Free, and Online share the canonical timing, cost, and online-capable location
 scopes with Advanced filters; Nearby is a separate proximity state. Explicit canonical
 values override conflicting legacy quick URL parameters. Advanced filters stays closed
-until opened. Show all / Stack cards is a client-side view preference, persisted locally,
-that switches between a non-overlapping grid and piles without querying the server. Advanced
+until opened. Stacked / All cards is a client-side view preference, persisted locally,
+beside the activity results. Its bordered selector makes the active mode explicit and
+switches between a non-overlapping grid and piles without querying the server. Advanced
 filters include category, timing, location type, structured cost, and hidden-card scope. Pagination retains every
 filter. Empty results retain the same Discover/friends layout; turning a quick
 filter off restores results under the remaining search and filters. Today uses **America/New_York** (including DST), as do datetime-local

@@ -1,7 +1,8 @@
 (function () {
   const root = document.querySelector('[data-stack-root]');
-  const toggle = document.getElementById('card-view-toggle');
-  if (!root || !toggle) return;
+  const selector = document.getElementById('card-view-selector');
+  if (!root || !selector) return;
+  const modes = Array.from(selector.querySelectorAll('input[name="card-view"]'));
   const items = Array.from(root.querySelectorAll('[data-stack-item]'));
   const minWidth = Number(root.dataset.cardMinWidth);
   const gap = Number(root.dataset.stackGap);
@@ -34,15 +35,15 @@
         root.append(stack);
       });
     }
-    toggle.textContent = showAll ? 'Stack cards' : 'Show all';
-    toggle.setAttribute('aria-pressed', String(showAll));
+    modes.forEach(input => { input.checked = input.value === root.dataset.view; });
   }
-  toggle.hidden = false;
-  toggle.addEventListener('click', () => {
-    showAll = !showAll;
+  selector.hidden = false;
+  modes.forEach(input => input.addEventListener('change', () => {
+    if (!input.checked) return;
+    showAll = input.value === 'all';
     try { localStorage.setItem('belong-card-view', showAll ? 'all' : 'stacked'); } catch (_) {}
     applyLayout();
-  });
+  }));
   window.addEventListener('belong:discovery-layout', applyLayout);
   applyLayout();
 }());
