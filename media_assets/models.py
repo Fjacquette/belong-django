@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from django.db import models
 from django.urls import reverse
 
+from .images import image_mime_type
+
 
 class ImageAssetPurpose(models.TextChoices):
     GENERIC = "generic", "Generic"
@@ -54,7 +56,7 @@ class ImageAsset(models.Model):
         Useful for quickly linking to binary assets without generating a new request.
         """
         encoded = base64.b64encode(self.data).decode("ascii")
-        return f"data:{self.content_type};base64,{encoded}"
+        return f"data:{image_mime_type(bytes(self.data))};base64,{encoded}"
 
     def get_absolute_url(self) -> str:
         return reverse("media_assets:serve", args=[str(self.id)])
@@ -65,7 +67,7 @@ class ImageAsset(models.Model):
             name=name,
             purpose=purpose,
             data=payload,
-            content_type=metadata.content_type,
-            size=metadata.size,
+            content_type=image_mime_type(payload),
+            size=len(payload),
             filename=metadata.filename or "",
         )

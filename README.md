@@ -122,6 +122,36 @@ source .venv/bin/activate
 npx tailwindcss@3.4.13 -i assets/tailwind.css -o static/css/tailwind.css --minify
 ```
 
+Tailwind scans templates and the app Python form files containing literal widget
+classes. Commit rebuilt `static/css/tailwind.css` with changes to those classes so
+the browser-test checkout receives the same styling.
+
+## Pilot audience and image rules
+
+Activity discovery, details, and participation actions share the same audience
+rule: hosts always have access; Everyone includes authenticated users; Friends
+includes direct friends; Friends of friends includes at most two friendship hops.
+Group and custom audiences are not offered by creation/admin forms yet; existing
+rows with these or unknown audience values remain host-only. Unauthorized detail
+and participation requests return 404.
+
+Image uploads support JPEG, PNG, and non-animated WebP. Pillow validates actual
+image bytes; GIF, SVG, other formats, corrupt files, and animated images are
+rejected. Image URLs require login and serve a MIME type and Content-Length
+derived from actual bytes, with private/no-store caching and `nosniff`, including
+for legacy rows with incorrect metadata. Invalid legacy assets return 404 without
+rewriting stored data. BinaryField storage is unchanged.
+
+Action URL fields accept only HTTP/HTTPS links (or blank values). Legacy unsafe
+links render as `#`. Default response choices are Interested, Count me in, and
+I have a question; Declined remains an explicit opt-in. The join shortcut prefers
+Interested, then Count me in, and leaves responses unchanged when neither is
+available. The visible participation UI is planned separately.
+
+The legacy `import_mock_activities` command is disabled, including `--reset`;
+use the explicitly invoked `seed_demo` workflow above. Its unused React fixture
+was removed; source artwork used by the supported seeder remains available.
+
 ## Adding Images Later
 When you’re ready for card artwork, place uploaded assets under `static/img/` (or another static directory) and reference them from the templates. Add an `image_url` field to `Activity` only once we have a real storage target.
 

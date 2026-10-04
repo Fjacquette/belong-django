@@ -246,7 +246,7 @@ class ActivityLoopTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(ActivityResponse.objects.exists())
 
-    def test_join_uses_first_allowed_status_without_duplicating_response(self):
+    def test_join_prefers_interested_without_duplicating_response(self):
         self.activity.available_responses = [
             ActivityResponseStatus.COMMITTED, ActivityResponseStatus.INTERESTED,
         ]
@@ -255,7 +255,7 @@ class ActivityLoopTests(TestCase):
         response = self.client.post(url)
         self.assertEqual(response.status_code, 200)
         original = ActivityResponse.objects.get(user=self.participant, activity=self.activity)
-        self.assertEqual(original.status, ActivityResponseStatus.COMMITTED)
+        self.assertEqual(original.status, ActivityResponseStatus.INTERESTED)
 
         response = self.client.post(url)
 

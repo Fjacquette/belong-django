@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-import imghdr
-import mimetypes
-
 from django import forms
 
+from .images import image_mime_type
 from .models import ImageAsset
 
 
@@ -22,7 +20,7 @@ class ImageAssetAdminForm(forms.ModelForm):
         cleaned = super().clean()
         upload = cleaned.get("upload")
 
-        if not upload and not self.instance.pk:
+        if not upload and self.instance._state.adding:
             raise forms.ValidationError("Please upload an image to store.")
 
         if upload:
@@ -31,11 +29,10 @@ class ImageAssetAdminForm(forms.ModelForm):
 
             # We need the raw payload later, so read once and stash it.
             payload = upload.read()
-            image_type = imghdr.what(None, h=payload)
-            if image_type is None:
-                raise forms.ValidationError("Please upload a valid image file.")
+            self._content_type = image_mime_type(payload)
+            self._payload = payload
 
-            # Rewind so save() can read again.
+            # Leave the upload stream reusable; save() uses the validated payload.
             upload.seek(0)
 
         return cleaned
@@ -45,12 +42,10 @@ class ImageAssetAdminForm(forms.ModelForm):
         upload = self.cleaned_data.get("upload")
 
         if upload:
-            payload = upload.read()
-            upload.seek(0)
-            content_type = upload.content_type or mimetypes.guess_type(upload.name)[0] or "application/octet-stream"
+            payload = self._payload
             instance.data = payload
             instance.size = len(payload)
-            instance.content_type = content_type
+            instance.content_type = self._content_type
             instance.filename = upload.name
 
         if commit:

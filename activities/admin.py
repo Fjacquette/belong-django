@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Activity, ActivityCategory, ActivityResponse
+from .models import Activity, ActivityCategory, ActivityResponse, PILOT_AUDIENCE_CHOICES
 
 
 @admin.register(ActivityCategory)
@@ -11,6 +11,11 @@ class ActivityCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Activity)
 class ActivityAdmin(admin.ModelAdmin):
+    def formfield_for_choice_field(self, db_field, request, **kwargs):
+        if db_field.name == "audience":
+            kwargs["choices"] = PILOT_AUDIENCE_CHOICES
+        return super().formfield_for_choice_field(db_field, request, **kwargs)
+
     list_display = (
         "title",
         "host",
