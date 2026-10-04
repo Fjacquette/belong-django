@@ -96,22 +96,8 @@
 
           <p class="text-base text-belong-slate leading-relaxed whitespace-pre-line">{{ activity.description }}</p>
 
-          {% if activity.action1_label or activity.action2_label or activity.action3_label %}
-            <div class="flex flex-wrap gap-3">
-              {% if activity.action1_label %}
-                <a href="{{ activity.action1_href|default:'#' }}" class="px-5 py-3 rounded-full bg-belong-purple text-white font-semibold hover:bg-belong-purpleDark transition">{{ activity.action1_label }}</a>
-              {% endif %}
-              {% if activity.action2_label %}
-                <a href="{{ activity.action2_href|default:'#' }}" class="px-5 py-3 rounded-full bg-belong-pink text-white font-semibold hover:opacity-90 transition">{{ activity.action2_label }}</a>
-              {% endif %}
-              {% if activity.action3_label %}
-                <a href="{{ activity.action3_href|default:'#' }}" class="px-5 py-3 rounded-full bg-belong-teal text-white font-semibold hover:opacity-90 transition">{{ activity.action3_label }}</a>
-              {% endif %}
-            </div>
-          {% endif %}
-
           <div class="rounded-2xl border border-white/60 px-5 py-4 bg-white/80">
-            {% include 'activities/_join_region.html' with activity=activity attendee_count=join_context.attendee_count joined=join_context.joined response_options=join_context.response_options current_status=join_context.current_status current_status_label=join_context.current_status_label %}
+            {% include 'activities/_join_region.html' with activity=activity variant='detail' interested_count=join_context.interested_count committed_count=join_context.committed_count attendee_count=join_context.attendee_count joined=join_context.joined response_options=join_context.response_options current_status=join_context.current_status current_status_label=join_context.current_status_label %}
           </div>
         </div>
       </div>

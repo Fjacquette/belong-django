@@ -92,21 +92,12 @@ def _friend_context(user) -> List[Dict[str, object]]:
 
 
 def _build_join_context(request: HttpRequest, activity: Activity) -> Dict[str, object]:
-    responses_qs = activity.responses.filter(
-        status__in=[
-            ActivityResponseStatus.INTERESTED,
-            ActivityResponseStatus.COMMITTED,
-        ]
-    )
-    attendee_count = responses_qs.count()
-
-    current_response = None
-    if request.user.is_authenticated:
-        current_response = (
-            ActivityResponse.objects.filter(user=request.user, activity=activity)
-            .select_related("activity")
-            .first()
-        )
+    # Reuse discovery's prefetched responses; keep interest distinct from commitment.
+    responses = list(activity.responses.all())
+    interested_count = sum(r.status == ActivityResponseStatus.INTERESTED for r in responses)
+    committed_count = sum(r.status == ActivityResponseStatus.COMMITTED for r in responses)
+    attendee_count = interested_count + committed_count
+    current_response = next((r for r in responses if r.user_id == request.user.pk), None)
 
     response_options = []
     for value in activity.active_responses():
@@ -125,6 +116,8 @@ def _build_join_context(request: HttpRequest, activity: Activity) -> Dict[str, o
     return {
         "activity": activity,
         "attendee_count": attendee_count,
+        "interested_count": interested_count,
+        "committed_count": committed_count,
         "joined": activity.is_joined,
         "current_status": current_status,
         "current_status_label": RESPONSE_LABELS.get(current_status, ""),
@@ -137,6 +130,8 @@ def _annotate_join_data(request: HttpRequest, activities: List[Activity]) -> Non
         _decorate_activity(activity)
         context = _build_join_context(request, activity)
         activity.j_attendee_count = context["attendee_count"]
+        activity.j_interested_count = context["interested_count"]
+        activity.j_committed_count = context["committed_count"]
         activity.j_joined = context["joined"]
         activity.j_current_status = context["current_status"]
         activity.j_current_status_label = context["current_status_label"]
@@ -300,5 +295,12 @@ def leave(request: HttpRequest, pk: int) -> HttpResponse:
 
 
 def _render_join_region(request: HttpRequest, activity: Activity) -> HttpResponse:
+    variant = "detail" if request.POST.get("variant") == "detail" else "card"
+    # UI forms also work when HTMX is unavailable. Preserve the existing fragment API.
+    if "variant" in request.POST and request.headers.get("HX-Request") != "true":
+        if variant == "detail":
+            return redirect("activities:detail", pk=activity.pk)
+        return redirect("activities:index")
     context = _build_join_context(request, activity)
+    context["variant"] = variant
     return render(request, "activities/_join_region.html", context)

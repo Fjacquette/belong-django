@@ -146,7 +146,9 @@ Action URL fields accept only HTTP/HTTPS links (or blank values). Legacy unsafe
 links render as `#`. Default response choices are Interested, Count me in, and
 I have a question; Declined remains an explicit opt-in. The join shortcut prefers
 Interested, then Count me in, and leaves responses unchanged when neither is
-available. The visible participation UI is planned separately.
+available. Cards offer a compact response selector; activity details show response buttons.
+Responses update in place with HTMX, can be changed or removed, and keep
+interest separate from commitment. Custom action links remain secondary.
 
 The legacy `import_mock_activities` command is disabled, including `--reset`;
 use the explicitly invoked `seed_demo` workflow above. Its unused React fixture
