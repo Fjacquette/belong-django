@@ -47,7 +47,7 @@ Current durable rules:
 
 ## UI direction
 
-See `UI_PRINCIPLES.md`.
+See `UI_PRINCIPLES.md` and `DESIGN_SYSTEM.md`. The latter is the authoritative visual system for reusable control families, spacing/geometry, and card information hierarchy.
 
 Additional current decisions:
 
@@ -59,6 +59,7 @@ Additional current decisions:
 - Create should be a floating **+** primary action rather than a peer navigation link.
 - Friends/presence should quietly communicate "Who's around" with Active / Idle / Offline states.
 - Activity cards should remain compact and rapidly scannable.
+- The top one or two card bands must show the core decision facts when known: activity name, organizer, audience, cost, time/date, and location/online state.
 - Truncated card text must expose the full value on hover/focus.
 - Navigation is link semantics; state changes are button semantics.
 - Mobile is a first-class layout, not desktop compressed narrower.
