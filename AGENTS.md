@@ -2,7 +2,7 @@
 
 This Django repository is the authoritative Belong implementation.
 
-Follow [UI_PRINCIPLES.md](UI_PRINCIPLES.md) for interface changes.
+Before substantive work, read [PROJECT_STATE.md](PROJECT_STATE.md) for the current product/implementation handoff and inspect live GitHub issues/PRs. Follow [UI_PRINCIPLES.md](UI_PRINCIPLES.md) for interface changes.
 
 ## Product constraints
 
@@ -42,3 +42,13 @@ Pure documentation changes that cannot affect the running app may skip presentat
 PR descriptions explain changes and what to inspect, with wording such as
 “Browser-test is running this iteration at http://127.0.0.1:8001. Review: …”.
 Do not ask Frank to stop servers, refresh worktrees, migrate, or start browser-test.
+
+## Maintain project continuity
+
+`PROJECT_STATE.md` is the concise handoff for a fresh ChatGPT/Codex context. Keep it current when an implementation materially changes product decisions, architecture, workflow, or the intended implementation sequence.
+
+- Keep it short and current; do not append a chronological work log.
+- GitHub issues/PRs remain authoritative for live status.
+- Preserve durable product history in the Belong canonical project context rather than copying it into `PROJECT_STATE.md`.
+- When a completed iteration changes the state materially, update `PROJECT_STATE.md` in the same PR.
+- If only a PR/issue status changed and the stated decisions/sequence remain accurate, no edit is required.
