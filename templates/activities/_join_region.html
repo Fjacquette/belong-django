@@ -1,10 +1,10 @@
-<div id="participation-{{ activity.pk }}" class="w-full {% if variant == 'detail' %}space-y-3{% else %}space-y-1 text-xs text-white{% endif %}" aria-label="Participation in {{ activity.title }}" aria-live="polite">
+<div id="participation-{{ activity.pk }}" class="w-full {% if variant == 'detail' %}space-y-3{% else %}participation--card space-y-1 text-xs text-white{% endif %}" aria-label="Participation in {{ activity.title }}" aria-live="polite">
   {% if variant == 'detail' %}
     <h2 class="font-semibold text-lg">Want to take part?</h2>
     <p class="text-sm text-belong-slate/80">Interested keeps it open. Count me in means you plan to join.</p>
   {% endif %}
   {% if response_options %}
-    <form method="post" action="{% url 'activities:respond' activity.pk %}" hx-post="{% url 'activities:respond' activity.pk %}" hx-target="#participation-{{ activity.pk }}" hx-swap="outerHTML" class="flex flex-wrap items-center gap-1">
+    <form method="post" action="{% url 'activities:respond' activity.pk %}" hx-post="{% url 'activities:respond' activity.pk %}" hx-target="#participation-{{ activity.pk }}" hx-swap="outerHTML" class="participation__response flex flex-wrap items-center gap-1">
       {% csrf_token %}
       <input type="hidden" name="variant" value="{{ variant|default:'card' }}">
       {% if variant == 'detail' %}
@@ -25,8 +25,8 @@
   {% else %}
     <p class="text-xs">No response choices available.</p>
   {% endif %}
-  <div class="flex items-center justify-between gap-1 {% if variant == 'detail' %}text-sm{% endif %}">
-    <p>{% if current_status %}You: {{ current_status_label }}{% else %}No response yet{% endif %}</p>
+  <div class="participation__status flex items-center justify-between gap-1 {% if variant == 'detail' %}text-sm{% endif %}">
+    <p title="{% if current_status %}You: {{ current_status_label }}{% else %}No response yet{% endif %}">{% if current_status %}You: {{ current_status_label }}{% else %}No response yet{% endif %}</p>
     {% if current_status %}
       <form method="post" action="{% url 'activities:leave' activity.pk %}" hx-post="{% url 'activities:leave' activity.pk %}" hx-target="#participation-{{ activity.pk }}" hx-swap="outerHTML">
         {% csrf_token %}
@@ -35,7 +35,7 @@
       </form>
     {% endif %}
   </div>
-  <div class="flex flex-wrap items-center justify-between gap-x-2 {% if variant == 'detail' %}text-sm{% endif %}">
+  <div class="participation__counts flex flex-wrap items-center justify-between gap-x-2 {% if variant == 'detail' %}text-sm{% endif %}">
     <p>{{ interested_count|default:0 }} interested · {{ committed_count|default:0 }} {% if variant == 'detail' %}count me in{% else %}in{% endif %}</p>
     {% if variant == 'detail' and activity.action1_url %}
       <a href="{{ activity.action1_href }}" class="underline">{{ activity.action1_label|default:'More information' }}</a>

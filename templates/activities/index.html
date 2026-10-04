@@ -43,28 +43,28 @@
       {% include 'includes/friend_list.html' with friends=friends %}
     </aside>
     <section class="flex flex-1 flex-col gap-8 min-w-0">
-      <form method="get" class="w-full flex items-center gap-4 bg-white/85 border border-white/60 rounded-[24px] px-6 py-3">
+      <form method="get" class="w-full flex flex-wrap items-center gap-4 bg-white/85 border border-white/60 rounded-[24px] px-4 sm:px-6 py-3">
         {% if active_category %}
           <input type="hidden" name="category" value="{{ active_category }}">
         {% endif %}
-        <div class="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.35em] text-belong-slate/60">
+        <div class="w-full sm:w-auto min-w-0 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.35em] text-belong-slate/60">
           Arrange
-          <select name="arrange" class="rounded-full border border-white/70 bg-white px-4 py-2 text-sm text-belong-slate focus:border-belong-purple focus:ring-1 focus:ring-belong-purple/30">
+          <select name="arrange" class="min-w-0 flex-1 sm:flex-none rounded-full border border-white/70 bg-white px-4 py-2 text-sm tracking-normal text-belong-slate focus:border-belong-purple focus:ring-1 focus:ring-belong-purple/30">
             {% for value, label in arrange_options %}
               <option value="{{ value }}" {% if request.GET.arrange == value %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
           </select>
         </div>
-        <div class="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.35em] text-belong-slate/60">
+        <div class="w-full sm:w-auto min-w-0 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.35em] text-belong-slate/60">
           Sort
-          <select name="sort" class="rounded-full border border-white/70 bg-white px-4 py-2 text-sm text-belong-slate focus:border-belong-purple focus:ring-1 focus:ring-belong-purple/30">
+          <select name="sort" class="min-w-0 flex-1 sm:flex-none rounded-full border border-white/70 bg-white px-4 py-2 text-sm tracking-normal text-belong-slate focus:border-belong-purple focus:ring-1 focus:ring-belong-purple/30">
             {% for value, label in sort_options %}
               <option value="{{ value }}" {% if request.GET.sort == value %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
           </select>
         </div>
         <div class="ml-auto relative w-full max-w-md">
-          <input type="search" name="q" value="{{ query }}" placeholder="Search activities" class="w-full rounded-full border border-white/70 bg-white px-5 py-2 pl-11 text-sm text-belong-slate focus:border-belong-purple focus:ring-2 focus:ring-belong-purple/25" />
+          <input type="search" name="q" value="{{ query|default:'' }}" placeholder="Search activities" class="w-full rounded-full border border-white/70 bg-white px-5 py-2 pl-11 text-sm text-belong-slate focus:border-belong-purple focus:ring-2 focus:ring-belong-purple/25" />
           <span class="absolute left-4 top-1/2 -translate-y-1/2 text-belong-slate/50">🔍</span>
         </div>
         <button type="submit" class="inline-flex items-center gap-2 rounded-full bg-belong-purple px-5 py-2 text-sm font-semibold text-white hover:bg-belong-purpleDark transition">Search</button>
