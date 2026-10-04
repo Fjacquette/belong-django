@@ -34,7 +34,7 @@
       </div>
     {% endif %}
   </div>
-  <div class="activity-card__band-4 flex flex-col justify-center gap-1 bg-white/70 text-black font-body activity-card__body" style="padding: 8px 11px;">
+  <div class="activity-card__band-4 flex flex-col justify-center gap-1 bg-white/70 text-black font-body activity-card__body" style="padding: 6px 11px;">
     <p class="activity-card__description{% if activity.action1_url %} activity-card__description--with-action{% endif %}">{{ activity.description|truncatechars:320 }}</p>
     {% if activity.action1_url %}
       <a href="{{ activity.action1_href }}" title="{{ activity.action1_label|default:'More information' }}" class="block text-xs underline truncate shrink-0">{{ activity.action1_label|default:'More information' }}</a>

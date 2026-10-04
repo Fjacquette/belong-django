@@ -40,7 +40,7 @@
 
   .activity-card {
     display: grid;
-    grid-template-rows: var(--band-1) var(--band-2) var(--band-3) minmax(0, 1fr) 88px;
+    grid-template-rows: var(--band-1) var(--band-2) var(--band-3) minmax(0, 1fr) 96px;
     width: 100%;
     height: var(--card-height);
     background: linear-gradient(135deg, var(--card-primary) 0%, var(--card-secondary) 100%);
@@ -69,16 +69,18 @@
     overflow-wrap: anywhere;
   }
   .participation--card { line-height: 16px; }
-  .participation--card .participation__response { flex-wrap: nowrap; }
-  .participation--card .participation__response button,
-  .participation--card .participation__status form { flex-shrink: 0; }
-  .participation--card .participation__status p,
+  .participation--card .participation__response,
+  .participation--card .participation__counts { flex-wrap: nowrap; }
+  .participation--card .participation__counts form { flex-shrink: 0; }
+  .participation--card .participation__counts { min-height: 28px; }
+  .participation--card .participation__remove { min-height: 28px; padding: 0 2px; }
   .participation--card .participation__counts p {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  .account-menu summary::-webkit-details-marker { display: none; }
 
   .activity-card__headline {
     font-size: calc(var(--card-base-font, 16px) * 1.25);

@@ -28,9 +28,15 @@ class ParticipationUITests(TestCase):
         for url in [reverse("activities:index"), self.url("detail")]:
             with self.subTest(url=url):
                 response = self.client.get(url)
-                for status in self.activity.available_responses:
+                choices = self.activity.available_responses if url == self.url("detail") else ["interested"]
+                for status in choices:
                     self.assertContains(response, f'value="{status}"')
                 self.assertNotContains(response, 'value="committed"')
+                if url != self.url("detail"):
+                    self.assertNotContains(response, 'value="question"')
+                    self.assertNotContains(response, 'value="declined"')
+                    self.assertNotContains(response, '<select')
+                    self.assertNotContains(response, '>Save</button>')
                 self.assertContains(response, 'href="https://example.com/walk"')
                 self.assertContains(response, f'hx-post="{self.url("respond")}"')
                 self.assertContains(response, f'hx-target="#participation-{self.activity.pk}"')
@@ -39,7 +45,7 @@ class ParticipationUITests(TestCase):
         self.assertContains(self.client.get(reverse("activities:index")), f'href="{self.url("detail")}"')
         self.assertContains(self.client.get(self.url("detail")), 'href="https://example.com/route"')
 
-    def test_htmx_select_change_and_remove_preserve_variant_and_other_users(self):
+    def test_htmx_direct_change_and_remove_preserve_variant_and_other_users(self):
         ActivityResponse.objects.create(user=self.host, activity=self.activity, status="interested")
         for variant in ["card", "detail"]:
             for status in ["interested", "committed", "question"]:
@@ -48,15 +54,22 @@ class ParticipationUITests(TestCase):
                     self.assertEqual(response.status_code, 200)
                     self.assertNotContains(response, '<html')
                     self.assertContains(response, f'id="participation-{self.activity.pk}"')
-                    self.assertContains(response, f'You: {ActivityResponseStatus(status).label}')
+                    if variant == "detail":
+                        self.assertContains(response, f'You: {ActivityResponseStatus(status).label}')
+                    elif status in ["interested", "committed"]:
+                        self.assertContains(response, f'value="{status}" aria-pressed="true"')
+                    else:
+                        self.assertNotContains(response, 'aria-pressed="true"')
                     self.assertContains(response, f'name="variant" value="{variant}"')
                     self.assertContains(response, f'hx-post="{self.url("leave")}"')
                     self.assertEqual(ActivityResponse.objects.get(user=self.viewer, activity=self.activity).status, status)
                     self.assertEqual(ActivityResponse.objects.filter(user=self.viewer).count(), 1)
-                    for url in [reverse("activities:index"), self.url("detail")]:
-                        self.assertContains(self.client.get(url), f'You: {ActivityResponseStatus(status).label}')
+                    self.assertContains(self.client.get(self.url("detail")), f'You: {ActivityResponseStatus(status).label}')
             response = self.client.post(self.url("leave"), {"variant": variant}, HTTP_HX_REQUEST="true")
-            self.assertContains(response, "No response yet")
+            if variant == "detail":
+                self.assertContains(response, "No response yet")
+            self.assertNotContains(response, 'aria-pressed="true"')
+            self.assertNotContains(response, f'hx-post="{self.url("leave")}"')
             self.assertFalse(ActivityResponse.objects.filter(user=self.viewer).exists())
             self.assertTrue(ActivityResponse.objects.filter(user=self.host).exists())
 
@@ -87,10 +100,12 @@ class ParticipationUITests(TestCase):
         self.assertNotContains(response, f'hx-post="{self.url("respond")}"')
         self.assertContains(response, f'hx-post="{self.url("leave")}"')
 
-    def test_current_card_choice_is_selected(self):
+    def test_current_card_choice_is_highlighted(self):
         ActivityResponse.objects.create(user=self.viewer, activity=self.activity, status="committed")
         response = self.client.get(reverse("activities:index"))
-        self.assertContains(response, '<option value="committed" selected>Count me in</option>', html=True)
+        self.assertContains(response, 'value="committed" aria-pressed="true"')
+        self.assertContains(response, 'value="interested" aria-pressed="false"')
+        self.assertContains(response, 'aria-pressed="true"', count=1)
 
     def test_plain_forms_redirect_back_to_full_page(self):
         for variant, destination in [("card", reverse("activities:index")), ("detail", self.url("detail"))]:
@@ -103,3 +118,37 @@ class ParticipationUITests(TestCase):
         client.force_login(self.viewer)
         self.assertEqual(client.post(self.url("respond"), {"status": "interested", "variant": "card"}, HTTP_HX_REQUEST="true").status_code, 403)
         self.assertFalse(ActivityResponse.objects.filter(user=self.viewer).exists())
+
+    def test_question_only_activity_uses_detail_link_on_card(self):
+        self.activity.available_responses = ["question", "declined"]
+        self.activity.save()
+        response = self.client.get(reverse("activities:index"))
+        self.assertContains(response, "View activity")
+        self.assertNotContains(response, f'hx-post="{self.url("respond")}"')
+        self.assertNotContains(response, 'value="interested"')
+        self.assertNotContains(response, 'value="committed"')
+        detail = self.client.get(self.url("detail"))
+        self.assertContains(detail, 'value="question"')
+        self.assertContains(detail, 'value="declined"')
+
+    def test_discover_offers_search_and_categories_without_placeholder_controls(self):
+        response = self.client.get(reverse("activities:index"))
+        self.assertContains(response, 'role="search"')
+        self.assertContains(response, 'name="q"')
+        self.assertContains(response, f'href="{reverse("activities:categories")}"')
+        for marker in ['name="arrange"', 'name="sort"', '>Search</button>', "Advanced filter", "(soon)"]:
+            self.assertNotContains(response, marker)
+        response = self.client.get(reverse("activities:index"), {"q": "unmatched"})
+        self.assertNotContains(response, self.activity.title)
+
+    def test_friends_show_names_and_status_without_column_headers(self):
+        from social.models import Friendship, UserProfile
+
+        Friendship.make_pair(self.viewer, self.host)
+        UserProfile.objects.update_or_create(user=self.host, defaults={"status_text": "Up for a walk"})
+        response = self.client.get(reverse("activities:index"))
+        self.assertContains(response, "Up for a walk")
+        self.assertContains(response, "Who’s around")
+        self.assertContains(response, "data-friends-secondary")
+        self.assertNotContains(response, "<span>Status</span>")
+        self.assertNotContains(response, "<span class=\"font-semibold\">Friends</span>")

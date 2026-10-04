@@ -2,6 +2,8 @@
 
 This Django repository is the authoritative Belong implementation.
 
+Follow [UI_PRINCIPLES.md](UI_PRINCIPLES.md) for interface changes.
+
 ## Product constraints
 
 - Belong is activity-first: shared activities create and deepen relationships.

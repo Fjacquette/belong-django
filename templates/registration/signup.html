@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}Create account · Belong{% endblock %}
-{% block auth_action %}<a href="{% url 'login' %}" class="text-sm font-semibold hover:underline">Sign in</a>{% endblock %}
+
 {% block content %}
   <div class="mx-auto grid max-w-4xl gap-6 lg:grid-cols-2 lg:gap-12 items-start">
     <div class="space-y-3 lg:pt-8">
@@ -32,6 +32,7 @@
         {% endfor %}
         <button type="submit" class="w-full bg-belong-purple text-white py-3 rounded-full font-semibold transition hover:bg-belong-purpleDark">Create account</button>
       </form>
+      <p class="text-sm text-belong-slate/80">Already have an account? <a href="{% url 'login' %}" class="text-belong-purple font-semibold underline">Sign in</a></p>
     </section>
   </div>
 {% endblock %}
