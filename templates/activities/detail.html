@@ -99,13 +99,13 @@
           {% if activity.action1_label or activity.action2_label or activity.action3_label %}
             <div class="flex flex-wrap gap-3">
               {% if activity.action1_label %}
-                <a href="{{ activity.action1_url|default:'#' }}" class="px-5 py-3 rounded-full bg-belong-purple text-white font-semibold hover:bg-belong-purpleDark transition">{{ activity.action1_label }}</a>
+                <a href="{{ activity.action1_href|default:'#' }}" class="px-5 py-3 rounded-full bg-belong-purple text-white font-semibold hover:bg-belong-purpleDark transition">{{ activity.action1_label }}</a>
               {% endif %}
               {% if activity.action2_label %}
-                <a href="{{ activity.action2_url|default:'#' }}" class="px-5 py-3 rounded-full bg-belong-pink text-white font-semibold hover:opacity-90 transition">{{ activity.action2_label }}</a>
+                <a href="{{ activity.action2_href|default:'#' }}" class="px-5 py-3 rounded-full bg-belong-pink text-white font-semibold hover:opacity-90 transition">{{ activity.action2_label }}</a>
               {% endif %}
               {% if activity.action3_label %}
-                <a href="{{ activity.action3_url|default:'#' }}" class="px-5 py-3 rounded-full bg-belong-teal text-white font-semibold hover:opacity-90 transition">{{ activity.action3_label }}</a>
+                <a href="{{ activity.action3_href|default:'#' }}" class="px-5 py-3 rounded-full bg-belong-teal text-white font-semibold hover:opacity-90 transition">{{ activity.action3_label }}</a>
               {% endif %}
             </div>
           {% endif %}

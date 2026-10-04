@@ -14,6 +14,7 @@ from django.views.decorators.http import require_POST
 from django.utils import timezone
 
 from .forms import ActivityForm
+from .visibility import visible_activities
 from .models import (
     Activity,
     ActivityCategory,
@@ -144,7 +145,7 @@ def _annotate_join_data(request: HttpRequest, activities: List[Activity]) -> Non
 
 @login_required
 def index(request: HttpRequest) -> HttpResponse:
-    activities_qs = Activity.objects.select_related("host", "category").prefetch_related("responses").annotate(
+    activities_qs = visible_activities(request.user).select_related("host", "category").prefetch_related("responses").annotate(
         attendee_count=Count(
             "responses",
             filter=Q(
@@ -211,7 +212,7 @@ def category_explore(request: HttpRequest) -> HttpResponse:
 @login_required
 def detail(request: HttpRequest, pk: int) -> HttpResponse:
     activity = get_object_or_404(
-        Activity.objects.select_related("host", "category")
+        visible_activities(request.user).select_related("host", "category")
         .prefetch_related("responses")
         .annotate(
             attendee_count=Count(
@@ -257,7 +258,7 @@ def create(request: HttpRequest) -> HttpResponse:
 @login_required
 @require_POST
 def respond(request: HttpRequest, pk: int) -> HttpResponse:
-    activity = get_object_or_404(Activity.objects.select_related("host"), pk=pk)
+    activity = get_object_or_404(visible_activities(request.user).select_related("host"), pk=pk)
     status = request.POST.get("status")
     allowed = activity.active_responses()
     if not status or status not in allowed:
@@ -274,9 +275,14 @@ def respond(request: HttpRequest, pk: int) -> HttpResponse:
 @login_required
 @require_POST
 def join(request: HttpRequest, pk: int) -> HttpResponse:
-    activity = get_object_or_404(Activity.objects.select_related("host"), pk=pk)
+    activity = get_object_or_404(visible_activities(request.user).select_related("host"), pk=pk)
     allowed_statuses = activity.active_responses()
-    default_status = allowed_statuses[0] if allowed_statuses else ActivityResponseStatus.INTERESTED
+    default_status = next(
+        (status for status in (ActivityResponseStatus.INTERESTED, ActivityResponseStatus.COMMITTED)
+         if status in allowed_statuses), None,
+    )
+    if default_status is None:
+        return _render_join_region(request, activity)
     ActivityResponse.objects.update_or_create(
         user=request.user,
         activity=activity,
@@ -288,7 +294,7 @@ def join(request: HttpRequest, pk: int) -> HttpResponse:
 @login_required
 @require_POST
 def leave(request: HttpRequest, pk: int) -> HttpResponse:
-    activity = get_object_or_404(Activity.objects.select_related("host"), pk=pk)
+    activity = get_object_or_404(visible_activities(request.user).select_related("host"), pk=pk)
     ActivityResponse.objects.filter(user=request.user, activity=activity).delete()
     return _render_join_region(request, activity)
 

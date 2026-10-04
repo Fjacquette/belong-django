@@ -22,6 +22,7 @@ from activities.models import (
     ActivityResponseStatus,
     ActivityVisibility,
     DemoSeedRecord,
+    DEFAULT_RESPONSE_CHOICES,
 )
 from media_assets.models import ImageAsset, ImageAssetPurpose
 from social.models import FriendGroup, FriendGroupMembership, Friendship, UserProfile
@@ -432,6 +433,10 @@ class Command(BaseCommand):
                     [{"username": organizer_username, "status_text": ""}]
                 )[organizer_username]
                 base_users[organizer_username] = organizer_user
+            if payload.get("audience") in {
+                ActivityVisibility.FRIENDS, ActivityVisibility.EXTENDED_FRIENDS,
+            }:
+                ensure_friendships(base_users, [("demo", organizer_username)])
 
             organizer_asset = load_image_asset(
                 payload.get("organizer_image"),
@@ -492,7 +497,7 @@ class Command(BaseCommand):
                     action3_url=payload.get("action3_url", ""),
                     available_responses=payload.get(
                         "available_responses",
-                        [choice[0] for choice in ActivityResponseStatus.choices],
+                        list(DEFAULT_RESPONSE_CHOICES),
                     ),
                     post_until=(
                         aware(payload.get("post_until")) or aware(payload.get("starts_at"))

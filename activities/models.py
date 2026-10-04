@@ -1,7 +1,8 @@
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from django.core.validators import MinValueValidator
+from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator, URLValidator
 from django.db import models
 from django.utils import timezone
 
@@ -45,6 +46,14 @@ class ActivityLocationType(models.TextChoices):
     ONLINE = "online", "Online"
     HYBRID = "hybrid", "Hybrid"
     TBD = "tbd", "TBD"
+
+
+PILOT_AUDIENCE_CHOICES = [
+    choice for choice in ActivityVisibility.choices
+    if choice[0] in {
+        ActivityVisibility.EVERYONE, ActivityVisibility.FRIENDS, ActivityVisibility.EXTENDED_FRIENDS,
+    }
+]
 
 
 class ActivityResponseStatus(models.TextChoices):
@@ -130,11 +139,11 @@ class Activity(models.Model):
     color_primary = models.CharField(max_length=7, blank=True)
     color_secondary = models.CharField(max_length=7, blank=True)
     action1_label = models.CharField(max_length=80, blank=True)
-    action1_url = models.CharField(max_length=255, blank=True)
+    action1_url = models.CharField(max_length=255, blank=True, validators=[URLValidator(schemes=["http", "https"])])
     action2_label = models.CharField(max_length=80, blank=True)
-    action2_url = models.CharField(max_length=255, blank=True)
+    action2_url = models.CharField(max_length=255, blank=True, validators=[URLValidator(schemes=["http", "https"])])
     action3_label = models.CharField(max_length=80, blank=True)
-    action3_url = models.CharField(max_length=255, blank=True)
+    action3_url = models.CharField(max_length=255, blank=True, validators=[URLValidator(schemes=["http", "https"])])
     available_responses = models.JSONField(default=list, blank=True)
     capacity = models.PositiveIntegerField(null=True, blank=True, validators=[MinValueValidator(1)])
     created_at = models.DateTimeField(auto_now_add=True)
@@ -149,7 +158,25 @@ class Activity(models.Model):
     def active_responses(self):  # pragma: no cover - helper for templates later
         if not self.available_responses:
             return [status.value for status in DEFAULT_RESPONSE_CHOICES]
-        return self.available_responses
+        if not isinstance(self.available_responses, list):
+            return []
+        return [status for status in self.available_responses if status in ActivityResponseStatus.values]
+
+    def _action_href(self, value):
+        try:
+            URLValidator(schemes=["http", "https"])(value)
+        except ValidationError:
+            return "#"
+        return value
+
+    def action1_href(self):
+        return self._action_href(self.action1_url)
+
+    def action2_href(self):
+        return self._action_href(self.action2_url)
+
+    def action3_href(self):
+        return self._action_href(self.action3_url)
 
     def visible_until(self):  # pragma: no cover
         if self.post_until:

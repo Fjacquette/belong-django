@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from django.contrib import admin
+from django.core.exceptions import ValidationError
 from django.utils.html import format_html
 
 from .forms import ImageAssetAdminForm
@@ -31,8 +32,10 @@ class ImageAssetAdmin(admin.ModelAdmin):
     def preview(self, obj: ImageAsset) -> str:
         if not obj.pk:
             return "Upload an image and save to see a preview."
-        if not obj.content_type.startswith("image/"):
+        try:
+            data_uri = obj.as_data_uri()
+        except ValidationError:
             return "Preview unavailable for this file type."
-        return format_html('<img src="{}" style="max-width: 240px; max-height: 240px;" alt="Preview">', obj.as_data_uri())
+        return format_html('<img src="{}" style="max-width: 240px; max-height: 240px;" alt="Preview">', data_uri)
 
     preview.short_description = "Preview"

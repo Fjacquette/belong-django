@@ -3,7 +3,7 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 
 BASE_INPUT_CLASSES = (
     "w-full rounded-xl border border-slate-200/70 px-4 py-3 text-base "
-    "focus:border-rocket-magenta focus:ring-2 focus:ring-rocket-magenta/40 transition"
+    "focus:border-belong-purple focus:ring-2 focus:ring-belong-purple/40 transition"
 )
 
 

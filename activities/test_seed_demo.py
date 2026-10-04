@@ -40,7 +40,7 @@ class DemoSeedingTests(TestCase):
         self.assertEqual(Activity.objects.count(), len(ACTIVITY_DATA))
         self.assertEqual(ActivityCategory.objects.count(), len(CATEGORIES))
         self.assertEqual(ActivityResponse.objects.count(), len(ACTIVITY_DATA))
-        self.assertEqual(Friendship.objects.count(), 5)
+        self.assertEqual(Friendship.objects.count(), 8)
         self.assertEqual(FriendGroup.objects.count(), 3)
         self.assertEqual(FriendGroupMembership.objects.count(), 5)
         self.assertTrue(ImageAsset.objects.exists())

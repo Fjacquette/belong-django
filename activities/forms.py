@@ -7,6 +7,8 @@ from .models import (
     ActivityLocationType,
     ActivityResponseStatus,
     ActivityVisibility,
+    DEFAULT_RESPONSE_CHOICES,
+    PILOT_AUDIENCE_CHOICES,
 )
 
 _DATETIME_INPUT_KWARGS = {
@@ -26,7 +28,7 @@ class ActivityForm(forms.ModelForm):
     available_responses = forms.MultipleChoiceField(
         choices=ActivityResponseStatus.choices,
         required=False,
-        initial=[choice[0] for choice in ActivityResponseStatus.choices],
+        initial=list(DEFAULT_RESPONSE_CHOICES),
         widget=forms.CheckboxSelectMultiple,
         help_text="Choose the response options attendees can pick from.",
     )
@@ -88,6 +90,7 @@ class ActivityForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+        self.fields["audience"].choices = PILOT_AUDIENCE_CHOICES
         base_classes = (
             "mt-1 w-full border border-white/70 rounded-xl px-4 py-2 bg-white "
             "focus:outline-none focus:ring-2 focus:ring-belong-purple/30 focus:border-belong-purple"
@@ -115,7 +118,7 @@ class ActivityForm(forms.ModelForm):
     def save(self, commit=True):
         instance: Activity = super().save(commit=False)
         if not instance.available_responses:
-            instance.available_responses = [choice[0] for choice in ActivityResponseStatus.choices]
+            instance.available_responses = list(DEFAULT_RESPONSE_CHOICES)
         if commit:
             instance.save()
             self.save_m2m()

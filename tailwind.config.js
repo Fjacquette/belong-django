@@ -2,6 +2,9 @@
 module.exports = {
   content: [
     './templates/**/*.html',
+    './activities/forms.py',
+    './belong/forms.py',
+    './media_assets/forms.py',
   ],
   theme: {
     extend: {
