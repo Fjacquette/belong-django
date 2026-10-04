@@ -200,6 +200,44 @@ remains versioned.
 Demo credentials are development-only and belong to the explicitly seeded
 accounts. Personal browser-test accounts can also be created through signup.
 
+## Groups foundation
+
+The floating **+** opens a small create chooser: Activity first, Group second.
+Groups are persistent people/context, separate from activities and the existing
+personal FriendGroup lists. Create a group with a name, description, and access
+mode; its creator becomes the primary organizer and an active member.
+The four modes are **Open** (visible, immediate join), **Closed** (visible, request
+approval), **Unlisted** (not proactively surfaced, immediate join through a link or
+linked activity), and **Private** (hidden from nonmembers, invitation only).
+There is no group directory or group feed. Member rosters are visible
+only to active members/organizers, while Open/Closed/Unlisted visitors see identity and
+member count.
+
+Open and Unlisted groups admit members immediately; Closed groups create pending requests
+that organizers can approve or decline. Invitation-only groups block self-joining;
+email invitations and invite-based joining arrive in #22. Accepting a valid private
+invitation will grant membership directly, without another approval step; invitation
+authority remains a separate organizer-controlled capability for that slice.
+Owners/organizers can block and unblock membership. Blocked users cannot join,
+request membership, or erase a block by leaving; blocking does not change independent
+activity participation. Only the owner can block another organizer; the owner cannot
+be blocked. Members can leave or
+cancel requests; the primary organizer cannot leave or demote themselves. Only
+the primary organizer appoints/removes additional organizers; additional organizers
+can approve requests and create linked activities. Group settings and membership
+also have Django admin support. No invitation button is shown before it works.
+
+Activity creation has an optional Group selector restricted to groups the creator
+organizes. Activities keep their existing audience/response rules regardless of
+group membership; linking a group does not grant access to either private group
+details or restricted activities. Deleting a group preserves its activities by
+clearing their group reference. Existing activities and personal friend lists are
+left intact by the migrations. The access-mode migration retains group identity,
+owners, memberships, and activity links. Legacy private groups stay Private;
+unlisted groups become Unlisted; public open/approval groups become Open/Closed.
+Legacy public invitation-only groups become Private to retain the membership
+restriction. Existing pending memberships are retained rather than auto-approved.
+
 ## Pilot discovery and presence
 
 Discover submits text search only with Search or Enter, never per keystroke. Its

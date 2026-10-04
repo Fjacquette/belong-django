@@ -54,7 +54,8 @@ class AuthScreenTests(TestCase):
         primary = header.split("<details", 1)[0]
         self.assertIn("Discover", primary)
         self.assertNotIn(">Create</a>", primary)
-        self.assertContains(response, 'aria-label="Create activity"')
+        self.assertContains(response, 'aria-label="Create"')
+        self.assertContains(response, f'href="{reverse("groups:create")}"')
         self.assertNotIn("Logout", primary)
         self.assertNotIn("Categories", header)
         account = header.split("<details", 1)[1]

@@ -253,7 +253,7 @@ def category_explore(request: HttpRequest) -> HttpResponse:
 @login_required
 def detail(request: HttpRequest, pk: int) -> HttpResponse:
     activity = get_object_or_404(
-        visible_activities(request.user).select_related("host", "category")
+        visible_activities(request.user).select_related("host", "category", "group")
         .prefetch_related("responses")
         .annotate(
             attendee_count=Count(
@@ -276,6 +276,7 @@ def detail(request: HttpRequest, pk: int) -> HttpResponse:
         "activity": activity,
         "join_context": join_context,
         "friends": _friend_context(request.user),
+        "show_group": activity.group and activity.group.can_view(request.user),
     }
     return render(request, "activities/detail.html", context)
 
@@ -283,7 +284,7 @@ def detail(request: HttpRequest, pk: int) -> HttpResponse:
 @login_required
 def create(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
-        form = ActivityForm(request.POST)
+        form = ActivityForm(request.POST, user=request.user)
         if form.is_valid():
             activity: Activity = form.save(commit=False)
             activity.host = request.user
@@ -291,7 +292,7 @@ def create(request: HttpRequest) -> HttpResponse:
             messages.success(request, "Activity created!")
             return redirect("activities:detail", pk=activity.pk)
     else:
-        form = ActivityForm()
+        form = ActivityForm(user=request.user, initial={"group": request.GET.get("group")})
 
     return render(request, "activities/form.html", {"form": form})
 

@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Create group · Belong{% endblock %}
+{% block content %}
+<section class="max-w-xl mx-auto">
+  <h1 class="text-3xl font-display mb-4">Create a group</h1>
+  <form method="post" class="space-y-4">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {% for field in form %}
+      <div>{{ field.label_tag }}{{ field }}{% if field.help_text %}<p class="mt-1 text-sm" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</p>{% endif %}{{ field.errors }}</div>
+    {% endfor %}
+    <div class="flex items-center gap-4">
+      <button type="submit" class="rounded-full bg-belong-purple text-white px-5 py-3">Create group</button>
+      <a href="{% url 'activities:index' %}" class="text-belong-purple underline">Back to Discover</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

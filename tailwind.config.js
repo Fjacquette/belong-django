@@ -4,6 +4,7 @@ module.exports = {
     './templates/**/*.html',
     './static/js/**/*.js',
     './activities/forms.py',
+    './groups/forms.py',
     './belong/forms.py',
     './media_assets/forms.py',
   ],

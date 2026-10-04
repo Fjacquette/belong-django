@@ -77,6 +77,10 @@ DEFAULT_RESPONSE_CHOICES = [
 
 
 class Activity(models.Model):
+    group = models.ForeignKey(
+        "groups.Group", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="activities",
+    )
     host = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,

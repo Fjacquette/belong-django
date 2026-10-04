@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'activities',
     'social.apps.SocialConfig',
+    'groups.apps.GroupsConfig',
     'media_assets.apps.MediaAssetsConfig',
 ]
 
