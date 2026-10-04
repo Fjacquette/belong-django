@@ -10,7 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
+
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,7 +23,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-xq4$#g0c#%9s(okm6dklz4a=*xr%6s$lv$&cn3mvqf#v4jk@l^'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '').strip()
+if not SECRET_KEY:
+    try:
+        SECRET_KEY = (BASE_DIR / '.django-secret-key').read_text().strip()
+    except FileNotFoundError:
+        pass
+if not SECRET_KEY:
+    raise ImproperlyConfigured(
+        'Set DJANGO_SECRET_KEY or create .django-secret-key as described in README.md.'
+    )
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True

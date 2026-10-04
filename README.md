@@ -16,10 +16,23 @@ uv sync
 # 2. Activate the environment
 source .venv/bin/activate
 
-# 3. Run migrations
+# 3. Create a private local Django secret key (only if it does not exist)
+python - <<'PYKEY'
+import os
+from pathlib import Path
+from django.core.management.utils import get_random_secret_key
+
+path = Path(".django-secret-key")
+if not path.exists():
+    with path.open("x") as handle:
+        os.chmod(path, 0o600)
+        handle.write(get_random_secret_key() + "\n")
+PYKEY
+
+# 4. Run migrations
 python manage.py migrate
 
-# 4. Seed demo data (creates admin/admin123 + demo/demo123)
+# 5. Seed demo data (creates admin/admin123 + demo/demo123)
 python manage.py seed_demo
 ```
 
@@ -53,3 +66,18 @@ npx tailwindcss@3.4.13 -i assets/tailwind.css -o static/css/tailwind.css --minif
 
 ## Adding Images Later
 When you’re ready for card artwork, place uploaded assets under `static/img/` (or another static directory) and reference them from the templates. Add an `image_url` field to `Activity` only once we have a real storage target.
+
+## Local Data and Secrets
+
+Django reads `DJANGO_SECRET_KEY` from the environment, or falls back to the
+ignored `.django-secret-key` file. Keep this key private and persistent across
+restarts. For deployments, set a fresh `DJANGO_SECRET_KEY`; do not reuse a key
+from repository history.
+
+SQLite databases, local environment files, uploaded media, virtual environments,
+caches, and Windows download metadata are ignored. Keep local data on your
+machine or back it up separately. Source artwork in `mock_images/` and `static/`
+remains versioned.
+
+Demo accounts created by `seed_demo` use the documented development passwords.
+Use demo seeding only in a local development database.

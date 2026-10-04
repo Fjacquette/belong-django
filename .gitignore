@@ -8,3 +8,28 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Local credentials and configuration
+.env
+.env.*
+!.env.example
+.django-secret-key
+*.pem
+*.key
+
+# Local databases and uploaded files
+*.sqlite3
+*.sqlite3-*
+*.sqlite
+*.sqlite-*
+/media/
+/uploads/
+
+# Machine-specific files and caches
+.uv-cache/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*:Zone.Identifier
+*.log
