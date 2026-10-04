@@ -28,3 +28,17 @@ Follow [UI_PRINCIPLES.md](UI_PRINCIPLES.md) for interface changes.
 - Do not commit secrets, local databases, uploaded user data,
   environment-specific configuration, or machine metadata. Preserve local data
   and stage only the intended source changes.
+
+## Present every implementation for review
+
+Before declaring a normal implementation iteration complete, commit the finished
+source, open its PR, and run `./scripts/present-test.sh` from the main checkout.
+Present that exact committed HEAD in the persistent browser-test environment on
+http://127.0.0.1:8001, verify readiness, and report the preview commit SHA.
+Preserve browser-test data, configuration, and secrets. Codex owns the worktree,
+dependency, migration, and server mechanics; Frank should only reload his browser.
+Pure documentation changes that cannot affect the running app may skip presentation.
+
+PR descriptions explain changes and what to inspect, with wording such as
+“Browser-test is running this iteration at http://127.0.0.1:8001. Review: …”.
+Do not ask Frank to stop servers, refresh worktrees, migrate, or start browser-test.

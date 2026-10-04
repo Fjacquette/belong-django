@@ -11,42 +11,64 @@ Server-rendered Django app for Belong — a card-driven social experience using 
 ## Local dev and browser-test workflow
 
 Requires Python 3.12+, `uv`, and Node.js/`npx` (for the dev Tailwind watcher).
-Run these commands from the main checkout:
+Run commands from the main checkout:
 
 ```bash
-# Start dev from your current feature branch, on http://127.0.0.1:8000
+# Dev: current feature source, Python/Tailwind watchers, foreground; Ctrl+C stops it
 ./start_belong.sh
 
-# In another terminal, create or refresh browser-test from origin/master
+# Product review: present exact committed HEAD, no PR merge required
+./scripts/present-test.sh
+
+# Explicitly return browser-test to current origin/master
 ./scripts/refresh-test.sh
 
-# Start browser-test on http://127.0.0.1:8001
+# Start/restart the current browser-test revision in the background
 ./start_test.sh
+
+# Stop only the managed browser-test process
+./scripts/stop-test.sh
 ```
 
-The launchers install locked Python dependencies, create missing local config and
-secret files, check Django, and apply migrations. A newly created database starts
-empty: use **Sign up** in the browser to create an account, then add activities.
-Existing databases, keys, and configuration are preserved; no data is copied or
-reseeded. Dev keeps your current `db.sqlite3` and watches Tailwind and Python
-changes. Browser-test uses master's committed CSS; restart it after refreshing
-so dependency changes and migrations are applied. Stop either launcher with
-Ctrl+C. Both bind only to `127.0.0.1`; there is no public deployment.
+Dev runs at http://127.0.0.1:8000. Browser-test runs at
+http://127.0.0.1:8001 with committed CSS and `--noreload`. Presentation installs
+locked dependencies, checks Django, applies migrations, starts a background
+server that survives the invoking task, and verifies HTTP readiness. It prints
+`Browser-test ready at http://127.0.0.1:8001 — <short SHA>` only after success.
+A newly created database is empty; signup and demo seeding remain explicit.
 
-Browser-test lives in the ignored `.worktrees/test/` directory, on the dedicated
-`browser-test` branch tracking `origin/master`. It is a separate checkout with
-its own `.venv`, `db.sqlite3`, `.env.local`, and `.django-secret-key`. It shows
-integrated master, even while the main checkout contains unfinished feature
-work. It is a **persistent environment for browser/product evaluation**, separate
-from the temporary database created by `python manage.py test`.
+Normal Codex implementation iterations finish with a committed PR **already
+running in browser-test**. Frank only reloads the browser. PR descriptions give
+review pointers, not deployment commands. See AGENTS.md for the completion rule.
 
-Refresh fetches master and fast-forwards only the browser-test branch. It does
-not switch, merge into, or clean your dev branch. Local source edits or commits
-in browser-test stop refresh with an error; preserve them before retrying. No
-reset, database copying, or database deletion is performed.
+Browser-test is the ignored `.worktrees/test/` checkout, with its own `.venv`,
+SQLite database, `.env.local`, and `.django-secret-key`. Presentation uses detached
+HEAD at the exact feature commit; refresh returns it to the `browser-test` branch
+tracking `origin/master`. The main dev branch is never switched by these tools.
+This persistent product-review environment is separate from automated test databases.
+
+Presentation refuses uncommitted tracked or untracked source in the main or test
+checkout. Refresh permits unfinished main work but refuses test source changes
+and local test commits. Ignored files are preserved, and revision switches refuse
+to overwrite them if the target starts tracking those paths. Nothing is reset,
+copied, deleted, or automatically reseeded. Migrations may update the test schema.
+
+Ignored `.belong-runtime/` holds the operation lock, preview commit, process state,
+and `browser-test.log`. Server ownership checks PID/start time, exact command,
+and checkout before stopping a process. Readiness checks the owned listening
+socket and login endpoint. Unknown port occupancy fails without killing anything;
+stale PID state cannot authorize killing another process. Refresh stops and
+restarts a managed server when returning to master; otherwise it only updates
+source. Concurrent operations are refused. Failed startup clears PID state and
+points to the log. These process checks require local Linux/WSL `/proc`.
+
+An older foreground `start_test.sh` server has no managed PID state. Stop that
+launcher once before adopting this workflow; presentation deliberately treats
+it as unknown rather than killing a process based on port or command alone.
 
 Dev and test use different session/CSRF cookie names because browsers share
-cookies between localhost ports. You can stay logged into both independently.
+cookies between localhost ports. Both bind only to `127.0.0.1`; no public deployment,
+firewall configuration, production setup, Docker, or systemd is involved.
 
 ## Local configuration
 
@@ -87,7 +109,8 @@ file copying is needed. Production/Sage setup is deferred to a later issue.
 ## Seeding Notes
 
 Demo seeding is an explicit command; launchers never run it automatically.
-After setting up browser-test once with `./start_test.sh`, stop it, then populate
+After setting up browser-test once with `./start_test.sh`, use
+`./scripts/stop-test.sh` if it is running, then populate
 its database from the main checkout:
 
 ```bash
