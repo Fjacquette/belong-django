@@ -2,7 +2,7 @@
 
 This Django repository is the authoritative Belong implementation.
 
-Before substantive work, read [PROJECT_STATE.md](PROJECT_STATE.md) for the current product/implementation handoff and inspect live GitHub issues/PRs. Follow [UI_PRINCIPLES.md](UI_PRINCIPLES.md) for interface changes.
+Before substantive work, read [PROJECT_STATE.md](PROJECT_STATE.md) for the current product/implementation handoff and inspect live GitHub issues/PRs. For interface work, follow both [UI_PRINCIPLES.md](UI_PRINCIPLES.md) and [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md). UI_PRINCIPLES defines product/interaction rules; DESIGN_SYSTEM defines the reusable visual language, geometry, control families, and card information hierarchy.
 
 ## Product constraints
 
@@ -47,6 +47,9 @@ copy between ChatGPT and Codex when the direction can be recorded in GitHub.
 - Do not commit secrets, local databases, uploaded user data,
   environment-specific configuration, or machine metadata. Preserve local data
   and stage only the intended source changes.
+- For UI changes, prefer reusable classes/tokens from DESIGN_SYSTEM.md over inventing
+  new one-off Tailwind recipes. If a genuinely new visual pattern is required,
+  update DESIGN_SYSTEM.md in the same PR.
 
 ## Present every implementation for review
 
