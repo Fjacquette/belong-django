@@ -9,6 +9,8 @@
 - Mobile is a first-class layout, not desktop squeezed narrower.
 - Avoid redundant labels, headers, badges, and explanations when context already communicates meaning.
 - Belong is not Facebook, Reddit, Meetup, or a generic SaaS dashboard.
+- `DESIGN_SYSTEM.md` is the authoritative visual language for control families,
+  geometry, spacing, responsive behavior, and activity-card information hierarchy.
 
 ## Interaction grammar
 
@@ -32,3 +34,5 @@ Additional consistency rules:
 - Do not hide essential interaction behind hover, accidental click targets, or ambiguous labels.
 - State-changing controls must visibly expose their current state when that state matters.
 - Navigation uses links; mutations use buttons. Hide is private state, separate from participation.
+- On activity cards, the top one or two bands must carry the core decision information:
+  activity name, organizer, audience, cost, time/date, and location/online state when known.
