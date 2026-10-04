@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from .forms import GroupForm
-from .models import Group, GroupMembership, JoinPolicy, MemberRole, MemberStatus
+from .models import Group, GroupAccess, GroupMembership, MemberRole, MemberStatus
 
 
 def _visible_group(user, pk):
@@ -42,7 +42,10 @@ def detail(request, pk):
         "members": members if active or organizer else None,
         "member_count": members.count(),
         "pending": group.memberships.filter(status=MemberStatus.PENDING).select_related("user") if organizer else None,
-        "can_join": not membership and group.join_policy != JoinPolicy.INVITE,
+        "blocked": group.memberships.filter(status=MemberStatus.BLOCKED).select_related("user") if organizer else None,
+        "can_join": group.access != GroupAccess.PRIVATE and (
+            not membership or membership.status == MemberStatus.PENDING and group.access in [GroupAccess.OPEN, GroupAccess.UNLISTED]
+        ),
     })
 
 
@@ -53,11 +56,16 @@ def join(request, pk):
         group = _visible_group(request.user, pk)
         # Serialize membership creation/policy decisions with organizer actions.
         group = Group.objects.select_for_update().get(pk=group.pk)
-        if group.join_policy == JoinPolicy.INVITE:
+        if group.access == GroupAccess.PRIVATE or group.memberships.filter(user=request.user, status=MemberStatus.BLOCKED).exists():
             raise Http404
-        GroupMembership.objects.get_or_create(group=group, user=request.user, defaults={
-            "status": MemberStatus.ACTIVE if group.join_policy == JoinPolicy.OPEN else MemberStatus.PENDING,
+        membership, _ = GroupMembership.objects.get_or_create(group=group, user=request.user, defaults={
+            "status": MemberStatus.PENDING if group.access == GroupAccess.CLOSED else MemberStatus.ACTIVE,
         })
+        # Existing pending requests survive migration. Joining an Open/Unlisted
+        # group explicitly now completes membership without organizer approval.
+        if membership.status == MemberStatus.PENDING and group.access in [GroupAccess.OPEN, GroupAccess.UNLISTED]:
+            membership.status = MemberStatus.ACTIVE
+            membership.save(update_fields=["status"])
     return redirect(group)
 
 
@@ -69,6 +77,8 @@ def leave(request, pk):
         if group.owner_id == request.user.pk:
             raise Http404
         member = get_object_or_404(GroupMembership, group=group, user=request.user)
+        if member.status == MemberStatus.BLOCKED:
+            raise Http404
         member.delete()
     return redirect("activities:index")
 
@@ -82,10 +92,16 @@ def membership_action(request, pk, member_pk):
             raise Http404
         member = get_object_or_404(GroupMembership, pk=member_pk, group=group)
         action = request.POST.get("action")
-        if action == "decline" and member.status == MemberStatus.PENDING:
+        if action == "unblock" and member.status == MemberStatus.BLOCKED:
             member.delete()
             return redirect(group)
-        elif action == "approve" and member.status == MemberStatus.PENDING:
+        elif action == "block" and member.user_id != group.owner_id and (member.role != MemberRole.ORGANIZER or group.owner_id == request.user.pk):
+            member.status = MemberStatus.BLOCKED
+            member.role = MemberRole.MEMBER
+        elif action == "decline" and member.status == MemberStatus.PENDING:
+            member.delete()
+            return redirect(group)
+        elif action == "approve" and member.status == MemberStatus.PENDING and group.access != GroupAccess.PRIVATE:
             member.status = MemberStatus.ACTIVE
         elif action in ["promote", "demote"] and group.owner_id == request.user.pk and member.user_id != group.owner_id and member.status == MemberStatus.ACTIVE:
             member.role = MemberRole.ORGANIZER if action == "promote" else MemberRole.MEMBER

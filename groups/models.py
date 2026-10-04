@@ -4,16 +4,11 @@ from django.db import models
 from django.urls import reverse
 
 
-class GroupVisibility(models.TextChoices):
-    PUBLIC = "public", "Public — visible through linked activities"
-    UNLISTED = "unlisted", "Unlisted — accessible by direct link"
-    PRIVATE = "private", "Private — members only"
-
-
-class JoinPolicy(models.TextChoices):
-    OPEN = "open", "Anyone can join"
-    APPROVAL = "approval", "Organizer approval required"
-    INVITE = "invite", "Invitation only"
+class GroupAccess(models.TextChoices):
+    OPEN = "open", "Open"
+    CLOSED = "closed", "Closed"
+    UNLISTED = "unlisted", "Unlisted"
+    PRIVATE = "private", "Private"
 
 
 class MemberRole(models.TextChoices):
@@ -24,21 +19,20 @@ class MemberRole(models.TextChoices):
 class MemberStatus(models.TextChoices):
     ACTIVE = "active", "Active"
     PENDING = "pending", "Awaiting approval"
+    BLOCKED = "blocked", "Blocked"
 
 
 class Group(models.Model):
     name = models.CharField(max_length=120)
     description = models.TextField(blank=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="owned_groups")
-    visibility = models.CharField(max_length=12, choices=GroupVisibility.choices, default=GroupVisibility.PUBLIC)
-    join_policy = models.CharField(max_length=12, choices=JoinPolicy.choices, default=JoinPolicy.APPROVAL)
+    access = models.CharField(max_length=12, choices=GroupAccess.choices, default=GroupAccess.CLOSED)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["name", "pk"]
         constraints = [
-            models.CheckConstraint(condition=models.Q(visibility__in=GroupVisibility.values), name="group_valid_visibility"),
-            models.CheckConstraint(condition=models.Q(join_policy__in=JoinPolicy.values), name="group_valid_join_policy"),
+            models.CheckConstraint(condition=models.Q(access__in=GroupAccess.values), name="group_valid_access"),
         ]
 
     def __str__(self):
@@ -55,7 +49,16 @@ class Group(models.Model):
     def can_view(self, user):
         if not user.is_authenticated:
             return False
-        return self.visibility != GroupVisibility.PRIVATE or self.owner_id == user.pk or self.memberships.filter(user=user, status=MemberStatus.ACTIVE).exists()
+        return self.access != GroupAccess.PRIVATE or self.owner_id == user.pk or self.memberships.filter(user=user, status=MemberStatus.ACTIVE).exists()
+
+    @property
+    def access_description(self):
+        return {
+            GroupAccess.OPEN: "Visible; anyone can join immediately unless blocked.",
+            GroupAccess.CLOSED: "Visible; membership requires organizer approval.",
+            GroupAccess.UNLISTED: "Reachable through a link or linked activity; anyone can join immediately unless blocked.",
+            GroupAccess.PRIVATE: "Hidden from nonmembers; membership requires an invitation.",
+        }[self.access]
 
     def can_organize(self, user):
         return user.is_authenticated and (self.owner_id == user.pk or self.memberships.filter(user=user, status=MemberStatus.ACTIVE, role=MemberRole.ORGANIZER).exists())

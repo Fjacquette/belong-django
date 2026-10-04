@@ -6,20 +6,22 @@
   <h1 class="text-3xl font-display">{{ group.name }}</h1>
   <p class="whitespace-pre-line">{{ group.description }}</p>
   <p class="text-sm">Primary organizer: {{ group.owner.get_full_name|default:group.owner.username }}</p>
-  <p class="text-sm">{{ group.get_visibility_display }} · {{ group.get_join_policy_display }}</p>
+  <p class="text-sm">{{ group.get_access_display }} · {{ group.access_description }}</p>
   {% if organizer %}
     <a href="{% url 'activities:create' %}?group={{ group.pk }}" class="inline-flex items-center rounded-full border border-belong-purple text-belong-purple px-4 min-h-11">Create an activity for this group</a>
   {% endif %}
   {% if can_join %}
     <form method="post" action="{% url 'groups:join' group.pk %}">{% csrf_token %}
-      <button class="rounded-full bg-belong-purple text-white px-5 min-h-11">{% if group.join_policy == 'open' %}Join group{% else %}Request to join{% endif %}</button>
+      <button class="rounded-full bg-belong-purple text-white px-5 min-h-11">{% if group.access == 'closed' %}Request to join{% else %}Join group{% endif %}</button>
     </form>
   {% elif membership.status == 'pending' %}
     <p role="status">Your request is awaiting organizer approval.</p>
-  {% elif not membership and group.join_policy == 'invite' %}
+  {% elif membership.status == 'blocked' %}
+    <p role="status">You are blocked from joining this group.</p>
+  {% elif not membership and group.access == 'private' %}
     <p>Membership is by invitation.</p>
   {% endif %}
-  {% if membership and not is_owner %}
+  {% if membership and not is_owner and membership.status != 'blocked' %}
     <form method="post" action="{% url 'groups:leave' group.pk %}">{% csrf_token %}
       <button class="rounded-full border border-belong-purple text-belong-purple px-4 min-h-11">{% if membership.status == 'pending' %}Cancel request{% else %}Leave group{% endif %}</button>
     </form>
@@ -35,6 +37,13 @@
               <button name="action" value="{% if member.role == 'organizer' %}demote{% else %}promote{% endif %}" class="rounded-full border border-belong-purple text-belong-purple px-3 min-h-11 text-sm">{% if member.role == 'organizer' %}Make member{% else %}Make organizer{% endif %}</button>
             </form>
           {% endif %}
+          {% if organizer and member.user_id != group.owner_id %}
+            {% if is_owner or member.role != 'organizer' %}
+              <form method="post" action="{% url 'groups:membership_action' group.pk member.pk %}">{% csrf_token %}
+                <button name="action" value="block" class="rounded-full border border-belong-purple text-belong-purple px-3 min-h-11 text-sm">Block membership</button>
+              </form>
+            {% endif %}
+          {% endif %}
         </li>
       {% endfor %}
     </ul>
@@ -46,8 +55,18 @@
     {% for member in pending %}
       <form method="post" action="{% url 'groups:membership_action' group.pk member.pk %}" class="flex flex-wrap items-center justify-between gap-2">{% csrf_token %}
         <span>{{ member.user.get_full_name|default:member.user.username }}</span>
-        <button name="action" value="approve" class="rounded-full border border-belong-purple text-belong-purple px-3 min-h-11">Approve</button>
+        {% if group.access != 'private' %}<button name="action" value="approve" class="rounded-full border border-belong-purple text-belong-purple px-3 min-h-11">Approve</button>{% endif %}
         <button name="action" value="decline" class="rounded-full border border-belong-purple text-belong-purple px-3 min-h-11">Decline</button>
+        <button name="action" value="block" class="rounded-full border border-belong-purple text-belong-purple px-3 min-h-11">Block membership</button>
+      </form>
+    {% endfor %}
+  {% endif %}
+  {% if blocked %}
+    <h2 class="text-xl font-display">Blocked memberships</h2>
+    {% for member in blocked %}
+      <form method="post" action="{% url 'groups:membership_action' group.pk member.pk %}" class="flex flex-wrap items-center justify-between gap-2">{% csrf_token %}
+        <span>{{ member.user.get_full_name|default:member.user.username }}</span>
+        <button name="action" value="unblock" class="rounded-full border border-belong-purple text-belong-purple px-3 min-h-11">Unblock</button>
       </form>
     {% endfor %}
   {% endif %}

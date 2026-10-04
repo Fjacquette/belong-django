@@ -109,8 +109,12 @@ Existing demo metadata is enriched without reseeding accounts or responses.
 
 The Groups foundation (#21) adds persistent Group and GroupMembership entities,
 separate from legacy personal FriendGroup lists. The floating + discloses Activity
-(primary) and Group (secondary) creation. Groups have public/unlisted/private
-visibility and open/approval/invitation-only join policies. Membership rosters are
+(primary) and Group (secondary) creation. Groups expose four coherent access modes:
+Open (visible, immediate join), Closed (visible, request approval), Unlisted
+(link/linked activity only, immediate join), and Private (hidden, invitation only).
+Owners/organizers can block membership; a block prevents self-join and cannot be
+cleared by leaving. Invitation acceptance/authority remain #22; acceptance will
+grant membership directly, without a second approval step. Membership rosters are
 visible to active members; organizers approve requests and the owner appoints additional
 organizers. Activities optionally link to a group their creator organizes; group
 membership never gates ordinary activity participation. Email invitations are #22.

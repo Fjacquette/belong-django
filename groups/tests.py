@@ -7,7 +7,8 @@ from django.urls import reverse
 
 from activities.forms import ActivityForm
 from activities.models import Activity, ActivityResponse
-from .models import Group, GroupMembership, GroupVisibility, JoinPolicy, MemberRole, MemberStatus
+from .forms import GroupForm
+from .models import Group, GroupMembership, GroupAccess, MemberRole, MemberStatus
 
 
 class GroupTests(TestCase):
@@ -17,7 +18,7 @@ class GroupTests(TestCase):
         cls.owner = User.objects.create_user(username="janine")
         cls.member = User.objects.create_user(username="hiker")
         cls.outsider = User.objects.create_user(username="visitor")
-        cls.group = Group.objects.create(name="Hikes with Janine", owner=cls.owner, join_policy=JoinPolicy.OPEN)
+        cls.group = Group.objects.create(name="Hikes with Janine", owner=cls.owner, access=GroupAccess.OPEN)
         cls.owner_membership = GroupMembership.objects.create(group=cls.group, user=cls.owner, role=MemberRole.ORGANIZER)
         cls.membership = GroupMembership.objects.create(group=cls.group, user=cls.member)
 
@@ -27,7 +28,7 @@ class GroupTests(TestCase):
 
     def test_creation_sets_owner_and_active_organizer_atomically(self):
         self.client.force_login(self.outsider)
-        response = self.client.post(reverse("groups:create"), {"name": "Evening walks", "description": "Walk together", "visibility": "unlisted", "join_policy": "approval", "owner": self.owner.pk})
+        response = self.client.post(reverse("groups:create"), {"name": "Evening walks", "description": "Walk together", "access": "unlisted", "owner": self.owner.pk})
         group = Group.objects.get(name="Evening walks")
         self.assertRedirects(response, group.get_absolute_url())
         self.assertEqual(group.owner, self.outsider)
@@ -37,7 +38,7 @@ class GroupTests(TestCase):
 
     def test_invalid_creation_does_not_create_group_or_membership(self):
         self.client.force_login(self.owner)
-        response = self.client.post(reverse("groups:create"), {"name": "", "visibility": "unknown", "join_policy": "open"})
+        response = self.client.post(reverse("groups:create"), {"name": "", "access": "unknown"})
         self.assertContains(response, "This field is required")
         self.assertEqual(Group.objects.count(), 1)
 
@@ -47,7 +48,7 @@ class GroupTests(TestCase):
         self.assertIn(reverse("login"), response.url)
 
     def test_private_group_only_owner_and_active_members_can_view(self):
-        self.group.visibility = GroupVisibility.PRIVATE
+        self.group.access = GroupAccess.PRIVATE
         self.group.save()
         GroupMembership.objects.create(group=self.group, user=self.outsider, status=MemberStatus.PENDING)
         for user, status in [(self.owner, 200), (self.member, 200), (self.outsider, 404)]:
@@ -55,8 +56,8 @@ class GroupTests(TestCase):
             self.assertEqual(self.client.get(self.group.get_absolute_url()).status_code, status)
 
     def test_public_and_unlisted_identity_visible_but_roster_is_members_only(self):
-        for visibility in [GroupVisibility.PUBLIC, GroupVisibility.UNLISTED]:
-            self.group.visibility = visibility
+        for access in [GroupAccess.OPEN, GroupAccess.CLOSED, GroupAccess.UNLISTED]:
+            self.group.access = access
             self.group.save()
             self.client.force_login(self.outsider)
             response = self.client.get(self.group.get_absolute_url())
@@ -74,7 +75,7 @@ class GroupTests(TestCase):
         self.assertEqual((membership.role, membership.status), ("member", "active"))
 
     def test_approval_join_and_organizer_approval(self):
-        self.group.join_policy = JoinPolicy.APPROVAL
+        self.group.access = GroupAccess.CLOSED
         self.group.save()
         self.client.force_login(self.outsider)
         self.client.post(reverse("groups:join", args=[self.group.pk]))
@@ -88,11 +89,21 @@ class GroupTests(TestCase):
         self.assertEqual(pending.status, "active")
 
     def test_invite_only_cannot_self_join(self):
-        self.group.join_policy = JoinPolicy.INVITE
+        self.group.access = GroupAccess.PRIVATE
         self.group.save()
         self.client.force_login(self.outsider)
         self.assertEqual(self.client.post(reverse("groups:join", args=[self.group.pk])).status_code, 404)
         self.assertFalse(self.group.memberships.filter(user=self.outsider).exists())
+
+    def test_private_legacy_pending_request_cannot_bypass_invitation(self):
+        self.group.access = GroupAccess.PRIVATE
+        self.group.save()
+        pending = GroupMembership.objects.create(group=self.group, user=self.outsider, status="pending")
+        self.assertEqual(self.action(self.owner, pending, "approve").status_code, 404)
+        self.assertNotContains(self.client.get(self.group.get_absolute_url()), 'value="approve"')
+        pending.refresh_from_db()
+        self.assertEqual(pending.status, "pending")
+        self.assertFalse(self.group.can_view(self.outsider))
 
     def test_owner_can_add_and_remove_additional_organizer(self):
         self.assertEqual(self.action(self.owner, self.membership, "promote").status_code, 302)
@@ -142,9 +153,93 @@ class GroupTests(TestCase):
             self.owner_membership.full_clean()
 
     def test_group_enum_constraints(self):
-        for values in [dict(visibility="invalid"), dict(join_policy="invalid")]:
+        for values in [dict(access="invalid")]:
             with self.subTest(values=values), self.assertRaises(IntegrityError), transaction.atomic():
                 Group.objects.create(name="Invalid", owner=self.owner, **values)
+
+    def test_four_modes_are_the_only_creation_and_admin_choices(self):
+        self.client.force_login(self.owner)
+        page = self.client.get(reverse("groups:create"))
+        form = page.context["form"]
+        self.assertEqual(list(form.fields), ["name", "description", "access"])
+        self.assertEqual([value for value, label in form.fields["access"].choices if value], GroupAccess.values)
+        from django.test import RequestFactory
+        request = RequestFactory().get("/admin/")
+        request.user = self.owner
+        admin_form = admin.site._registry[Group].get_form(request)
+        self.assertIn("access", admin_form.base_fields)
+        self.assertNotIn("join_policy", admin_form.base_fields)
+        self.assertNotIn("visibility", admin_form.base_fields)
+        for access in GroupAccess.values:
+            response = self.client.post(reverse("groups:create"), {"name": f"Mode {access}", "access": access, "visibility": "private", "join_policy": "open"})
+            group = Group.objects.get(name=f"Mode {access}")
+            self.assertRedirects(response, group.get_absolute_url())
+            self.assertEqual(group.access, access)
+        invalid = GroupForm({"name": "Bad", "access": "public"})
+        self.assertFalse(invalid.is_valid())
+        invalid_group = Group(name="Bad", owner=self.owner, access="public")
+        with self.assertRaises(ValidationError):
+            invalid_group.full_clean()
+
+    def test_unlisted_joins_immediately_through_link_without_approval(self):
+        self.group.access = GroupAccess.UNLISTED
+        self.group.save()
+        self.client.force_login(self.outsider)
+        page = self.client.get(self.group.get_absolute_url())
+        self.assertContains(page, "Join group")
+        self.assertNotContains(page, "Request to join")
+        self.client.post(reverse("groups:join", args=[self.group.pk]))
+        self.assertEqual(self.group.memberships.get(user=self.outsider).status, "active")
+        # Discover continues to surface activities, never a proactive group list.
+        self.assertNotContains(self.client.get(reverse("activities:index")), self.group.name)
+
+    def test_pending_request_can_complete_self_join_in_open_and_unlisted_modes(self):
+        membership = GroupMembership.objects.create(group=self.group, user=self.outsider, status="pending")
+        self.client.force_login(self.outsider)
+        for access in [GroupAccess.OPEN, GroupAccess.UNLISTED]:
+            self.group.access = access
+            self.group.save()
+            membership.status = "pending"
+            membership.save()
+            page = self.client.get(self.group.get_absolute_url())
+            self.assertContains(page, "Join group")
+            self.assertNotContains(page, "awaiting organizer approval")
+            self.client.post(reverse("groups:join", args=[self.group.pk]))
+            membership.refresh_from_db()
+            self.assertEqual(membership.status, "active")
+
+    def test_block_prevents_join_and_leave_bypass_until_organizer_unblocks(self):
+        for access in [GroupAccess.OPEN, GroupAccess.CLOSED, GroupAccess.UNLISTED]:
+            self.group.access = access
+            self.group.save()
+            self.assertEqual(self.action(self.owner, self.membership, "block").status_code, 302)
+            self.client.force_login(self.member)
+            self.assertContains(self.client.get(self.group.get_absolute_url()), "blocked from joining")
+            for route in ["join", "leave"]:
+                self.assertEqual(self.client.post(reverse(f"groups:{route}", args=[self.group.pk])).status_code, 404)
+            self.assertEqual(self.action(self.member, self.membership, "unblock").status_code, 404)
+            self.assertEqual(self.action(self.owner, self.membership, "unblock").status_code, 302)
+            self.client.force_login(self.member)
+            self.client.post(reverse("groups:join", args=[self.group.pk]))
+            self.membership = self.group.memberships.get(user=self.member)
+            self.assertEqual(self.membership.status, "pending" if access == GroupAccess.CLOSED else "active")
+
+    def test_moderator_cannot_block_owner_or_peer_organizer(self):
+        self.assertEqual(self.action(self.owner, self.membership, "promote").status_code, 302)
+        self.assertEqual(self.action(self.member, self.owner_membership, "block").status_code, 404)
+        self.assertEqual(self.action(self.member, self.membership, "block").status_code, 404)
+        other = GroupMembership.objects.create(group=self.group, user=self.outsider)
+        self.assertEqual(self.action(self.member, other, "block").status_code, 302)
+        self.assertEqual(self.action(self.member, other, "unblock").status_code, 302)
+        self.assertEqual(self.action(self.owner, self.membership, "block").status_code, 302)
+        self.assertFalse(self.group.can_organize(self.member))
+
+    def test_blocked_membership_does_not_gate_activity_response(self):
+        self.action(self.owner, self.membership, "block")
+        activity = Activity.objects.create(title="Public hike", description="Walk", host=self.owner, group=self.group)
+        self.client.force_login(self.member)
+        self.client.post(reverse("activities:respond", args=[activity.pk]), {"status": "interested"})
+        self.assertTrue(ActivityResponse.objects.filter(activity=activity, user=self.member).exists())
 
     def test_activity_group_optional_and_participation_not_gated(self):
         ordinary = Activity.objects.create(title="Walk", description="Together", host=self.owner)
@@ -158,7 +253,7 @@ class GroupTests(TestCase):
         self.assertFalse(self.group.memberships.filter(user=self.outsider).exists())
 
     def test_private_group_not_disclosed_by_public_activity(self):
-        self.group.visibility = "private"
+        self.group.access = "private"
         self.group.save()
         activity = Activity.objects.create(title="Public walk", description="Walk", host=self.owner, group=self.group)
         self.client.force_login(self.outsider)

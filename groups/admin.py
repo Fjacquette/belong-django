@@ -14,8 +14,8 @@ class MembershipInline(admin.TabularInline):
 
 @admin.register(Group)
 class GroupAdmin(admin.ModelAdmin):
-    list_display = ["name", "owner", "visibility", "join_policy"]
-    list_filter = ["visibility", "join_policy"]
+    list_display = ["name", "owner", "access"]
+    list_filter = ["access"]
     search_fields = ["name", "owner__username"]
     autocomplete_fields = ["owner"]
     inlines = [MembershipInline]
