@@ -37,5 +37,5 @@ Thumbs.db
 # Persistent local browser-test checkout
 /.worktrees/
 
-# Managed local browser-test process state and logs
+# Local browser-test process state
 /.belong-runtime/

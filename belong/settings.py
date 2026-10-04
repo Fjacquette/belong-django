@@ -80,6 +80,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'social.middleware.ActivityPresenceMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -140,7 +141,9 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+# Pilot dates and datetime-local forms use Eastern time, including DST.
+TIME_ZONE = 'America/New_York'
+PILOT_TIME_ZONE = TIME_ZONE
 
 USE_I18N = True
 
@@ -163,9 +166,9 @@ LOGOUT_REDIRECT_URL = 'activities:index'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-CARD_HEIGHT = 460            # example height in px
-CARD_WIDTH_RATIO = 0.56      # width = height * ratio
-CARD_BANDS = [0.22, 0.14, 0.32, 0.20, 0.12]
+CARD_HEIGHT = 400            # example height in px
+CARD_WIDTH_RATIO = 0.645      # width = height * ratio
+CARD_BANDS = [0.20, 0.12, 0.32, 0.20, 0.16]
 
 STACK_OFFSET = round(CARD_HEIGHT * CARD_BANDS[0])
 BASE_FONT = round(CARD_HEIGHT * 0.04)   # ≈4% of height

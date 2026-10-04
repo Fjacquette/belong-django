@@ -1,9 +1,10 @@
-<div id="participation-{{ activity.pk }}" class="w-full {% if variant == 'detail' %}space-y-3{% else %}participation--card space-y-1 text-xs text-white{% endif %}" aria-label="Participation in {{ activity.title }}" aria-live="polite">
+<div id="participation-{{ activity.pk }}" class="w-full {% if variant == 'detail' %}space-y-3{% else %}participation--card space-y-0.5 text-xs text-white{% endif %}" aria-label="Participation in {{ activity.title }}" aria-live="polite">
   {% if variant == 'detail' %}
     {% if response_options %}
       <form method="post" action="{% url 'activities:respond' activity.pk %}" hx-post="{% url 'activities:respond' activity.pk %}" hx-target="#participation-{{ activity.pk }}" hx-swap="outerHTML" class="participation__response flex flex-wrap items-center gap-1">
         {% csrf_token %}
         <input type="hidden" name="variant" value="detail">
+        <input type="hidden" name="next" value="{{ next_path }}">
         {% for option in response_options %}
           <button type="submit" name="status" value="{{ option.value }}" aria-pressed="{% if current_status == option.value %}true{% else %}false{% endif %}" class="min-h-11 rounded-full border border-belong-teal px-4 py-2 text-sm font-semibold {% if current_status == option.value %}bg-belong-teal text-white{% else %}bg-white text-belong-teal{% endif %} hover:opacity-80 focus-visible:outline focus-visible:outline-2">{{ option.label }}</button>
         {% endfor %}
@@ -17,8 +18,9 @@
       <form method="post" action="{% url 'activities:respond' activity.pk %}" hx-post="{% url 'activities:respond' activity.pk %}" hx-target="#participation-{{ activity.pk }}" hx-swap="outerHTML" class="participation__response flex items-center gap-1">
         {% csrf_token %}
         <input type="hidden" name="variant" value="card">
+        <input type="hidden" name="next" value="{{ next_path }}">
         {% for option in card_response_options %}
-          <button type="submit" name="status" value="{{ option.value }}" aria-pressed="{% if current_status == option.value %}true{% else %}false{% endif %}" class="min-w-0 flex-1 min-h-11 rounded-full border border-white/70 px-1 text-xs font-semibold {% if current_status == option.value %}bg-white text-belong-teal{% else %}bg-white/10 text-white{% endif %} hover:opacity-80 focus-visible:outline focus-visible:outline-2">{{ option.label }}</button>
+          <button type="submit" name="status" value="{{ option.value }}" aria-pressed="{% if current_status == option.value %}true{% else %}false{% endif %}" title="{{ option.label }}" class="min-w-0 flex-1 min-h-10 rounded-full border border-white/70 px-1 text-xs font-semibold {% if current_status == option.value %}bg-white text-belong-teal{% else %}bg-white/10 text-white{% endif %} hover:opacity-80 focus-visible:outline focus-visible:outline-2">{{ option.label }}</button>
         {% endfor %}
       </form>
     {% else %}
@@ -26,12 +28,30 @@
     {% endif %}
   {% endif %}
   <div class="participation__counts flex flex-wrap items-center justify-between gap-x-2 {% if variant == 'detail' %}text-sm{% endif %}">
-    <p>{{ interested_count|default:0 }} interested · {{ committed_count|default:0 }} {% if variant == 'detail' %}count me in{% else %}in{% endif %}</p>
+    {% if variant == 'detail' %}
+      <p>{{ interested_count|default:0 }} interested · {{ committed_count|default:0 }} count me in</p>
+    {% else %}
+      {% if card_current_status_label %}
+      <p tabindex="0" title="You: {{ card_current_status_label }} · {{ response_counts_label }}" aria-label="You: {{ card_current_status_label }}">You: {{ card_current_status_label }}</p>
+      {% else %}
+      <p tabindex="0" title="{{ response_counts_label }}">{{ response_count|default:0 }} response{{ response_count|pluralize }}</p>
+      {% endif %}
+    {% endif %}
     {% if current_status %}
       <form method="post" action="{% url 'activities:leave' activity.pk %}" hx-post="{% url 'activities:leave' activity.pk %}" hx-target="#participation-{{ activity.pk }}" hx-swap="outerHTML">
         {% csrf_token %}
         <input type="hidden" name="variant" value="{{ variant|default:'card' }}">
-        <button type="submit" class="participation__remove underline whitespace-nowrap" aria-label="Remove your response">{% if variant == 'detail' %}Remove response{% else %}Remove{% endif %}</button>
+        <input type="hidden" name="next" value="{{ next_path }}">
+        <button type="submit" class="participation__remove whitespace-nowrap" aria-label="Remove your response">{% if variant == 'detail' %}Remove response{% else %}×{% endif %}</button>
+      </form>
+    {% endif %}
+    {% if variant != 'detail' %}
+      <a href="{% url 'activities:detail' activity.pk %}" title="Full details and all response choices" class="underline shrink-0">Details</a>
+      <form method="post" action="{% url 'activities:hide' activity.pk %}" hx-post="{% url 'activities:hide' activity.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="hidden" value="{% if activity.is_hidden %}0{% else %}1{% endif %}">
+        <input type="hidden" name="next" value="{{ next_path }}">
+        <button type="submit" class="participation__remove whitespace-nowrap" title="{% if activity.is_hidden %}Show this activity again{% else %}Hide privately from your discovery list{% endif %}">{% if activity.is_hidden %}Unhide{% else %}Hide{% endif %}</button>
       </form>
     {% endif %}
   </div>

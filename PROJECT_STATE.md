@@ -14,6 +14,19 @@ Keep this file short. Update it when product decisions, architecture, workflow, 
 - Claude Code may be used as an independent skeptical reviewer, not as a concurrent editor.
 - GitHub is the durable handoff layer. Frank should not need to copy implementation prompts/results between tools.
 
+### Working loop
+
+The normal loop is deliberately simple:
+
+1. Frank reviews the running product and gives ChatGPT product feedback, criticism, or a new decision.
+2. ChatGPT translates that feedback into durable GitHub issue/PR comments, acceptance criteria, sequencing, or follow-up issues as needed.
+3. Frank's instruction to Codex should normally be only a short directive such as **"address PR #27"** or **"attack the next issue."**
+4. Codex reads the relevant GitHub issue/PR plus the repository guidance, implements it, tests it, pushes it, and presents the exact committed browser-test preview.
+5. ChatGPT reviews the resulting PR/code against the issue and product direction, writes any required corrections back to GitHub, and the cycle repeats.
+6. Frank should not be used as a message bus between ChatGPT and Codex. Do not give him long implementation prompts to paste into Codex when the direction can be written to GitHub instead.
+
+GitHub issues and PRs are therefore not merely tracking artifacts; they are the primary technical-lead-to-implementer communication channel and the durable record of active implementation intent.
+
 Default posture: **do it now**. If product behavior needs backend/model work, build it. Complexity may require smaller vertical slices; it is not a reason to defer the behavior unless there is a concrete blocker.
 
 ## Product direction
@@ -64,7 +77,10 @@ Already established:
 - safe action URLs;
 - rendered participation controls;
 - UI simplification principles;
-- automatic browser-test presentation tooling.
+- automatic browser-test presentation tooling;
+- cumulative discovery filters, explicit cost/GPS semantics, private Hide/Unhide;
+- creator-selected direct intent controls, compact cards, and floating Create;
+- authenticated HTTP presence with Active / Idle / Offline thresholds.
 
 The browser-test review environment is:
 
@@ -74,23 +90,24 @@ For normal implementation work, Codex must present the exact committed feature H
 
 ## Current implementation sequence
 
-### Immediate next work
+### Discovery iteration
 
-**#19 — Refine discovery, presence, card density, and direct intent controls**
+**#19** is implemented in this feature iteration; GitHub remains authoritative for merge status.
+Today uses America/New_York; Nearby requires browser location within 25 miles;
+Online includes Hybrid; Free requires explicit free cost. Advanced filters retain
+query state across pages; quick shortcuts share canonical advanced dimensions.
+Text search submits only on Search or Enter in its own cluster. Advanced filters is
+collapsed until opened; the explicit Stacked / Spread out selector on the results utility line changes only local view state. Hide is private
+and reversible. New activities default only to Interested; creators explicitly add
+stronger/context-specific responses. Existing choices/order are preserved. Cards expose
+the first two creator-selected responses; Details exposes all, and repeating a selection clears it.
+Presence reflects authenticated HTTP activity: Active within 5 minutes, Idle within
+30, Offline thereafter or without a timestamp, with writes throttled to one minute.
+Who’s around uses width-based page layout independent of matching card counts,
+including zero results. Quick toggles clear their canonical dimension when turned off.
+Existing demo metadata is enriched without reseeding accounts or responses.
 
-This issue should implement, not mock-only/defer:
-
-- Who's around + Active / Idle / Offline presence;
-- cumulative Today / Nearby / Online / Free quick filters;
-- advanced filters including category;
-- rudimentary backend support needed to make those filters genuinely work;
-- private Hide / Unhide state;
-- floating Create (+);
-- more compact cards;
-- creator-selected response choices rendered directly where practical;
-- obvious Details affordance;
-- tooltips/full text for truncation;
-- consistent button/link semantics.
+The next planned product work is the Groups / recurring activity sequence below.
 
 ### Groups / recurring activity sequence
 

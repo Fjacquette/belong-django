@@ -183,3 +183,27 @@ class DemoSeedingTests(TestCase):
 
         self.assertFalse(get_user_model().objects.exists())
         self.assertFalse(DemoSeedRecord.objects.exists())
+
+    def test_demo_discovery_semantics_are_explicit_and_activity_specific(self):
+        self.seed()
+        self.assertTrue(Activity.objects.filter(cost_type='free').exists())
+        self.assertTrue(Activity.objects.filter(cost_type='paid').exists())
+        self.assertTrue(Activity.objects.filter(cost_type='unknown').exists())
+        self.assertTrue(Activity.objects.exclude(location_gps='').exists())
+        self.assertGreater(len({tuple(a.available_responses) for a in Activity.objects.all()}), 2)
+
+    def test_metadata_migration_preserves_custom_values_and_untracked_activity(self):
+        from importlib import import_module
+        from django.apps import apps
+        self.seed()
+        demo = self.first_demo_activity()
+        demo.cost_type = 'paid'
+        demo.location_gps = '41,-76'
+        demo.save()
+        personal = Activity.objects.create(host=demo.host, title=demo.title, description='Personal copy')
+        enrich = import_module('activities.migrations.0007_demo_discovery_metadata').enrich_demo
+        enrich(apps, None)
+        demo.refresh_from_db()
+        personal.refresh_from_db()
+        self.assertEqual((demo.cost_type,demo.location_gps), ('paid','41,-76'))
+        self.assertEqual((personal.cost_type,personal.location_gps), ('unknown',''))

@@ -337,6 +337,21 @@ ACTIVITY_DATA = [
 ]
 
 
+# Explicit pilot demo semantics, not inference from arbitrary user cost prose.
+DEMO_DISCOVERY = {'Sailing on weekends!': ('free', '39.267,-76.798', ['interested', 'more']),
+ 'Chill Overwatch 2': ('free', '', ['committed', 'question']),
+ 'Hersheypark trip': ('paid', '40.288,-76.656', ['interested', 'vote', 'question']),
+ 'Need help moving': ('free', '40.121,-75.339', ['committed', 'more']),
+ 'Co-ed softball league': ('paid', '40.130,-75.514', ['committed', 'declined']),
+ 'Greg is bored': ('unknown', '40.028,-75.174', ['interested', 'vote']),
+ 'Firefighter flashover training': ('paid', '39.962,-75.606', ['committed', 'question']),
+ 'Wednesday night paddle': ('paid', '40.248,-75.649', ['interested', 'committed']),
+ 'Stroll the Street - Manayunk': ('free', '40.028,-75.225', ['interested', 'more'])}
+for example in ACTIVITY_DATA:
+    cost, gps, responses = DEMO_DISCOVERY[example["title"]]
+    example.update(cost_type=cost, location_gps=gps, available_responses=responses)
+
+
 class Command(BaseCommand):
     help = "Safely create or refresh known demo records in local dev/test only"
 
@@ -482,6 +497,7 @@ class Command(BaseCommand):
                     allow_friend_invites=payload.get("allow_friend_invites", True),
                     allow_friend_of_friend_invites=payload.get("allow_friend_of_friend_invites", False),
                     is_personal_invitation=payload.get("is_personal_invitation", False),
+                    cost_type=payload["cost_type"],
                     cost_display=payload.get("cost_display", ""),
                     cost_has_details=payload.get("cost_has_details", False),
                     accommodations=payload.get("accommodations", ""),

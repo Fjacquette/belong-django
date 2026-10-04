@@ -4,6 +4,7 @@
   <div class="flex flex-col lg:flex-row gap-10">
     {% if friends %}
       <aside class="hidden xl:block w-[220px] flex-shrink-0">
+        <p class="text-sm text-belong-slate/70 mb-2">Who’s around</p>
         {% include 'includes/friend_list.html' with friends=friends %}
       </aside>
     {% endif %}
@@ -99,7 +100,7 @@
           <p class="text-base text-belong-slate leading-relaxed whitespace-pre-line">{{ activity.description }}</p>
 
           <div class="rounded-2xl border border-white/60 px-5 py-4 bg-white/80">
-            {% include 'activities/_join_region.html' with activity=activity variant='detail' interested_count=join_context.interested_count committed_count=join_context.committed_count attendee_count=join_context.attendee_count joined=join_context.joined response_options=join_context.response_options current_status=join_context.current_status current_status_label=join_context.current_status_label %}
+            {% include 'activities/_join_region.html' with activity=activity variant='detail' interested_count=join_context.interested_count committed_count=join_context.committed_count attendee_count=join_context.attendee_count joined=join_context.joined response_options=join_context.response_options current_status=join_context.current_status current_status_label=join_context.current_status_label next_path=join_context.next_path %}
           </div>
         </div>
       </div>

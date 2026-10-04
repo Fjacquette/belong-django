@@ -11,5 +11,6 @@ urlpatterns = [
     path("activities/<int:pk>/", views.detail, name="detail"),
     path("activities/<int:pk>/respond", views.respond, name="respond"),
     path("activities/<int:pk>/join", views.join, name="join"),
+    path("activities/<int:pk>/hide", views.hide, name="hide"),
     path("activities/<int:pk>/leave", views.leave, name="leave"),
 ]

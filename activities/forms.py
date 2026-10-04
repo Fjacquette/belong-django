@@ -30,7 +30,7 @@ class ActivityForm(forms.ModelForm):
         required=False,
         initial=list(DEFAULT_RESPONSE_CHOICES),
         widget=forms.CheckboxSelectMultiple,
-        help_text="Choose the response options attendees can pick from.",
+        help_text="Choose what intent is useful for this activity. The first two appear on its card; all choices appear in Details.",
     )
 
     class Meta:
@@ -63,6 +63,7 @@ class ActivityForm(forms.ModelForm):
             "allow_friend_invites",
             "allow_friend_of_friend_invites",
             "is_personal_invitation",
+            "cost_type",
             "cost_display",
             "cost_has_details",
             "accommodations",
@@ -90,6 +91,7 @@ class ActivityForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+        self.fields["location_gps"].help_text = "Latitude, longitude; used for Nearby within 25 miles."
         self.fields["audience"].choices = PILOT_AUDIENCE_CHOICES
         base_classes = (
             "mt-1 w-full border border-white/70 rounded-xl px-4 py-2 bg-white "
@@ -110,6 +112,13 @@ class ActivityForm(forms.ModelForm):
         self.fields["organizer_image"].queryset = ImageAsset.objects.filter(
             purpose=ImageAssetPurpose.ORGANIZER
         )
+
+    def clean_location_gps(self):
+        from .discovery import coordinates
+        value = self.cleaned_data.get("location_gps", "").strip()
+        if value and coordinates(value) is None:
+            raise forms.ValidationError("Use latitude, longitude (for example 40.0, -75.0).")
+        return value
 
     def clean_available_responses(self):
         responses = self.cleaned_data.get("available_responses") or []

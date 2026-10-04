@@ -145,7 +145,8 @@ source .venv/bin/activate
 npx tailwindcss@3.4.13 -i assets/tailwind.css -o static/css/tailwind.css --minify
 ```
 
-Tailwind scans templates and the app Python form files containing literal widget
+Tailwind scans templates, local JavaScript (including dynamically added stack classes),
+and the app Python form files containing literal widget
 classes. Commit rebuilt `static/css/tailwind.css` with changes to those classes so
 the browser-test checkout receives the same styling.
 
@@ -166,10 +167,13 @@ for legacy rows with incorrect metadata. Invalid legacy assets return 404 withou
 rewriting stored data. BinaryField storage is unchanged.
 
 Action URL fields accept only HTTP/HTTPS links (or blank values). Legacy unsafe
-links render as `#`. Default response choices are Interested, Count me in, and
-I have a question; Declined remains an explicit opt-in. The join shortcut prefers
-Interested, then Count me in, and leaves responses unchanged when neither is
-available. Cards offer direct Interested and Count me in buttons; activity
+links render as `#`. New activities default only to Interested, a low-friction
+expression of proto-intent.
+Creators explicitly opt into stronger or context-specific choices such as Count me in,
+Tell me more, I have a question, Vote on details, or Cannot make it when appropriate.
+Existing creator-selected choices remain intact. The legacy join shortcut uses the
+first creator-selected choice and remains idempotent; it does not impose an RSVP pair.
+Cards offer the first two creator-selected response buttons; activity
 details show all allowed response buttons.
 Responses update in place with HTMX, can be changed or removed, and keep
 interest separate from commitment. Custom action links remain secondary.
@@ -195,3 +199,42 @@ remains versioned.
 
 Demo credentials are development-only and belong to the explicitly seeded
 accounts. Personal browser-test accounts can also be created through signup.
+
+## Pilot discovery and presence
+
+Discover submits text search only with Search or Enter, never per keystroke. Its
+compact bar keeps Search beside the text field, separate from direct quick toggles.
+Today, Free, and Online share the canonical timing, cost, and online-capable location
+scopes with Advanced filters; Nearby is a separate proximity state. Explicit canonical
+values override conflicting legacy quick URL parameters. Advanced filters stays closed
+until opened. Stacked / Spread out is a client-side view preference, persisted locally,
+on the utility line with Advanced filters above the activity results. Its bordered selector makes the active mode explicit and
+switches between a non-overlapping grid and piles without querying the server. Advanced
+filters include category, timing, location type, structured cost, and hidden-card scope. Pagination retains every
+filter. Empty results retain the same Discover/friends layout; turning a quick
+filter off restores results under the remaining search and filters. Today uses **America/New_York** (including DST), as do datetime-local
+creation fields; open-ended activities do not count as Today. Online includes
+Online and Hybrid. Free means explicitly Free, never inferred from cost prose;
+legacy activities start as Unknown.
+
+Nearby asks for browser location when enabled, searches within **25 miles** using
+Haversine distance and `location_gps` in `latitude, longitude` format, and ignores
+missing/invalid activity coordinates. Denied, missing, or invalid device location
+leaves Nearby off with feedback. Device coordinates remain in the discovery query,
+not the user's profile. This is a local pilot filter, not production geospatial search.
+Demo fixtures contain curated cost/coordinates and varied response choices. A
+migration fills missing coordinates/unknown cost only on known seed-owned examples;
+custom GPS/explicit costs and untracked activities are preserved. It does not reseed
+accounts, images, schedules, or responses.
+
+Hide is a unique private user/activity preference. It never changes a participation
+response or informs the organizer. Normal discovery excludes hidden activities;
+Advanced filters can include/show only hidden cards, whose Unhide action reverses the preference.
+Creators choose from six response types: Interested, Count me in, I have a question,
+Cannot make it, Tell me more, and Vote on details. The first two chosen appear directly
+on cards; Details exposes all. Clicking the selected response again clears it.
+
+Presence records authenticated HTTP requests, throttled to at most one update per
+minute: **Active** within 5 minutes, **Idle** within 30, **Offline** after 30 minutes
+or with no recorded activity. Creating a profile or changing a status does not mark
+someone Active. These are activity-based hints, not real-time/socket connection state.

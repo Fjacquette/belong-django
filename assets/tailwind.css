@@ -7,7 +7,7 @@
     display: grid;
     gap: 1.5rem;
     grid-template-columns: repeat(auto-fit, minmax(var(--card-min-width, var(--card-width)), 1fr));
-    justify-items: center;
+    justify-items: stretch;
     align-items: start;
   }
 
@@ -19,7 +19,7 @@
 
   .activity-stack {
     position: relative;
-    width: min(100%, var(--card-width));
+    width: 100%;
     min-height: calc(var(--card-height) + var(--stack-depth, 0) * var(--stack-offset));
     justify-self: center;
   }
@@ -32,6 +32,12 @@
     z-index: var(--stack-z, 1);
   }
 
+  [data-stack-root][data-view="all"] .activity-stack__layer {
+    position: relative;
+    top: auto;
+    z-index: auto;
+  }
+
   /* Bring a covered card forward for pointer and keyboard participation. */
   .activity-stack__layer:hover,
   .activity-stack__layer:focus-within {
@@ -40,7 +46,7 @@
 
   .activity-card {
     display: grid;
-    grid-template-rows: var(--band-1) var(--band-2) var(--band-3) minmax(0, 1fr) 96px;
+    grid-template-rows: var(--band-1) var(--band-2) var(--band-3) minmax(0, 1fr) 76px;
     width: 100%;
     height: var(--card-height);
     background: linear-gradient(135deg, var(--card-primary) 0%, var(--card-secondary) 100%);
@@ -72,14 +78,23 @@
   .participation--card .participation__response,
   .participation--card .participation__counts { flex-wrap: nowrap; }
   .participation--card .participation__counts form { flex-shrink: 0; }
-  .participation--card .participation__counts { min-height: 28px; }
-  .participation--card .participation__remove { min-height: 28px; padding: 0 2px; }
+  .participation--card .participation__counts { min-height: 24px; }
+  .participation--card .participation__remove { min-height: 24px; padding: 0 5px; }
   .participation--card .participation__counts p {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  .participation__remove {
+    border: 1px solid currentColor;
+    border-radius: 9999px;
+    min-height: 32px;
+    padding: 0 8px;
+  }
+  .participation__remove:hover { background: rgb(255 255 255 / 0.15); }
+  html { scroll-padding-bottom: 5rem; }
+  .activity-card button, .activity-card a { scroll-margin-bottom: 5rem; }
   .account-menu summary::-webkit-details-marker { display: none; }
 
   .activity-card__headline {

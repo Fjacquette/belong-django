@@ -22,6 +22,7 @@ class ActivityLoopTests(TestCase):
             host=cls.host,
             title="Walk together",
             description="Find a time for a walk in the park.",
+            available_responses=["interested", "committed", "question"],
         )
 
     def setUp(self):
@@ -95,6 +96,7 @@ class ActivityLoopTests(TestCase):
             reverse("activities:create"),
             {
                 "title": "Play a board game",
+                "cost_type": "unknown",
                 "description": "Choose a game and a time together.",
                 "location_type": ActivityLocationType.TBD,
                 "audience": ActivityVisibility.EVERYONE,
@@ -108,6 +110,8 @@ class ActivityLoopTests(TestCase):
         self.assertEqual(created.description, "Choose a game and a time together.")
         self.assertIsNone(created.starts_at)
         self.assertIsNone(created.ends_at)
+        self.assertEqual(created.available_responses, ["interested"])
+        self.assertEqual(created.active_responses(), ["interested"])
         self.assertRedirects(response, reverse("activities:detail", args=[created.pk]))
 
     def test_allowed_response_statuses_are_stored(self):
@@ -195,6 +199,8 @@ class ActivityLoopTests(TestCase):
                 self.assertEqual(existing.status, ActivityResponseStatus.INTERESTED)
 
     def test_default_responses_do_not_allow_declined(self):
+        self.activity.available_responses = []
+        self.activity.save(update_fields=["available_responses"])
         response = self.client.post(
             reverse("activities:respond", args=[self.activity.pk]),
             {"status": ActivityResponseStatus.DECLINED},
@@ -246,7 +252,7 @@ class ActivityLoopTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(ActivityResponse.objects.exists())
 
-    def test_join_prefers_interested_without_duplicating_response(self):
+    def test_join_uses_first_creator_choice_without_duplicating_response(self):
         self.activity.available_responses = [
             ActivityResponseStatus.COMMITTED, ActivityResponseStatus.INTERESTED,
         ]
@@ -255,7 +261,7 @@ class ActivityLoopTests(TestCase):
         response = self.client.post(url)
         self.assertEqual(response.status_code, 200)
         original = ActivityResponse.objects.get(user=self.participant, activity=self.activity)
-        self.assertEqual(original.status, ActivityResponseStatus.INTERESTED)
+        self.assertEqual(original.status, ActivityResponseStatus.COMMITTED)
 
         response = self.client.post(url)
 
