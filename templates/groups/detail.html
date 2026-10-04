@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}{{ group.name }} · Belong{% endblock %}
+{% block content %}
+<section class="max-w-2xl mx-auto space-y-5 break-words">
+  <a href="{% url 'activities:index' %}" class="text-belong-purple underline">← Discover</a>
+  <h1 class="text-3xl font-display">{{ group.name }}</h1>
+  <p class="whitespace-pre-line">{{ group.description }}</p>
+  <p class="text-sm">Primary organizer: {{ group.owner.get_full_name|default:group.owner.username }}</p>
+  <p class="text-sm">{{ group.get_visibility_display }} · {{ group.get_join_policy_display }}</p>
+  {% if organizer %}
+    <a href="{% url 'activities:create' %}?group={{ group.pk }}" class="inline-flex items-center rounded-full border border-belong-purple text-belong-purple px-4 min-h-11">Create an activity for this group</a>
+  {% endif %}
+  {% if can_join %}
+    <form method="post" action="{% url 'groups:join' group.pk %}">{% csrf_token %}
+      <button class="rounded-full bg-belong-purple text-white px-5 min-h-11">{% if group.join_policy == 'open' %}Join group{% else %}Request to join{% endif %}</button>
+    </form>
+  {% elif membership.status == 'pending' %}
+    <p role="status">Your request is awaiting organizer approval.</p>
+  {% elif not membership and group.join_policy == 'invite' %}
+    <p>Membership is by invitation.</p>
+  {% endif %}
+  {% if membership and not is_owner %}
+    <form method="post" action="{% url 'groups:leave' group.pk %}">{% csrf_token %}
+      <button class="rounded-full border border-belong-purple text-belong-purple px-4 min-h-11">{% if membership.status == 'pending' %}Cancel request{% else %}Leave group{% endif %}</button>
+    </form>
+  {% endif %}
+  <h2 class="text-xl font-display">Members · {{ member_count }}</h2>
+  {% if members %}
+    <ul class="space-y-3">
+      {% for member in members %}
+        <li class="flex flex-wrap items-center justify-between gap-2">
+          <span>{{ member.user.get_full_name|default:member.user.username }} · {% if member.user_id == group.owner_id %}Primary organizer{% else %}{{ member.get_role_display }}{% endif %}</span>
+          {% if is_owner and member.user_id != group.owner_id %}
+            <form method="post" action="{% url 'groups:membership_action' group.pk member.pk %}">{% csrf_token %}
+              <button name="action" value="{% if member.role == 'organizer' %}demote{% else %}promote{% endif %}" class="rounded-full border border-belong-purple text-belong-purple px-3 min-h-11 text-sm">{% if member.role == 'organizer' %}Make member{% else %}Make organizer{% endif %}</button>
+            </form>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="text-sm">The member list is visible to group members.</p>
+  {% endif %}
+  {% if pending %}
+    <h2 class="text-xl font-display">Join requests</h2>
+    {% for member in pending %}
+      <form method="post" action="{% url 'groups:membership_action' group.pk member.pk %}" class="flex flex-wrap items-center justify-between gap-2">{% csrf_token %}
+        <span>{{ member.user.get_full_name|default:member.user.username }}</span>
+        <button name="action" value="approve" class="rounded-full border border-belong-purple text-belong-purple px-3 min-h-11">Approve</button>
+        <button name="action" value="decline" class="rounded-full border border-belong-purple text-belong-purple px-3 min-h-11">Decline</button>
+      </form>
+    {% endfor %}
+  {% endif %}
+</section>
+{% endblock %}

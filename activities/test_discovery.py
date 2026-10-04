@@ -212,7 +212,7 @@ class DiscoveryTests(TestCase):
         self.assertContains(response, 'Full details and all response choices')
         self.assertContains(response, '>Details</a>')
         self.assertContains(response, '>Hide</button>')
-        self.assertContains(response, 'aria-label="Create activity"')
+        self.assertContains(response, 'aria-label="Create"')
         self.assertNotContains(response, 'href="/discover/categories/"')
 
     def test_creator_vocabulary_and_toggle_to_clear(self):

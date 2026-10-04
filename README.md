@@ -200,6 +200,33 @@ remains versioned.
 Demo credentials are development-only and belong to the explicitly seeded
 accounts. Personal browser-test accounts can also be created through signup.
 
+## Groups foundation
+
+The floating **+** opens a small create chooser: Activity first, Group second.
+Groups are persistent people/context, separate from activities and the existing
+personal FriendGroup lists. Create a group with a name, description, visibility,
+and join policy; its creator becomes the primary organizer and an active member.
+Public groups can be surfaced through linked activities; unlisted groups are
+accessible by direct link; private groups are visible only to active members and
+the owner. There is no group directory or group feed. Member rosters are visible
+only to active members/organizers, while public/unlisted visitors see identity and
+member count.
+
+Open groups admit members immediately; approval groups create pending requests
+that organizers can approve or decline. Invitation-only groups block self-joining;
+email invitations and invite-based joining arrive in #22. Members can leave or
+cancel requests; the primary organizer cannot leave or demote themselves. Only
+the primary organizer appoints/removes additional organizers; additional organizers
+can approve requests and create linked activities. Group settings and membership
+also have Django admin support. No invitation button is shown before it works.
+
+Activity creation has an optional Group selector restricted to groups the creator
+organizes. Activities keep their existing audience/response rules regardless of
+group membership; linking a group does not grant access to either private group
+details or restricted activities. Deleting a group preserves its activities by
+clearing their group reference. Existing activities and personal friend lists are
+left intact by the additive migrations.
+
 ## Pilot discovery and presence
 
 Discover submits text search only with Search or Enter, never per keystroke. Its

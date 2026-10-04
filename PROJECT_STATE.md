@@ -107,7 +107,14 @@ Who’s around uses width-based page layout independent of matching card counts,
 including zero results. Quick toggles clear their canonical dimension when turned off.
 Existing demo metadata is enriched without reseeding accounts or responses.
 
-The next implementation issue is **#21 — core Group model and membership**.
+The Groups foundation (#21) adds persistent Group and GroupMembership entities,
+separate from legacy personal FriendGroup lists. The floating + discloses Activity
+(primary) and Group (secondary) creation. Groups have public/unlisted/private
+visibility and open/approval/invitation-only join policies. Membership rosters are
+visible to active members; organizers approve requests and the owner appoints additional
+organizers. Activities optionally link to a group their creator organizes; group
+membership never gates ordinary activity participation. Email invitations are #22.
+GitHub remains authoritative for merge status; #22 is the next implementation slice.
 
 **#28 — Establish and apply a coherent Belong UI design language** is an explicit follow-up for visual/spacing/control consistency. It should inform new UI work, including Groups, but is not a reason to block the current functional slices.
 
@@ -117,7 +124,7 @@ The next implementation issue is **#21 — core Group model and membership**.
 
 Implementation slices are already defined and are intended to be built, not parked:
 
-- **#21** core Group model and membership
+- **#21** core Group model and membership implemented in this iteration
 - **#22** email invitations and joining
 - **#23** recurring series and specific occurrences
 - **#24** organizer RSVP roster and occurrence lifecycle/cancellation

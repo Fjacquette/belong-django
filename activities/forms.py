@@ -37,6 +37,7 @@ class ActivityForm(forms.ModelForm):
         model = Activity
         fields = [
             "title",
+            "group",
             "headline",
             "summary",
             "description",
@@ -89,8 +90,14 @@ class ActivityForm(forms.ModelForm):
             "location_type": forms.Select(choices=ActivityLocationType.choices),
         }
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args, user=None, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+        from django.db.models import Q
+        from groups.models import Group
+        self.fields["group"].queryset = Group.objects.filter(
+            Q(owner=user) | Q(memberships__user=user, memberships__role="organizer", memberships__status="active")
+        ).distinct() if user and user.is_authenticated else Group.objects.none()
+        self.fields["group"].help_text = "Optional. Link an activity to a group you organize; participation still follows the activity audience."
         self.fields["location_gps"].help_text = "Latitude, longitude; used for Nearby within 25 miles."
         self.fields["audience"].choices = PILOT_AUDIENCE_CHOICES
         base_classes = (
