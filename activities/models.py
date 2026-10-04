@@ -1,9 +1,21 @@
 from django.conf import settings
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
 
 from media_assets.models import ImageAssetPurpose
+
+
+class DemoSeedRecord(models.Model):
+    """Explicit ownership of records created by the local demo seeder."""
+
+    key = models.CharField(max_length=160, unique=True)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.CharField(max_length=64)
+    content_object = GenericForeignKey("content_type", "object_id")
+
 
 class ActivityCategory(models.Model):
     name = models.CharField(max_length=80)

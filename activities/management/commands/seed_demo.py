@@ -8,7 +8,10 @@ from typing import Iterable
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.management.base import BaseCommand
+from django.contrib.contenttypes.models import ContentType
+from django.core.management.base import BaseCommand, CommandError
+from django.db import IntegrityError, transaction
+from django.template.defaultfilters import slugify
 from django.utils import timezone
 
 from activities.models import (
@@ -18,11 +21,39 @@ from activities.models import (
     ActivityResponse,
     ActivityResponseStatus,
     ActivityVisibility,
+    DemoSeedRecord,
 )
 from media_assets.models import ImageAsset, ImageAssetPurpose
 from social.models import FriendGroup, FriendGroupMembership, Friendship, UserProfile
 
 User = get_user_model()
+
+
+def seed_record(key, model, defaults, *, identity=(), update=True):
+    """Never adopt an existing object by username, title, slug, or filename."""
+    content_type = ContentType.objects.get_for_model(model)
+    record = DemoSeedRecord.objects.select_for_update().filter(key=key).first()
+    if record and record.content_type_id != content_type.pk:
+        raise CommandError(f"Demo ownership mismatch for {key}; no changes made.")
+    obj = record.content_object if record else None
+    if obj is not None:
+        if any(getattr(obj, field) != defaults[field] for field in identity):
+            raise CommandError(f"Demo identity or owner changed for {key}; no changes made.")
+        if update:
+            for field, value in defaults.items():
+                setattr(obj, field, value)
+            obj.save()
+        return obj, False
+    try:
+        obj = model.objects.create(**defaults)
+    except IntegrityError as error:
+        raise CommandError(f"Existing data conflicts with {key}; no changes made.") from error
+    if record:
+        record.object_id = str(obj.pk)
+        record.save(update_fields=["object_id"])
+    else:
+        DemoSeedRecord.objects.create(key=key, content_type=content_type, object_id=str(obj.pk))
+    return obj, True
 
 
 @dataclass
@@ -63,51 +94,56 @@ def load_image_asset(relative_path: str | None, *, purpose: str, name: str) -> I
     if not relative_path:
         return None
 
-    asset_path = Path(settings.BASE_DIR, "static", relative_path)
-    if not asset_path.exists():
+    stem = Path(relative_path).stem.replace("-", "_")
+    stem = {"go_outside": "get_outside", "find": "find_your_tribe"}.get(stem, stem)
+    candidates = [Path(settings.BASE_DIR, "static", relative_path)]
+    candidates.extend(
+        Path(settings.BASE_DIR, "mock_images", name)
+        for name in (f"{stem}_image.jpg", f"{stem}.jpg", f"{stem}.png")
+    )
+    asset_path = next((path for path in candidates if path.is_file()), None)
+    if asset_path is None:
         return None
 
     payload = asset_path.read_bytes()
     content_type = mimetypes.guess_type(asset_path.name)[0] or "application/octet-stream"
 
-    asset, created = ImageAsset.objects.get_or_create(
-        purpose=purpose,
-        filename=relative_path,
-        defaults={
+    asset, _ = seed_record(
+        f"image:{purpose}:{relative_path}",
+        ImageAsset,
+        {
             "name": name,
+            "purpose": purpose,
+            "filename": relative_path,
             "data": payload,
             "content_type": content_type,
             "size": len(payload),
         },
     )
 
-    updates: list[str] = []
-    if not created:
-        if asset.name != name:
-            asset.name = name
-            updates.append("name")
-        if asset.size != len(payload):
-            asset.data = payload
-            asset.size = len(payload)
-            updates.extend(["data", "size"])
-        if asset.content_type != content_type:
-            asset.content_type = content_type
-            updates.append("content_type")
-
-        if updates:
-            asset.save(update_fields=list(dict.fromkeys(updates)))
-
     return asset
 
 
-def ensure_users(users: Iterable[dict[str, str]]):
+def ensure_users(users: Iterable[dict]):
     created_users = {}
     for data in users:
-        username = data["username"]
-        defaults = {"email": data.get("email") or f"{username}@example.com"}
-        user, created = User.objects.get_or_create(username=username, defaults=defaults)
-        if created and data.get("password"):
-            user.set_password(data["password"])
+        seed_name = data["username"]
+        username = "belong_demo" if seed_name == "demo" else f"belong_demo_{seed_name}"
+        user, created = seed_record(
+            f"user:{seed_name}", User,
+            {
+                "username": username,
+                "email": f"{username}@example.invalid",
+                "is_staff": data.get("is_staff", False),
+                "is_superuser": data.get("is_superuser", False),
+            },
+            identity=("username",), update=False,
+        )
+        if created:
+            if data.get("password"):
+                user.set_password(data["password"])
+            else:
+                user.set_unusable_password()
             user.save(update_fields=["password"])
         profile, _ = UserProfile.objects.get_or_create(user=user)
         profile.status_text = data.get("status_text", profile.status_text)
@@ -127,14 +163,18 @@ def ensure_users(users: Iterable[dict[str, str]]):
             profile.avatar_image = avatar_asset
 
         profile.save()
-        created_users[username] = user
+        created_users[seed_name] = user
     return created_users
 
 
 
 def ensure_friendships(user_map: dict[str, User], pairs: Iterable[tuple[str, str]]):
     for a, b in pairs:
-        Friendship.make_pair(user_map[a], user_map[b])
+        user_a, user_b = sorted((user_map[a], user_map[b]), key=lambda user: user.pk)
+        seed_record(
+            f"friendship:{a}:{b}", Friendship, {"user_a": user_a, "user_b": user_b},
+            identity=("user_a", "user_b"), update=False,
+        )
 
 
 def aware(dt: datetime | None):
@@ -297,20 +337,22 @@ ACTIVITY_DATA = [
 
 
 class Command(BaseCommand):
-    help = "Seed demo users, friends, categories, and activities for development"
+    help = "Safely create or refresh known demo records in local dev/test only"
 
+    @transaction.atomic
     def handle(self, *args, **options):
-        now = timezone.now()
+        if settings.ENVIRONMENT not in {"dev", "test"}:
+            raise CommandError("Demo seeding is allowed only in local dev/test environments.")
 
         base_users = ensure_users(
             [
-                {"username": "admin", "password": "admin123", "email": "admin@example.com"},
-                {"username": "demo", "password": "demo123", "email": "demo@example.com"},
+                {"username": "admin", "password": "admin123", "is_staff": True, "is_superuser": True},
+                {"username": "demo", "password": "demo123"},
                 {
                     "username": "stephi",
                     "status_text": "Playing RE4 on Quest.",
                     "avatar": "img/friends/stephi.jpg",
-                    "last_active_delta": timedelta(months=0, days=90) if hasattr(timedelta, "months") else timedelta(days=90),
+                    "last_active_delta": timedelta(days=90),
                 },
                 {
                     "username": "rainer",
@@ -333,11 +375,6 @@ class Command(BaseCommand):
             ]
         )
 
-        admin = base_users["admin"]
-        admin.is_staff = True
-        admin.is_superuser = True
-        admin.save(update_fields=["is_staff", "is_superuser"])
-
         demo = base_users["demo"]
 
         friend_pairs = [
@@ -356,19 +393,29 @@ class Command(BaseCommand):
             "Adventurers": ["glyn"],
         }
         for group_name, members in group_definitions.items():
-            group, _ = FriendGroup.objects.get_or_create(owner=demo, name=group_name)
+            group, _ = seed_record(
+                f"group:{slugify(group_name)}", FriendGroup,
+                {"owner": demo, "name": group_name}, identity=("owner",),
+            )
             for username in members:
-                FriendGroupMembership.objects.get_or_create(group=group, friend=base_users[username])
+                seed_record(
+                    f"membership:{slugify(group_name)}:{username}", FriendGroupMembership,
+                    {"group": group, "friend": base_users[username]},
+                    identity=("group", "friend"), update=False,
+                )
 
         # Categories
         category_map = {}
         for seed in CATEGORIES:
-            category, _ = ActivityCategory.objects.update_or_create(
-                slug=seed.slug,
-                defaults={
+            category, _ = seed_record(
+                f"category:{seed.slug}", ActivityCategory,
+                {
+                    "slug": f"belong-demo-{seed.slug}",
                     "name": seed.name,
                     "tagline": seed.tagline,
-                    "hero_image": seed.hero,
+                    "hero_image": (
+                        seed.hero if Path(settings.BASE_DIR, "static", seed.hero).is_file() else ""
+                    ),
                     "color_primary": seed.color_primary,
                     "color_secondary": seed.color_secondary,
                 },
@@ -376,78 +423,93 @@ class Command(BaseCommand):
             category_map[seed.slug] = category
 
         # Activities
-        Activity.objects.all().delete()
-        for index, payload in enumerate(ACTIVITY_DATA):
-        organizer_name = payload.get("organizer") or "Belong Host"
-        organizer_username = organizer_name.lower().replace(" ", "")
-        organizer_user = base_users.get(organizer_username)
-        if not organizer_user:
-            organizer_user = ensure_users([{"username": organizer_username, "status_text": ""}])[organizer_username]
+        for payload in ACTIVITY_DATA:
+            organizer_name = payload.get("organizer") or "Belong Host"
+            organizer_username = slugify(organizer_name)
+            organizer_user = base_users.get(organizer_username)
+            if not organizer_user:
+                organizer_user = ensure_users(
+                    [{"username": organizer_username, "status_text": ""}]
+                )[organizer_username]
+                base_users[organizer_username] = organizer_user
 
-        organizer_asset = load_image_asset(
-            payload.get("organizer_image"),
-            purpose=ImageAssetPurpose.ORGANIZER,
-            name=f"{organizer_name} organizer",
-        )
-        header_asset = load_image_asset(
-            payload.get("header_image"),
-            purpose=ImageAssetPurpose.ACTIVITY_HEADER,
-            name=f"{payload['title']} header",
-        )
-
-        activity = Activity.objects.create(
-            host=organizer_user,
-            title=payload["title"],
-            headline=payload.get("headline", ""),
-            summary=payload.get("summary", ""),
-            description=payload["description"],
-            category=category_map.get(payload.get("category")),
-            starts_at=aware(payload.get("starts_at")),
-            multiple_events=payload.get("multiple_events", False),
-            freetext_when=payload.get("freetext_when", ""),
-            location_type=payload.get("location_type", ActivityLocationType.TBD),
-            location_url=payload.get("location_url", ""),
-            location_name=payload.get("location_name", ""),
-            location_address1=payload.get("location_address1", ""),
-            location_address2=payload.get("location_address2", ""),
-            location_city=payload.get("location_city", ""),
-            location_state=payload.get("location_state", ""),
-            location_zip=payload.get("location_zip", ""),
-            location_phone=payload.get("location_phone", ""),
-            location_gps=payload.get("location_gps", ""),
-            location_instructions=payload.get("location_instructions", ""),
-            organizer_image=organizer_asset,
-            organizer_name=organizer_name,
-            audience=payload.get("audience", ActivityVisibility.EVERYONE),
-            allow_friend_invites=payload.get("allow_friend_invites", True),
-            allow_friend_of_friend_invites=payload.get("allow_friend_of_friend_invites", False),
-            is_personal_invitation=payload.get("is_personal_invitation", False),
-            cost_display=payload.get("cost_display", ""),
-            cost_has_details=payload.get("cost_has_details", False),
-            accommodations=payload.get("accommodations", ""),
-            restrictions=payload.get("restrictions", ""),
-            header_image=header_asset,
-            color_primary=payload.get("color_primary", ""),
-            color_secondary=payload.get("color_secondary", ""),
-            action1_label=payload.get("action1_label", ""),
-            action1_url=payload.get("action1_url", ""),
-            action2_label=payload.get("action2_label", ""),
-            action2_url=payload.get("action2_url", ""),
-            action3_label=payload.get("action3_label", ""),
-            action3_url=payload.get("action3_url", ""),
-            available_responses=payload.get(
-                "available_responses",
-                [choice[0] for choice in ActivityResponseStatus.choices],
-            ),
-            post_until=aware(payload.get("post_until")) or aware(payload.get("starts_at")) or timezone.now() + timedelta(days=30),
-        )
-
-            # Seed sample interest from demo user
-            ActivityResponse.objects.update_or_create(
-                user=demo,
-                activity=activity,
-                defaults={"status": ActivityResponseStatus.INTERESTED},
+            organizer_asset = load_image_asset(
+                payload.get("organizer_image"),
+                purpose=ImageAssetPurpose.ORGANIZER,
+                name=f"{organizer_name} organizer",
+            )
+            category = category_map.get(payload.get("category"))
+            category_seed = next(
+                (seed for seed in CATEGORIES if seed.slug == payload.get("category")), None
+            )
+            header_asset = load_image_asset(
+                payload.get("header_image") or (category_seed.hero if category_seed else None),
+                purpose=ImageAssetPurpose.ACTIVITY_HEADER,
+                name=f"{payload['title']} header",
             )
 
-        self.stdout.write(self.style.SUCCESS("Demo data refreshed."))
-        self.stdout.write(self.style.SUCCESS("Users: admin/admin123, demo/demo123"))
+            activity, _ = seed_record(
+                f"activity:{slugify(payload['title'])}", Activity,
+                dict(
+                    host=organizer_user,
+                    title=payload["title"],
+                    headline=payload.get("headline", ""),
+                    summary=payload.get("summary", ""),
+                    description=payload["description"],
+                    category=category,
+                    starts_at=aware(payload.get("starts_at")),
+                    multiple_events=payload.get("multiple_events", False),
+                    freetext_when=payload.get("freetext_when", ""),
+                    location_type=payload.get("location_type", ActivityLocationType.TBD),
+                    location_url=payload.get("location_url", ""),
+                    location_name=payload.get("location_name", ""),
+                    location_address1=payload.get("location_address1", ""),
+                    location_address2=payload.get("location_address2", ""),
+                    location_city=payload.get("location_city", ""),
+                    location_state=payload.get("location_state", ""),
+                    location_zip=payload.get("location_zip", ""),
+                    location_phone=payload.get("location_phone", ""),
+                    location_gps=payload.get("location_gps", ""),
+                    location_instructions=payload.get("location_instructions", ""),
+                    organizer_image=organizer_asset,
+                    organizer_name=organizer_name,
+                    audience=payload.get("audience", ActivityVisibility.EVERYONE),
+                    allow_friend_invites=payload.get("allow_friend_invites", True),
+                    allow_friend_of_friend_invites=payload.get("allow_friend_of_friend_invites", False),
+                    is_personal_invitation=payload.get("is_personal_invitation", False),
+                    cost_display=payload.get("cost_display", ""),
+                    cost_has_details=payload.get("cost_has_details", False),
+                    accommodations=payload.get("accommodations", ""),
+                    restrictions=payload.get("restrictions", ""),
+                    header_image=header_asset,
+                    color_primary=payload.get("color_primary", ""),
+                    color_secondary=payload.get("color_secondary", ""),
+                    action1_label=payload.get("action1_label", ""),
+                    action1_url=payload.get("action1_url", ""),
+                    action2_label=payload.get("action2_label", ""),
+                    action2_url=payload.get("action2_url", ""),
+                    action3_label=payload.get("action3_label", ""),
+                    action3_url=payload.get("action3_url", ""),
+                    available_responses=payload.get(
+                        "available_responses",
+                        [choice[0] for choice in ActivityResponseStatus.choices],
+                    ),
+                    post_until=(
+                        aware(payload.get("post_until")) or aware(payload.get("starts_at"))
+                        or timezone.now() + timedelta(days=30)
+                    ),
+                ),
+                identity=("host",),
+            )
+
+            # Seed sample interest from demo user
+            seed_record(
+                f"response:{slugify(payload['title'])}:demo", ActivityResponse,
+                {"user": demo, "activity": activity, "status": ActivityResponseStatus.INTERESTED},
+                identity=("user", "activity"), update=False,
+            )
+
+        self.stdout.write(self.style.SUCCESS("Known demo data refreshed; other records preserved."))
+        self.stdout.write(self.style.SUCCESS(
+            "Local-only initial credentials: belong_demo_admin/admin123, belong_demo/demo123"
+        ))
