@@ -184,6 +184,31 @@ Use explicit, human-readable fallbacks when information is unresolved:
 Truncation may be used for density, but every truncated value must expose the full
 value on hover/focus as already required by UI_PRINCIPLES.md.
 
+## 7A. Activity-card sizing and grid behavior
+
+Activity cards are fixed-format scanning objects, not fluid content panels. Their
+visual proportions must remain stable as the result count changes.
+
+- Define a preferred card width and a maximum card width from the existing card layout
+  variables/design tokens.
+- A single matching activity must render as one normal-width card; it must **not**
+  stretch to fill the entire activity-results frame.
+- Card/grid columns may become narrower down to the defined mobile/minimum width when
+  needed, but must not grow beyond the intended desktop card width merely because
+  fewer results are present.
+- The grid should pack as many normal-width columns as fit and leave unused horizontal
+  space rather than inflating cards.
+- Keep the first card/column aligned to the activity-results frame rather than
+  centering a lone card in a way that breaks alignment with search/results controls.
+- Stacked and Spread out modes use the same underlying card width; view mode changes
+  overlap/layout only, not card proportions.
+- Filtering from many results to one or zero must not cause surrounding controls,
+  Who's around, gutters, or card geometry to jump unpredictably.
+
+A card's information density and band hierarchy are designed around this stable width;
+responsive behavior should adapt columns/wrapping rather than turn the card into a
+full-width banner.
+
 ## 8. Activity-card actions
 
 Card actions are a distinct compact system, not a collection of unrelated controls.
