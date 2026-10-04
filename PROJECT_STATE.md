@@ -97,7 +97,7 @@ Today uses America/New_York; Nearby requires browser location within 25 miles;
 Online includes Hybrid; Free requires explicit free cost. Advanced filters retain
 query state across pages; quick shortcuts share canonical advanced dimensions.
 Text search submits only on Search or Enter in its own cluster. Advanced filters is
-collapsed until opened; the explicit Stacked / All cards selector beside results changes only local view state. Hide is private
+collapsed until opened; the explicit Stacked / Spread out selector on the results utility line changes only local view state. Hide is private
 and reversible. New activities default only to Interested; creators explicitly add
 stronger/context-specific responses. Existing choices/order are preserved. Cards expose
 the first two creator-selected responses; Details exposes all, and repeating a selection clears it.

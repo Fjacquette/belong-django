@@ -65,26 +65,25 @@
           </div>
         </div>
         <p id="location-feedback" role="status" class="empty:hidden text-sm text-belong-slate/80">{{ filter_warning }}</p>
-        <div class="relative">
-        <details class="min-w-0">
-          <summary class="cursor-pointer min-h-10 text-sm text-belong-purple py-2">Advanced filters</summary>
-          <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 bg-white/70 rounded-xl p-3 text-sm">
-            <label>Category<select name="category" class="block w-full min-w-0 border rounded-lg p-2"><option value="">Any category</option>{% for category in categories %}<option value="{{ category.slug }}" {% if filter_params.category == category.slug %}selected{% endif %}>{{ category.name }}</option>{% endfor %}</select></label>
-            <label>Timing<select name="timing" class="block w-full border rounded-lg p-2"><option value="">Any time</option><option value="today" {% if filter_params.timing == 'today' %}selected{% endif %}>Today</option><option value="upcoming" {% if filter_params.timing == 'upcoming' %}selected{% endif %}>Upcoming</option><option value="dateless" {% if filter_params.timing == 'dateless' %}selected{% endif %}>Open-ended</option></select></label>
-            <label>Location<select name="location" class="block w-full border rounded-lg p-2"><option value="">Any location</option>{% for value,label in location_choices %}<option value="{{ value }}" {% if filter_params.location == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-            <label>Cost<select name="cost" class="block w-full border rounded-lg p-2"><option value="">Any cost</option>{% for value,label in cost_choices %}<option value="{{ value }}" {% if filter_params.cost == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-            <label>Hidden activities<select name="hidden" class="block w-full border rounded-lg p-2"><option value="exclude">Leave hidden out</option><option value="include" {% if filter_params.hidden == 'include' %}selected{% endif %}>Include hidden</option><option value="only" {% if filter_params.hidden == 'only' %}selected{% endif %}>Only hidden</option></select></label>
-            <button type="submit" class="rounded-full border border-belong-purple text-belong-purple px-4 min-h-10 self-end">Apply filters</button>
-          </div>
-        </details>
-        </div>
       </form>
       <script src="{% static 'js/discovery.js' %}" defer></script>
       <script src="{% static 'js/discovery-layout.js' %}" defer></script>
       <script src="{% static 'js/card-view.js' %}" defer></script>
 
       <div data-activity-results>
-        <fieldset id="card-view-selector" class="mb-3 w-fit" hidden>
+        <div class="flex flex-wrap items-start justify-between gap-2 mb-3" data-results-utilities>
+        <details class="min-w-0 flex-1 basis-32">
+          <summary class="cursor-pointer min-h-10 text-sm text-belong-purple py-2">Advanced filters</summary>
+          <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 bg-white/70 rounded-xl p-3 text-sm">
+            <label>Category<select form="discovery-filters" name="category" class="block w-full min-w-0 border rounded-lg p-2"><option value="">Any category</option>{% for category in categories %}<option value="{{ category.slug }}" {% if filter_params.category == category.slug %}selected{% endif %}>{{ category.name }}</option>{% endfor %}</select></label>
+            <label>Timing<select form="discovery-filters" name="timing" class="block w-full border rounded-lg p-2"><option value="">Any time</option><option value="today" {% if filter_params.timing == 'today' %}selected{% endif %}>Today</option><option value="upcoming" {% if filter_params.timing == 'upcoming' %}selected{% endif %}>Upcoming</option><option value="dateless" {% if filter_params.timing == 'dateless' %}selected{% endif %}>Open-ended</option></select></label>
+            <label>Location<select form="discovery-filters" name="location" class="block w-full border rounded-lg p-2"><option value="">Any location</option>{% for value,label in location_choices %}<option value="{{ value }}" {% if filter_params.location == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+            <label>Cost<select form="discovery-filters" name="cost" class="block w-full border rounded-lg p-2"><option value="">Any cost</option>{% for value,label in cost_choices %}<option value="{{ value }}" {% if filter_params.cost == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+            <label>Hidden activities<select form="discovery-filters" name="hidden" class="block w-full border rounded-lg p-2"><option value="exclude">Leave hidden out</option><option value="include" {% if filter_params.hidden == 'include' %}selected{% endif %}>Include hidden</option><option value="only" {% if filter_params.hidden == 'only' %}selected{% endif %}>Only hidden</option></select></label>
+            <button form="discovery-filters" type="submit" class="rounded-full border border-belong-purple text-belong-purple px-4 min-h-10 self-end">Apply filters</button>
+          </div>
+        </details>
+        <fieldset id="card-view-selector" class="ml-auto w-fit shrink-0" hidden>
           <legend class="sr-only">Card view</legend>
           <div class="inline-flex rounded-full border border-belong-purple bg-white p-0.5 text-sm text-belong-purple">
             <label class="cursor-pointer">
@@ -93,10 +92,11 @@
             </label>
             <label class="cursor-pointer">
               <input type="radio" name="card-view" value="all" class="peer sr-only">
-              <span class="block rounded-full px-3 py-2 peer-checked:bg-belong-purple peer-checked:text-white peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2">All cards</span>
+              <span class="block rounded-full px-3 py-2 peer-checked:bg-belong-purple peer-checked:text-white peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2">Spread out</span>
             </label>
           </div>
         </fieldset>
+        </div>
       {% if activities %}
         <div class="activity-grid w-full"
              data-stack-root

@@ -145,7 +145,8 @@ source .venv/bin/activate
 npx tailwindcss@3.4.13 -i assets/tailwind.css -o static/css/tailwind.css --minify
 ```
 
-Tailwind scans templates and the app Python form files containing literal widget
+Tailwind scans templates, local JavaScript (including dynamically added stack classes),
+and the app Python form files containing literal widget
 classes. Commit rebuilt `static/css/tailwind.css` with changes to those classes so
 the browser-test checkout receives the same styling.
 
@@ -206,8 +207,8 @@ compact bar keeps Search beside the text field, separate from direct quick toggl
 Today, Free, and Online share the canonical timing, cost, and online-capable location
 scopes with Advanced filters; Nearby is a separate proximity state. Explicit canonical
 values override conflicting legacy quick URL parameters. Advanced filters stays closed
-until opened. Stacked / All cards is a client-side view preference, persisted locally,
-beside the activity results. Its bordered selector makes the active mode explicit and
+until opened. Stacked / Spread out is a client-side view preference, persisted locally,
+on the utility line with Advanced filters above the activity results. Its bordered selector makes the active mode explicit and
 switches between a non-overlapping grid and piles without querying the server. Advanced
 filters include category, timing, location type, structured cost, and hidden-card scope. Pagination retains every
 filter. Empty results retain the same Discover/friends layout; turning a quick

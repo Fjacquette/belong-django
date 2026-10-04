@@ -188,12 +188,15 @@ class DiscoveryTests(TestCase):
         self.assertContains(response, 'type="radio" name="card-view" value="stacked"')
         self.assertContains(response, 'type="radio" name="card-view" value="all"')
         self.assertContains(response, '>Stacked</span>')
-        self.assertContains(response, '>All cards</span>')
+        self.assertContains(response, '>Spread out</span>')
+        self.assertContains(response, 'data-results-utilities')
+        self.assertContains(response, '<select form="discovery-filters" name="timing"')
         markup = response.content.decode()
         filter_form = markup.split('id="discovery-filters"', 1)[1].split('</form>', 1)[0]
         self.assertNotIn('card-view-selector', filter_form)
         results = markup.split('data-activity-results', 1)[1]
         self.assertIn('card-view-selector', results)
+        self.assertIn('>Advanced filters</summary>', results)
         self.assertLess(results.index('card-view-selector'), results.index('data-stack-root'))
 
     def test_card_tooltips_details_private_buttons_and_floating_create(self):
