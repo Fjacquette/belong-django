@@ -92,7 +92,7 @@ For normal implementation work, Codex must present the exact committed feature H
 
 ### Discovery iteration
 
-**#19** is implemented in this feature iteration; GitHub remains authoritative for merge status.
+**#19 is complete and merged.**
 Today uses America/New_York; Nearby requires browser location within 25 miles;
 Online includes Hybrid; Free requires explicit free cost. Advanced filters retain
 query state across pages; quick shortcuts share canonical advanced dimensions.
@@ -107,7 +107,9 @@ Who’s around uses width-based page layout independent of matching card counts,
 including zero results. Quick toggles clear their canonical dimension when turned off.
 Existing demo metadata is enriched without reseeding accounts or responses.
 
-The next planned product work is the Groups / recurring activity sequence below.
+The next implementation issue is **#21 — core Group model and membership**.
+
+**#28 — Establish and apply a coherent Belong UI design language** is an explicit follow-up for visual/spacing/control consistency. It should inform new UI work, including Groups, but is not a reason to block the current functional slices.
 
 ### Groups / recurring activity sequence
 
