@@ -232,7 +232,7 @@ class ParticipationUITests(TestCase):
         self.assertContains(response, 'name="q"')
         self.assertContains(response, 'name="category"')
         self.assertNotContains(response, f'href="{reverse("activities:categories")}"')
-        for marker in ['name="arrange"', 'name="sort"', "Advanced filter", "(soon)"]:
+        for marker in ['name="arrange"', 'name="sort"', "(soon)"]:
             self.assertNotContains(response, marker)
         response = self.client.get(reverse("activities:index"), {"q": "unmatched"})
         self.assertNotContains(response, self.activity.title)

@@ -202,7 +202,12 @@ accounts. Personal browser-test accounts can also be created through signup.
 ## Pilot discovery and presence
 
 Discover submits text search only with Search or Enter, never per keystroke. Its
-compact bar combines search with direct Today/Nearby/Online/Free toggles. Advanced
+compact bar keeps Search beside the text field, separate from direct quick toggles.
+Today, Free, and Online share the canonical timing, cost, and online-capable location
+scopes with Advanced filters; Nearby is a separate proximity state. Explicit canonical
+values override conflicting legacy quick URL parameters. Advanced filters stays closed
+until opened. Show all / Stack cards is a client-side view preference, persisted locally,
+that switches between a non-overlapping grid and piles without querying the server. Advanced
 filters include category, timing, location type, structured cost, and hidden-card scope. Pagination retains every
 filter. Today uses **America/New_York** (including DST), as do datetime-local
 creation fields; open-ended activities do not count as Today. Online includes
@@ -221,7 +226,7 @@ accounts, images, schedules, or responses.
 
 Hide is a unique private user/activity preference. It never changes a participation
 response or informs the organizer. Normal discovery excludes hidden activities;
-Filters can include/show only hidden cards, whose Unhide action reverses the preference.
+Advanced filters can include/show only hidden cards, whose Unhide action reverses the preference.
 Creators choose from six response types: Interested, Count me in, I have a question,
 Cannot make it, Tell me more, and Vote on details. The first two chosen appear directly
 on cards; Details exposes all. Clicking the selected response again clears it.

@@ -45,26 +45,29 @@
       {% include 'includes/friend_list.html' with friends=friends %}
     </aside>
     {% endif %}
-    <section class="flex flex-1 flex-col gap-8 min-w-0">
-      <form method="get" role="search" id="discovery-filters" class="space-y-1">
+    <section class="flex flex-1 flex-col gap-6 min-w-0" data-activity-frame>
+      <form method="get" role="search" id="discovery-filters" data-query="{{ query|default:'' }}" class="space-y-1">
         <input type="hidden" name="lat" value="{{ filter_params.lat|default:'' }}">
         <input type="hidden" name="lon" value="{{ filter_params.lon|default:'' }}">
         <div class="flex flex-wrap items-center gap-2 lg:flex-nowrap" data-discovery-bar>
-          <label for="activity-search" class="sr-only">Find something</label>
-          <input id="activity-search" type="search" name="q" value="{{ query|default:'' }}" placeholder="Find something" class="min-w-0 w-full lg:w-auto lg:flex-1 rounded-xl border border-belong-slate/20 bg-white px-3 min-h-10 text-sm" />
-          <div class="flex flex-wrap items-center gap-2 lg:flex-nowrap lg:shrink-0">
+          <div class="flex items-center gap-2 w-full lg:w-auto lg:flex-1 min-w-0" data-search-cluster>
+            <label for="activity-search" class="sr-only">Find something</label>
+            <input id="activity-search" type="search" name="q" value="{{ query|default:'' }}" placeholder="Find something" class="min-w-0 w-full flex-1 rounded-xl border border-belong-slate/20 bg-white px-3 min-h-10 text-sm" />
+            <button type="submit" data-text-search class="rounded-full border border-belong-purple text-belong-purple px-4 min-h-10 shrink-0">Search</button>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 lg:flex-nowrap lg:shrink-0 lg:ml-4" data-quick-cluster>
             {% for filter in quick_filters %}
               <label class="inline-flex items-center gap-1 rounded-full border border-belong-slate/20 bg-white px-3 min-h-10 text-sm cursor-pointer">
-                <input type="checkbox" name="{{ filter.name }}" value="1" {% if filter.active %}checked{% endif %} data-quick-filter>
+                <input type="checkbox" {% if filter.name == 'nearby' %}name="nearby"{% endif %} value="1" {% if filter.active %}checked{% endif %} data-quick-filter="{{ filter.name }}">
                 {{ filter.label }}
               </label>
             {% endfor %}
-            <button type="submit" class="rounded-full border border-belong-purple text-belong-purple px-4 min-h-10 shrink-0">Search</button>
           </div>
         </div>
         <p id="location-feedback" role="status" class="empty:hidden text-sm text-belong-slate/80">{{ filter_warning }}</p>
-        <details {% if filter_params.filters or filter_params.category or filter_params.timing or filter_params.location or filter_params.cost or filter_params.hidden %}open{% endif %}>
-          <summary class="cursor-pointer min-h-10 text-sm text-belong-purple py-2">Filters</summary>
+        <div class="relative">
+        <details class="min-w-0">
+          <summary class="cursor-pointer min-h-10 text-sm text-belong-purple py-2">Advanced filters</summary>
           <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 bg-white/70 rounded-xl p-3 text-sm">
             <label>Category<select name="category" class="block w-full min-w-0 border rounded-lg p-2"><option value="">Any category</option>{% for category in categories %}<option value="{{ category.slug }}" {% if filter_params.category == category.slug %}selected{% endif %}>{{ category.name }}</option>{% endfor %}</select></label>
             <label>Timing<select name="timing" class="block w-full border rounded-lg p-2"><option value="">Any time</option><option value="today" {% if filter_params.timing == 'today' %}selected{% endif %}>Today</option><option value="upcoming" {% if filter_params.timing == 'upcoming' %}selected{% endif %}>Upcoming</option><option value="dateless" {% if filter_params.timing == 'dateless' %}selected{% endif %}>Open-ended</option></select></label>
@@ -74,8 +77,11 @@
             <button type="submit" class="rounded-full border border-belong-purple text-belong-purple px-4 min-h-10 self-end">Apply filters</button>
           </div>
         </details>
+        <button type="button" id="card-view-toggle" aria-pressed="false" class="absolute top-0 right-0 text-sm text-belong-purple min-h-10 shrink-0" hidden>Show all</button>
+        </div>
       </form>
       <script src="{% static 'js/discovery.js' %}" defer></script>
+      <script src="{% static 'js/card-view.js' %}" defer></script>
 
       {% if activities %}
         <div class="activity-grid w-full"
@@ -90,119 +96,7 @@
             </div>
           {% endfor %}
         </div>
-        <script>
-          document.addEventListener("DOMContentLoaded", function () {
-            var root = document.querySelector("[data-stack-root]");
-            if (!root) {
-              return;
-            }
 
-            var items = Array.prototype.slice.call(root.querySelectorAll("[data-stack-item]"));
-            if (!items.length) {
-              return;
-            }
-
-            var maxColumns = parseInt(root.getAttribute("data-max-columns") || "5", 10);
-            var minWidth = parseFloat(root.getAttribute("data-card-min-width") || "280");
-            var gap = parseFloat(root.getAttribute("data-stack-gap") || "24");
-
-            items.forEach(function (item) {
-              item.classList.add("activity-stack__layer");
-            });
-
-            var layoutContainer = document.querySelector("[data-layout-container]");
-            var sidebar = document.querySelector("[data-friends-column]");
-            var friendsSecondary = document.querySelector("[data-friends-secondary]");
-
-            function distribute(columns) {
-              var buckets = Array.from({ length: columns }, function () {
-                return [];
-              });
-
-              items.forEach(function (item, index) {
-                buckets[index % columns].push(item);
-              });
-
-              root.innerHTML = "";
-              root.setAttribute("data-stack-columns", String(columns));
-              root.style.gridTemplateColumns = "repeat(" + columns + ", minmax(var(--card-min-width, var(--card-width)), 1fr))";
-
-              buckets.forEach(function (bucket, columnIndex) {
-                if (!bucket.length) {
-                  return;
-                }
-                var stack = document.createElement("div");
-                stack.className = "activity-stack";
-                stack.setAttribute("data-stack-column", String(columnIndex));
-                bucket.forEach(function (item, layerIndex) {
-                  item.style.setProperty("--stack-index", layerIndex);
-                  item.style.setProperty("--stack-z", layerIndex + 1);
-                  stack.appendChild(item);
-                });
-                stack.style.setProperty("--stack-depth", Math.max(bucket.length - 1, 0));
-                root.appendChild(stack);
-              });
-            }
-
-            var maxAvailableColumns = Math.min(maxColumns, items.length);
-
-            function columnsFromWidth(width) {
-              if (!width) {
-                return 1;
-              }
-              var effective = Math.floor((width + gap) / (minWidth + gap));
-              return Math.max(1, Math.min(maxAvailableColumns, effective));
-            }
-
-            function measureColumns(sidebarShouldBeVisible) {
-              if (!sidebar || !layoutContainer) {
-                return columnsFromWidth(root.clientWidth);
-              }
-
-              var previousHidden = sidebar.hidden;
-              var previousLayout = layoutContainer.getAttribute("data-layout") || "no-sidebar";
-
-              if (sidebarShouldBeVisible && previousHidden) {
-                sidebar.hidden = false;
-                layoutContainer.setAttribute("data-layout", "with-sidebar");
-              } else if (!sidebarShouldBeVisible && !previousHidden) {
-                sidebar.hidden = true;
-                layoutContainer.setAttribute("data-layout", "no-sidebar");
-              }
-
-              var measured = columnsFromWidth(root.clientWidth);
-
-              if (sidebarShouldBeVisible !== !previousHidden) {
-                sidebar.hidden = previousHidden;
-                layoutContainer.setAttribute("data-layout", previousLayout);
-              }
-
-              return measured;
-            }
-
-            function applyLayout() {
-              var columnsWithSidebar = window.innerWidth >= 1024 ? measureColumns(true) : 0;
-
-              if (window.innerWidth >= 1024 && sidebar && layoutContainer && columnsWithSidebar > 1) {
-                sidebar.hidden = false;
-                layoutContainer.setAttribute("data-layout", "with-sidebar");
-                if (friendsSecondary) friendsSecondary.hidden = true;
-                distribute(columnsWithSidebar);
-              } else {
-                if (sidebar && layoutContainer) {
-                  sidebar.hidden = true;
-                  layoutContainer.setAttribute("data-layout", "no-sidebar");
-                }
-                if (friendsSecondary) friendsSecondary.hidden = false;
-                var columnsWithoutSidebar = measureColumns(false);
-                distribute(columnsWithoutSidebar);
-              }
-            }
-
-            window.addEventListener("resize", applyLayout);
-            applyLayout();
-          });
-        </script>
       {% else %}
         <p class="text-belong-slate">No activities match. Try fewer filters or make something happen.</p>
       {% endif %}

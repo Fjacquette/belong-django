@@ -95,7 +95,9 @@ For normal implementation work, Codex must present the exact committed feature H
 **#19** is implemented in this feature iteration; GitHub remains authoritative for merge status.
 Today uses America/New_York; Nearby requires browser location within 25 miles;
 Online includes Hybrid; Free requires explicit free cost. Advanced filters retain
-query state across pages; text search submits only on Search or Enter. Hide is private
+query state across pages; quick shortcuts share canonical advanced dimensions.
+Text search submits only on Search or Enter in its own cluster. Advanced filters is
+collapsed until opened; Show all / Stack cards changes only the local view preference. Hide is private
 and reversible. New activities default only to Interested; creators explicitly add
 stronger/context-specific responses. Existing choices/order are preserved. Cards expose
 the first two creator-selected responses; Details exposes all, and repeating a selection clears it.

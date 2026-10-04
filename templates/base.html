@@ -49,7 +49,7 @@
       {% block content %}{% endblock %}
     </main>
     {% if user.is_authenticated %}
-      <a href="{% url 'activities:create' %}" title="Create activity" aria-label="Create activity" class="fixed bottom-4 right-4 z-[150] h-12 w-12 flex items-center justify-center rounded-full bg-belong-purple text-white text-3xl shadow-soft hover:bg-belong-purpleDark">+</a>
+      <a href="{% url 'activities:create' %}" title="Create activity" aria-label="Create activity" class="fixed bottom-4 right-6 sm:right-8 lg:right-10 z-[150] h-12 w-12 flex items-center justify-center rounded-full bg-belong-purple text-white text-3xl shadow-soft hover:bg-belong-purpleDark">+</a>
     {% endif %}
 
   </body>

@@ -106,7 +106,7 @@ class DiscoveryTests(TestCase):
         for n in range(15):
             Activity.objects.create(host=self.host, title=f'Match {n}', description='Match', category=self.category,
                                     starts_at=NOW, location_gps='40,-75', location_type='online', cost_type='free')
-        params = {'q':'Match','category':'outdoors','today':'1','nearby':'1','lat':'40','lon':'-75','online':'1','free':'1','hidden':'include'}
+        params = {'q':'Match','category':'outdoors','timing':'today','nearby':'1','lat':'40','lon':'-75','location':'online_capable','cost':'free','hidden':'include'}
         response = self.discover(params)
         self.assertTrue(response.context['page_obj'].has_next())
         from urllib.parse import parse_qs
@@ -114,6 +114,31 @@ class DiscoveryTests(TestCase):
         self.assertContains(response, 'page=2')
         page2 = self.discover({**params,'page':'2'})
         self.assertEqual(len(page2.context['activities']), 3)
+
+    def test_quick_urls_normalize_to_one_canonical_state_and_closed_panel(self):
+        response = self.discover({'today': '1', 'free': '1', 'online': '1'})
+        self.assertEqual(response.context['filter_params'].dict(),
+                         {'timing': 'today', 'cost': 'free', 'location': 'online_capable'})
+        self.assertContains(response, '<option value="today" selected>Today</option>', html=True)
+        self.assertContains(response, '<option value="free" selected>Free</option>', html=True)
+        self.assertContains(response, '<option value="online_capable" selected>Online or hybrid</option>', html=True)
+        self.assertContains(response, '>Advanced filters</summary>')
+        self.assertNotContains(response, '<details open')
+        self.assertNotContains(response, 'name="today"')
+        self.assertNotContains(response, 'name="free"')
+        self.assertNotContains(response, 'name="online"')
+        self.assertContains(response, 'id="card-view-toggle"')
+
+    def test_explicit_advanced_dimensions_override_conflicting_old_quick_state(self):
+        response = self.discover({'today': '1', 'timing': 'dateless', 'online': '1',
+                                  'location': 'online', 'free': '1', 'cost': 'free'})
+        self.assertEqual({a.pk for a in response.context['activities']}, {self.open.pk})
+        quick = {item['name']: item['active'] for item in response.context['quick_filters']}
+        self.assertFalse(quick['today'])
+        self.assertFalse(quick['online'])
+        self.assertTrue(quick['free'])
+        self.assertEqual(self.ids({'free': '1', 'cost': 'paid', 'online': '1', 'location': 'in_person'}), {self.paid.pk})
+        self.assertEqual(self.ids({'today': '1', 'timing': ''}), self.ids({}))
 
     def test_card_tooltips_details_private_buttons_and_floating_create(self):
         self.near.title = 'Long activity title ' * 8

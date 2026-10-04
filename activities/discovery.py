@@ -27,22 +27,30 @@ def distance_miles(first, second):
     return 3958.8 * 2 * math.asin(math.sqrt(min(1, max(0, value))))
 
 
+def canonical_filters(params):
+    """Accept old quick-filter URLs, but explicit canonical dimensions win."""
+    params = params.copy()
+    for shortcut, dimension, value in [('today', 'timing', 'today'), ('free', 'cost', 'free'), ('online', 'location', 'online_capable')]:
+        if dimension not in params and params.get(shortcut) == '1':
+            params[dimension] = value
+        params.pop(shortcut, None)
+    return params
+
+
 def filter_activities(queryset, params):
     zone = ZoneInfo(settings.PILOT_TIME_ZONE)
     today = timezone.now().astimezone(zone).date()
     midnight = datetime.combine(today, time.min, tzinfo=zone)
-    if params.get('today') == '1' or params.get('timing') == 'today':
+    if params.get('timing') == 'today':
         queryset = queryset.filter(starts_at__gte=midnight, starts_at__lt=midnight + timedelta(days=1))
     if params.get('timing') == 'upcoming':
         queryset = queryset.filter(starts_at__gte=timezone.now())
     elif params.get('timing') == 'dateless':
         queryset = queryset.filter(starts_at__isnull=True)
-    if params.get('online') == '1':
+    if params.get('location') == 'online_capable':
         queryset = queryset.filter(location_type__in=[ActivityLocationType.ONLINE, ActivityLocationType.HYBRID])
     if params.get('location') in ActivityLocationType.values:
         queryset = queryset.filter(location_type=params['location'])
-    if params.get('free') == '1':
-        queryset = queryset.filter(cost_type=ActivityCostType.FREE)
     if params.get('cost') in ActivityCostType.values:
         queryset = queryset.filter(cost_type=params['cost'])
     warning = ''

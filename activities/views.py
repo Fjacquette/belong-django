@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
 from django.utils.http import url_has_allowed_host_and_scheme
-from .discovery import filter_activities
+from .discovery import canonical_filters, filter_activities
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -184,7 +184,7 @@ def index(request: HttpRequest) -> HttpResponse:
         )
     )
 
-    params = request.GET.copy()
+    params = canonical_filters(request.GET)
     hidden_mode = params.get("hidden", "exclude")
     hidden_ids = HiddenActivity.objects.filter(user=request.user).values("activity_id")
     if hidden_mode == "only":
@@ -230,9 +230,9 @@ def index(request: HttpRequest) -> HttpResponse:
         "active_category": category_slug,
         "filter_params": params,
         "filter_warning": filter_warning,
-        "quick_filters": [{"name": name, "label": label, "active": params.get(name) == "1"}
-                          for name, label in [("today", "Today"), ("nearby", "Nearby"), ("online", "Online"), ("free", "Free")]],
-        "location_choices": ActivityLocationType.choices,
+        "quick_filters": [{"name": name, "label": label, "active": params.get(dimension) == value}
+                          for name, label, dimension, value in [("today", "Today", "timing", "today"), ("nearby", "Nearby", "nearby", "1"), ("online", "Online", "location", "online_capable"), ("free", "Free", "cost", "free")]],
+        "location_choices": [("online_capable", "Online or hybrid"), *ActivityLocationType.choices],
         "cost_choices": ActivityCostType.choices,
         "pagination_query": pagination_params.urlencode(),
         "query": query,

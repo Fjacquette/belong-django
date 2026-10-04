@@ -7,7 +7,7 @@
     display: grid;
     gap: 1.5rem;
     grid-template-columns: repeat(auto-fit, minmax(var(--card-min-width, var(--card-width)), 1fr));
-    justify-items: center;
+    justify-items: stretch;
     align-items: start;
   }
 
@@ -19,7 +19,7 @@
 
   .activity-stack {
     position: relative;
-    width: min(100%, var(--card-width));
+    width: 100%;
     min-height: calc(var(--card-height) + var(--stack-depth, 0) * var(--stack-offset));
     justify-self: center;
   }
@@ -30,6 +30,12 @@
     width: 100%;
     top: calc(var(--stack-index, 0) * var(--stack-offset));
     z-index: var(--stack-z, 1);
+  }
+
+  [data-stack-root][data-view="all"] .activity-stack__layer {
+    position: relative;
+    top: auto;
+    z-index: auto;
   }
 
   /* Bring a covered card forward for pointer and keyboard participation. */
