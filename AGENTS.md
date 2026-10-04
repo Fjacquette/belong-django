@@ -16,6 +16,25 @@ Before substantive work, read [PROJECT_STATE.md](PROJECT_STATE.md) for the curre
 - Surface genuinely ambiguous product decisions rather than silently choosing a
   large behavioral change.
 
+## ChatGPT / Codex handoff model
+
+GitHub issues and PRs are the primary communication channel between ChatGPT as
+technical lead and Codex as implementer.
+
+The normal loop is:
+
+1. Frank reviews the running product and gives ChatGPT product feedback or criticism.
+2. ChatGPT converts that feedback into GitHub issue/PR comments, acceptance criteria,
+   sequencing, or follow-up issues.
+3. Frank should normally need to tell Codex only something short such as
+   “address PR #27” or “attack the next issue.”
+4. Codex reads GitHub plus these repository guidance files, implements/tests/pushes,
+   and presents the exact committed browser-test preview.
+5. ChatGPT reviews the result and writes any corrections back to GitHub; repeat.
+
+Do not make Frank act as a message bus by giving him long implementation prompts to
+copy between ChatGPT and Codex when the direction can be recorded in GitHub.
+
 ## Development workflow
 
 - Prefer simple server-rendered Django templates and HTMX. Do not introduce React
