@@ -32,6 +32,12 @@
     z-index: var(--stack-z, 1);
   }
 
+  /* Bring a covered card forward for pointer and keyboard participation. */
+  .activity-stack__layer:hover,
+  .activity-stack__layer:focus-within {
+    z-index: 100;
+  }
+
   .activity-card {
     width: 100%;
     height: var(--card-height);
@@ -41,8 +47,8 @@
   .activity-card__band-1 { height: var(--band-1); }
   .activity-card__band-2 { height: var(--band-2); }
   .activity-card__band-3 { height: var(--band-3); }
-  .activity-card__band-4 { height: var(--band-4); }
-  .activity-card__band-5 { height: var(--band-5); }
+  .activity-card__band-4 { height: calc(var(--band-4) - 24px); }
+  .activity-card__band-5 { height: calc(var(--band-5) + 24px); }
 
   .activity-card__headline {
     font-size: calc(var(--card-base-font, 16px) * 1.25);

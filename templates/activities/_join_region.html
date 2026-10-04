@@ -1,5 +1,48 @@
-{% with activity.action1_label|default:'Tell me more' as label %}
-{% with activity.action1_href|default:'#' as url %}
-  <a href="{{ url }}" class="inline-flex justify-center items-center rounded-full bg-gradient-to-r from-belong-teal to-belong-tealDark px-5 py-[4px] text-sm font-semibold text-white hover:opacity-90 transition">{{ label|truncatechars:24 }}</a>
-{% endwith %}
-{% endwith %}
+<div id="participation-{{ activity.pk }}" class="w-full {% if variant == 'detail' %}space-y-3{% else %}space-y-1 text-xs text-white{% endif %}" aria-label="Participation in {{ activity.title }}" aria-live="polite">
+  {% if variant == 'detail' %}
+    <h2 class="font-semibold text-lg">Want to take part?</h2>
+    <p class="text-sm text-belong-slate/80">Interested keeps it open. Count me in means you plan to join.</p>
+  {% endif %}
+  {% if response_options %}
+    <form method="post" action="{% url 'activities:respond' activity.pk %}" hx-post="{% url 'activities:respond' activity.pk %}" hx-target="#participation-{{ activity.pk }}" hx-swap="outerHTML" class="flex flex-wrap items-center gap-1">
+      {% csrf_token %}
+      <input type="hidden" name="variant" value="{{ variant|default:'card' }}">
+      {% if variant == 'detail' %}
+        {% for option in response_options %}
+          <button type="submit" name="status" value="{{ option.value }}" aria-pressed="{% if current_status == option.value %}true{% else %}false{% endif %}" class="rounded-full border border-belong-teal px-4 py-2 text-sm font-semibold {% if current_status == option.value %}bg-belong-teal text-white{% else %}bg-white text-belong-teal{% endif %} hover:opacity-80 focus-visible:outline focus-visible:outline-2">{{ option.label }}</button>
+        {% endfor %}
+      {% else %}
+        <label for="response-{{ activity.pk }}" class="sr-only">Your response to {{ activity.title }}</label>
+        <select id="response-{{ activity.pk }}" name="status" required class="min-w-0 flex-1 rounded-full bg-white text-belong-slate px-2 py-1 text-xs">
+          <option value="" {% if not current_status %}selected{% endif %} disabled>Want to take part?</option>
+          {% for option in response_options %}
+            <option value="{{ option.value }}" {% if current_status == option.value %}selected{% endif %}>{{ option.label }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="rounded-full bg-white text-belong-teal px-2 py-1 text-xs font-semibold">Save</button>
+      {% endif %}
+    </form>
+  {% else %}
+    <p class="text-xs">No response choices available.</p>
+  {% endif %}
+  <div class="flex items-center justify-between gap-1 {% if variant == 'detail' %}text-sm{% endif %}">
+    <p>{% if current_status %}You: {{ current_status_label }}{% else %}No response yet{% endif %}</p>
+    {% if current_status %}
+      <form method="post" action="{% url 'activities:leave' activity.pk %}" hx-post="{% url 'activities:leave' activity.pk %}" hx-target="#participation-{{ activity.pk }}" hx-swap="outerHTML">
+        {% csrf_token %}
+        <input type="hidden" name="variant" value="{{ variant|default:'card' }}">
+        <button type="submit" class="underline whitespace-nowrap" aria-label="Remove your response">{% if variant == 'detail' %}Remove response{% else %}Remove{% endif %}</button>
+      </form>
+    {% endif %}
+  </div>
+  <div class="flex flex-wrap items-center justify-between gap-x-2 {% if variant == 'detail' %}text-sm{% endif %}">
+    <p>{{ interested_count|default:0 }} interested · {{ committed_count|default:0 }} {% if variant == 'detail' %}count me in{% else %}in{% endif %}</p>
+    {% if variant == 'detail' and activity.action1_url %}
+      <a href="{{ activity.action1_href }}" class="underline">{{ activity.action1_label|default:'More information' }}</a>
+    {% endif %}
+    {% if variant == 'detail' %}
+      {% if activity.action2_url or activity.action2_label %}<a href="{{ activity.action2_href }}" class="underline">{{ activity.action2_label|default:'More information' }}</a>{% endif %}
+      {% if activity.action3_url or activity.action3_label %}<a href="{{ activity.action3_href }}" class="underline">{{ activity.action3_label|default:'More information' }}</a>{% endif %}
+    {% endif %}
+  </div>
+</div>

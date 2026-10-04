@@ -2,7 +2,7 @@
 <div class="activity-card relative rounded-[22px] border border-white/60 shadow-soft overflow-hidden"
      style="--card-primary: {{ primary }}; --card-secondary: {{ secondary }};">
   <div class="activity-card__band-1 flex flex-col justify-between items-center text-center text-white font-body" style="padding: 8px 11px;">
-    <h2 class="activity-card__headline font-body font-semibold w-full">{{ activity.title }}</h2>
+    <h2 class="activity-card__headline font-body font-semibold w-full"><a href="{% url 'activities:detail' activity.pk %}" class="hover:underline">{{ activity.title }}</a></h2>
     {% if activity.display_subline %}
       <p class="activity-card__subtitle font-body text-white truncate w-full">{{ activity.display_subline }}</p>
     {% endif %}
@@ -36,12 +36,15 @@
   </div>
   <div class="activity-card__band-4 relative text-black font-body activity-card__body" style="padding: 8px 11px;">
     <div class="absolute inset-0 bg-white/70"></div>
-    <div class="relative h-full overflow-hidden" style="display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;">
+    <div class="relative overflow-hidden" style="height: calc(100% - 16px); display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;">
       {{ activity.description|truncatechars:320 }}
     </div>
+    {% if activity.action1_url %}
+      <a href="{{ activity.action1_href }}" class="relative block text-xs underline truncate">{{ activity.action1_label|default:'More information' }}</a>
+    {% endif %}
   </div>
-  <div class="activity-card__band-5 flex items-center justify-center activity-card__cta" style="padding: 8px 11px;">
-    {% include 'activities/_join_region.html' with activity=activity %}
+  <div class="activity-card__band-5 flex items-center justify-center activity-card__cta" style="padding: 4px 11px;">
+    {% include 'activities/_join_region.html' with activity=activity variant='card' %}
   </div>
 </div>
 {% endwith %}
