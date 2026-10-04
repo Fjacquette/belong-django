@@ -122,6 +122,12 @@ def _build_join_context(request: HttpRequest, activity: Activity) -> Dict[str, o
         "current_status": current_status,
         "current_status_label": RESPONSE_LABELS.get(current_status, ""),
         "response_options": response_options,
+        "card_response_options": [
+            option
+            for value in (ActivityResponseStatus.INTERESTED, ActivityResponseStatus.COMMITTED)
+            for option in response_options
+            if option["value"] == value
+        ],
     }
 
 
@@ -136,6 +142,7 @@ def _annotate_join_data(request: HttpRequest, activities: List[Activity]) -> Non
         activity.j_current_status = context["current_status"]
         activity.j_current_status_label = context["current_status_label"]
         activity.j_response_options = context["response_options"]
+        activity.j_card_response_options = context["card_response_options"]
 
 
 @login_required
@@ -178,15 +185,6 @@ def index(request: HttpRequest) -> HttpResponse:
         "page_obj": page_obj,
         "activities": activities,
         "friends": _friend_context(request.user),
-        "arrange_options": [
-            ("title", "Show title & summary"),
-            ("compact", "Compact stack"),
-        ],
-        "sort_options": [
-            ("distance", "By distance"),
-            ("time", "By time"),
-            ("cost", "By cost"),
-        ],
         "categories": ActivityCategory.objects.all().order_by("name"),
         "active_category": category_slug,
         "query": query,

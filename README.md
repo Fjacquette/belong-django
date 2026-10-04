@@ -146,7 +146,8 @@ Action URL fields accept only HTTP/HTTPS links (or blank values). Legacy unsafe
 links render as `#`. Default response choices are Interested, Count me in, and
 I have a question; Declined remains an explicit opt-in. The join shortcut prefers
 Interested, then Count me in, and leaves responses unchanged when neither is
-available. Cards offer a compact response selector; activity details show response buttons.
+available. Cards offer direct Interested and Count me in buttons; activity
+details show all allowed response buttons.
 Responses update in place with HTMX, can be changed or removed, and keep
 interest separate from commitment. Custom action links remain secondary.
 

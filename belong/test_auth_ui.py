@@ -4,14 +4,17 @@ from django.urls import reverse
 
 
 class AuthScreenTests(TestCase):
-    def test_signed_out_headers_offer_only_logo_and_complementary_auth_action(self):
+    def test_signed_out_headers_show_only_identity_and_auth_links_stay_in_panels(self):
         for page, action, label in [("login", "signup", "Create account"), ("signup", "login", "Sign in")]:
             with self.subTest(page=page):
                 response = self.client.get(reverse(page))
                 self.assertEqual(response.status_code, 200)
                 header = response.content.decode().split("<header", 1)[1].split("</header>", 1)[0]
-                self.assertIn(f'href="{reverse(action)}"', header)
-                self.assertIn(label, header)
+                self.assertNotIn(label, header)
+                self.assertEqual(header.count("<a "), 1)
+                panel = response.content.decode().split('<section', 1)[1].split('</section>', 1)[0]
+                self.assertIn(f'href="{reverse(action)}"', panel)
+                self.assertIn(label, panel)
                 for text in ["Discover", "Categories", "Create Activity", "Logout", "data-menu-toggle", "primary-navigation"]:
                     self.assertNotIn(text, header)
                 for route in ["activities:index", "activities:categories", "activities:create", "logout"]:
@@ -47,5 +50,14 @@ class AuthScreenTests(TestCase):
         user = get_user_model().objects.create_user(username="navigation-review")
         self.client.force_login(user)
         response = self.client.get(reverse("activities:index"))
-        for label in ["Discover", "Categories", "Create Activity", "Logout"]:
-            self.assertContains(response, label)
+        header = response.content.decode().split("<header", 1)[1].split("</header>", 1)[0]
+        primary = header.split("<details", 1)[0]
+        self.assertIn("Discover", primary)
+        self.assertIn(">Create</a>", primary)
+        self.assertNotIn("Logout", primary)
+        self.assertNotIn("Categories", header)
+        account = header.split("<details", 1)[1]
+        self.assertIn("Logout", account)
+        self.assertIn('method="post"', account)
+        self.assertIn('name="csrfmiddlewaretoken"', account)
+        self.assertIn(user.username, account)

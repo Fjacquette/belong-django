@@ -39,37 +39,18 @@
     }
   </style>
   <div class="flex flex-col gap-8" data-layout-container data-layout="no-sidebar">
-    <aside class="flex-shrink-0" data-friends-column hidden>
+    {% if friends %}
+    <aside class="w-[220px] flex-shrink-0" data-friends-column hidden>
       {% include 'includes/friend_list.html' with friends=friends %}
     </aside>
+    {% endif %}
     <section class="flex flex-1 flex-col gap-8 min-w-0">
-      <form method="get" class="w-full flex flex-wrap items-center gap-4 bg-white/85 border border-white/60 rounded-[24px] px-4 sm:px-6 py-3">
-        {% if active_category %}
-          <input type="hidden" name="category" value="{{ active_category }}">
-        {% endif %}
-        <div class="w-full sm:w-auto min-w-0 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.35em] text-belong-slate/60">
-          Arrange
-          <select name="arrange" class="min-w-0 flex-1 sm:flex-none rounded-full border border-white/70 bg-white px-4 py-2 text-sm tracking-normal text-belong-slate focus:border-belong-purple focus:ring-1 focus:ring-belong-purple/30">
-            {% for value, label in arrange_options %}
-              <option value="{{ value }}" {% if request.GET.arrange == value %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="w-full sm:w-auto min-w-0 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.35em] text-belong-slate/60">
-          Sort
-          <select name="sort" class="min-w-0 flex-1 sm:flex-none rounded-full border border-white/70 bg-white px-4 py-2 text-sm tracking-normal text-belong-slate focus:border-belong-purple focus:ring-1 focus:ring-belong-purple/30">
-            {% for value, label in sort_options %}
-              <option value="{{ value }}" {% if request.GET.sort == value %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="ml-auto relative w-full max-w-md">
-          <input type="search" name="q" value="{{ query|default:'' }}" placeholder="Search activities" class="w-full rounded-full border border-white/70 bg-white px-5 py-2 pl-11 text-sm text-belong-slate focus:border-belong-purple focus:ring-2 focus:ring-belong-purple/25" />
-          <span class="absolute left-4 top-1/2 -translate-y-1/2 text-belong-slate/50">🔍</span>
-        </div>
-        <button type="submit" class="inline-flex items-center gap-2 rounded-full bg-belong-purple px-5 py-2 text-sm font-semibold text-white hover:bg-belong-purpleDark transition">Search</button>
-        <a href="{% url 'activities:categories' %}" class="inline-flex items-center gap-2 rounded-full bg-belong-teal/15 text-belong-teal px-5 py-2 text-sm font-semibold hover:bg-belong-teal/25 transition">Explore categories ↗</a>
-        <button type="button" class="inline-flex items-center gap-2 rounded-full border border-belong-purple/40 px-5 py-2 text-sm font-semibold text-belong-purple cursor-not-allowed">Advanced filter (soon)</button>
+      <form method="get" role="search" class="flex flex-wrap items-center gap-3">
+        {% if active_category %}<input type="hidden" name="category" value="{{ active_category }}">{% endif %}
+        <label for="activity-search" class="sr-only">Search activities</label>
+        <input id="activity-search" type="search" name="q" value="{{ query|default:'' }}" placeholder="Search activities" class="min-w-0 w-full sm:flex-1 rounded-xl border border-belong-slate/20 bg-white px-4 py-3 text-sm" />
+        <a href="{% url 'activities:categories' %}" class="inline-flex items-center min-h-11 text-sm text-belong-purple underline">Categories</a>
+        {% if active_category %}<a href="{% url 'activities:index' %}?q={{ query|default:''|urlencode }}" class="text-sm text-belong-purple underline">All categories</a>{% endif %}
       </form>
 
       {% if activities %}
@@ -81,7 +62,7 @@
              style="--card-width: {{ card_layout.width }}px; --card-min-width: {{ card_layout.min_width }}px; --card-height: {{ card_layout.height }}px; --stack-offset: {{ card_layout.stack_offset }}px; --band-1: {{ card_layout.bands_px.0 }}px; --band-2: {{ card_layout.bands_px.1 }}px; --band-3: {{ card_layout.bands_px.2 }}px; --band-4: {{ card_layout.bands_px.3 }}px; --band-5: {{ card_layout.bands_px.4 }}px; --card-base-font: {{ card_layout.base_font }}px; --stack-gap: 24px;">
           {% for activity in activities %}
             <div data-stack-item>
-              {% include 'activities/_card.html' with activity=activity attendee_count=activity.j_attendee_count interested_count=activity.j_interested_count committed_count=activity.j_committed_count response_options=activity.j_response_options current_status=activity.j_current_status current_status_label=activity.j_current_status_label %}
+              {% include 'activities/_card.html' with activity=activity attendee_count=activity.j_attendee_count interested_count=activity.j_interested_count committed_count=activity.j_committed_count response_options=activity.j_response_options card_response_options=activity.j_card_response_options current_status=activity.j_current_status current_status_label=activity.j_current_status_label %}
             </div>
           {% endfor %}
         </div>
@@ -107,6 +88,7 @@
 
             var layoutContainer = document.querySelector("[data-layout-container]");
             var sidebar = document.querySelector("[data-friends-column]");
+            var friendsSecondary = document.querySelector("[data-friends-secondary]");
 
             function distribute(columns) {
               var buckets = Array.from({ length: columns }, function () {
@@ -175,17 +157,19 @@
             }
 
             function applyLayout() {
-              var columnsWithSidebar = measureColumns(true);
+              var columnsWithSidebar = window.innerWidth >= 1024 ? measureColumns(true) : 0;
 
-              if (sidebar && layoutContainer && columnsWithSidebar > 1) {
+              if (window.innerWidth >= 1024 && sidebar && layoutContainer && columnsWithSidebar > 1) {
                 sidebar.hidden = false;
                 layoutContainer.setAttribute("data-layout", "with-sidebar");
+                if (friendsSecondary) friendsSecondary.hidden = true;
                 distribute(columnsWithSidebar);
               } else {
                 if (sidebar && layoutContainer) {
                   sidebar.hidden = true;
                   layoutContainer.setAttribute("data-layout", "no-sidebar");
                 }
+                if (friendsSecondary) friendsSecondary.hidden = false;
                 var columnsWithoutSidebar = measureColumns(false);
                 distribute(columnsWithoutSidebar);
               }
@@ -211,6 +195,12 @@
             {% endif %}
           </div>
         </div>
+      {% endif %}
+      {% if friends %}
+        <details data-friends-secondary class="text-sm">
+          <summary class="cursor-pointer min-h-11 py-3 text-belong-purple">Who’s around</summary>
+          {% include 'includes/friend_list.html' with friends=friends %}
+        </details>
       {% endif %}
     </section>
   </div>

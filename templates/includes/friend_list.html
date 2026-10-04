@@ -1,31 +1,23 @@
-<div class="rounded-[24px] bg-white/90 border border-white/70 px-4 py-5 space-y-4 w-[220px]">
-  <div class="flex items-center justify-between text-xs uppercase tracking-[0.35em] text-belong-slate/60">
-    <span class="font-semibold">Friends</span>
-    <span>Status</span>
-  </div>
-  <div class="space-y-2.5">
-    {% for friend in friends %}
-      <div class="flex items-center gap-3 p-3 rounded-2xl border border-white/70 bg-white/85">
-        <div class="relative h-9 w-9 rounded-full overflow-hidden bg-belong-purple/10 border border-white/80 flex items-center justify-center text-belong-purple font-semibold">
-          {% if friend.profile.avatar_url %}
-            <img src="{{ friend.profile.avatar_url }}" alt="{{ friend.user.get_full_name|default:friend.user.username }}" class="h-full w-full object-cover">
-          {% else %}
-            {{ friend.user.get_full_name|default:friend.user.username|slice:":1"|upper }}
-          {% endif %}
-          {% if friend.is_recent %}
-            <span class="absolute bottom-[-2px] right-[-2px] h-3 w-3 rounded-full border-2 border-white bg-emerald-500"></span>
-          {% endif %}
-        </div>
-        <div class="flex-1 min-w-0 text-xs text-belong-slate/70">
-          <p class="text-sm font-semibold text-belong-slate truncate">{{ friend.user.get_full_name|default:friend.user.username }}</p>
-          {% if friend.status %}
-            <p class="truncate">{{ friend.status }}</p>
-          {% endif %}
-          <p class="text-belong-slate/50">Last active {{ friend.last_active|timesince }} ago</p>
-        </div>
+<div class="space-y-1 w-full">
+  {% for friend in friends %}
+    <div class="flex items-center gap-3 py-2">
+      <div class="relative h-9 w-9 shrink-0 rounded-full bg-belong-purple/10 flex items-center justify-center text-belong-purple font-semibold">
+        {% if friend.profile.avatar_url %}
+          <img src="{{ friend.profile.avatar_url }}" alt="" class="h-full w-full rounded-full object-cover">
+        {% else %}
+          <span aria-hidden="true">{{ friend.user.get_full_name|default:friend.user.username|slice:":1"|upper }}</span>
+        {% endif %}
+        {% if friend.is_recent %}
+          <span class="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-belong-teal" title="Active recently"><span class="sr-only">Active recently</span></span>
+        {% endif %}
       </div>
-    {% empty %}
-      <p class="text-xs text-belong-slate/60">No friends to show yet. Start inviting people you trust.</p>
-    {% endfor %}
-  </div>
+      <div class="flex-1 min-w-0 text-xs text-belong-slate/70">
+        <p title="{{ friend.user.get_full_name|default:friend.user.username }}" class="text-sm font-semibold text-belong-slate truncate">{{ friend.user.get_full_name|default:friend.user.username }}</p>
+        {% if friend.status %}<p class="truncate" title="{{ friend.status }}">{{ friend.status }}</p>{% endif %}
+        {% if friend.last_active %}<p class="text-belong-slate/60">{{ friend.last_active|timesince }} ago</p>{% endif %}
+      </div>
+    </div>
+  {% empty %}
+    <p class="text-xs text-belong-slate/60">No friends to show yet.</p>
+  {% endfor %}
 </div>
