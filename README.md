@@ -85,10 +85,35 @@ For a new checkout, the launcher handles setup; no manual secret generation or
 file copying is needed. Production/Sage setup is deferred to a later issue.
 
 ## Seeding Notes
-The legacy `seed_demo` command is not used by this workflow. It currently has an
-indentation error, and its implementation deletes existing activities before
-replacing demo data. Do not use it on either persistent environment; repairs to
-demo seeding are outside this environment-setup change.
+
+Demo seeding is an explicit command; launchers never run it automatically.
+After setting up browser-test once with `./start_test.sh`, stop it, then populate
+its database from the main checkout:
+
+```bash
+(cd .worktrees/test && .venv/bin/python manage.py seed_demo)
+```
+
+Restart `./start_test.sh` and log in as `belong_demo` / `demo123`.
+The optional demo administrator is `belong_demo_admin` / `admin123`.
+These initial credentials are **local dev/test only**; the command refuses other
+environment names. For dev, use `.venv/bin/python manage.py seed_demo` after
+applying migrations with the launcher or `manage.py migrate`.
+
+The command retains the nine existing activity examples, twenty categories,
+friends, coordination groups, response examples, and available repository artwork.
+Each seed-owned record is identified by a `DemoSeedRecord` entry. Repeated runs
+refresh only known demo data, without duplicating it or resetting account
+passwords, privileges, or existing responses. Untracked activities created during
+review remain intact, even when hosted by a demo account or sharing a demo title.
+Existing accounts (including legacy `admin`/`demo`), categories, and uploaded
+images are not adopted by name. Demo categories use `belong-demo-` slugs.
+
+If an untracked account already uses a reserved demo username, or a tracked demo
+activity has been transferred to another owner, the command stops and rolls back
+the entire run. Resolve the conflict without deleting personal data, then retry.
+The ownership migration adds a tracking table; it does not claim legacy records.
+Manually edited seed-owned activity examples may be refreshed on the next run.
 
 ## Tailwind Production Build
 For a one-off build (e.g., before deploying), run:
@@ -112,5 +137,5 @@ caches, and Windows download metadata are ignored. Keep local data on your
 machine or back it up separately. Source artwork in `mock_images/` and `static/`
 remains versioned.
 
-Existing demo accounts, if present in your dev database, use development-only
-credentials. New browser-test accounts are created through signup independently.
+Demo credentials are development-only and belong to the explicitly seeded
+accounts. Personal browser-test accounts can also be created through signup.
