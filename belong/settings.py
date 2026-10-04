@@ -15,15 +15,24 @@ from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
 
+from .environment import config_bool, read_local_config
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Process environment takes precedence over this checkout's ignored local file.
+try:
+    CONFIG = read_local_config(BASE_DIR / '.env.local') | os.environ
+except ValueError as error:
+    raise ImproperlyConfigured(str(error)) from error
+ENVIRONMENT = CONFIG.get('BELONG_ENV', 'dev')
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '').strip()
+SECRET_KEY = CONFIG.get('DJANGO_SECRET_KEY', '').strip()
 if not SECRET_KEY:
     try:
         SECRET_KEY = (BASE_DIR / '.django-secret-key').read_text().strip()
@@ -35,9 +44,20 @@ if not SECRET_KEY:
     )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+try:
+    DEBUG = config_bool(CONFIG.get('DJANGO_DEBUG', str(ENVIRONMENT in {'dev', 'test'})))
+except ValueError as error:
+    raise ImproperlyConfigured(str(error)) from error
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in CONFIG.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1,[::1]').split(',')
+    if host.strip()
+]
+
+# Browsers share cookies between ports on the same host.
+SESSION_COOKIE_NAME = f'belong_{ENVIRONMENT}_sessionid'
+CSRF_COOKIE_NAME = f'belong_{ENVIRONMENT}_csrftoken'
 
 
 # Application definition
@@ -91,7 +111,7 @@ WSGI_APPLICATION = 'belong.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': (BASE_DIR / Path(CONFIG.get('DJANGO_DB_PATH', 'db.sqlite3')).expanduser()).resolve(),
     }
 }
 
