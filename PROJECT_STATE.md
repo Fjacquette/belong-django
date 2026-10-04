@@ -14,6 +14,19 @@ Keep this file short. Update it when product decisions, architecture, workflow, 
 - Claude Code may be used as an independent skeptical reviewer, not as a concurrent editor.
 - GitHub is the durable handoff layer. Frank should not need to copy implementation prompts/results between tools.
 
+### Working loop
+
+The normal loop is deliberately simple:
+
+1. Frank reviews the running product and gives ChatGPT product feedback, criticism, or a new decision.
+2. ChatGPT translates that feedback into durable GitHub issue/PR comments, acceptance criteria, sequencing, or follow-up issues as needed.
+3. Frank's instruction to Codex should normally be only a short directive such as **"address PR #27"** or **"attack the next issue."**
+4. Codex reads the relevant GitHub issue/PR plus the repository guidance, implements it, tests it, pushes it, and presents the exact committed browser-test preview.
+5. ChatGPT reviews the resulting PR/code against the issue and product direction, writes any required corrections back to GitHub, and the cycle repeats.
+6. Frank should not be used as a message bus between ChatGPT and Codex. Do not give him long implementation prompts to paste into Codex when the direction can be written to GitHub instead.
+
+GitHub issues and PRs are therefore not merely tracking artifacts; they are the primary technical-lead-to-implementer communication channel and the durable record of active implementation intent.
+
 Default posture: **do it now**. If product behavior needs backend/model work, build it. Complexity may require smaller vertical slices; it is not a reason to defer the behavior unless there is a concrete blocker.
 
 ## Product direction
