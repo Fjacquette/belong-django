@@ -110,7 +110,13 @@ Existing demo metadata is enriched without reseeding accounts or responses.
 
 The Groups foundation (#21) is merged. Persistent Group and GroupMembership entities are separate from legacy personal FriendGroup lists. The floating + discloses Activity (primary) and Group (secondary) creation. The settled group access modes are Open, Closed, Unlisted, and Private. Activities may link to groups but remain independently visible/participable according to their own audience rules. Invitation mechanics remain #22.
 
-**#28 — Establish and apply a coherent Belong UI design language** is now the immediate next implementation issue. Fix the activity-card action/footer language first, including removal of stale demo Interested/Count-me-in pairings and the inconsistent mix of response buttons, tiny remove controls, navigation text, and Hide controls. Apply the interaction grammar durably before continuing with #22.
+**#28** implements the shared control families documented in `DESIGN_SYSTEM.md`
+and `assets/tailwind.css`, applied across Discover, activity cards/details, Create,
+account menus, and group forms/actions. Card top bands expose logistics and
+organizer/audience/cost; compact footers distinguish response state, navigation,
+and quiet mutations. Known legacy seed-owned response defaults are migrated to
+activity-specific choices without altering responses or custom choices. GitHub is
+authoritative for merge status; #22 follows this visual-system iteration.
 
 ### Groups / recurring activity sequence
 

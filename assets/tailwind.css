@@ -3,6 +3,56 @@
 @tailwind utilities;
 
 @layer components {
+  .ui-page-gutter { @apply px-6 sm:px-8 lg:px-10; }
+  .ui-cluster { @apply flex flex-wrap items-center gap-2; }
+  .ui-button, .ui-menu-trigger, .ui-disclosure {
+    @apply inline-flex items-center justify-center gap-2 min-h-10 rounded-xl border px-3 text-sm font-semibold;
+  }
+  .ui-button--primary { @apply border-belong-purple bg-belong-purple text-white hover:bg-belong-purpleDark; }
+  .ui-button--secondary { @apply border-belong-purple bg-white text-belong-purple hover:bg-belong-purple/10; }
+  .ui-button--quiet { @apply border-belong-purple/30 bg-white/80 text-belong-purple hover:bg-white; }
+  .ui-button--compact { @apply min-h-9 rounded-lg px-2 text-xs; }
+  .ui-button--comfortable { @apply min-h-11; }
+  .ui-link { @apply text-belong-purple underline underline-offset-2 hover:text-belong-purpleDark; }
+  .ui-link--inverse { @apply text-white hover:text-white; }
+  .ui-field { @apply min-h-10 w-full min-w-0 rounded-xl border border-belong-slate/40 bg-white px-3 py-2 text-sm text-belong-purpleDark; }
+  .ui-menu-trigger { @apply cursor-pointer border-current bg-transparent; }
+  .ui-menu-panel { @apply rounded-xl border border-belong-purple/20 bg-white p-3 text-belong-purpleDark shadow-soft; }
+  .ui-disclosure { @apply w-fit cursor-pointer border-belong-purple/30 bg-white/80 text-belong-purple; }
+  .ui-disclosure::after { content: '▾'; }
+  details[open] > .ui-disclosure::after { transform: rotate(180deg); }
+  details[open] > .ui-disclosure { @apply border-belong-purple bg-white; }
+  .ui-disclosure, .ui-menu-trigger, .ui-fab { list-style: none; }
+  .ui-disclosure::-webkit-details-marker, .ui-menu-trigger::-webkit-details-marker, .ui-fab::-webkit-details-marker { display: none; }
+  .ui-filter { @apply inline-flex items-center gap-2 min-h-10 rounded-full border border-belong-purple/30 bg-white px-3 text-sm text-belong-purple cursor-pointer; }
+  .ui-filter:has(input:checked) { @apply border-belong-purple bg-belong-purple/10; }
+  .ui-filter input { accent-color: #843A96; }
+  .ui-check { @apply h-5 w-5; accent-color: #843A96; }
+  .ui-tooltip { @apply fixed z-[300] rounded-lg bg-belong-purpleDark text-white p-2 text-sm shadow-soft pointer-events-none; max-width: min(28rem, calc(100vw - 32px)); overflow-wrap: anywhere; }
+  .ui-tooltip[hidden] { display: none; }
+  .ui-segmented { @apply inline-flex rounded-full border border-belong-purple bg-white p-0.5 text-sm text-belong-purple; }
+  .ui-segment { @apply flex items-center justify-center min-h-9 rounded-full px-3 cursor-pointer; }
+  .ui-segmented input:checked + .ui-segment { @apply bg-belong-purple text-white font-semibold; }
+  .ui-segmented input:focus-visible + .ui-segment { outline: 2px solid #843A96; outline-offset: 2px; }
+  .ui-response { @apply border-belong-purple bg-white text-belong-purple; }
+  .ui-response[aria-pressed="true"] { @apply bg-belong-purple text-white; }
+  .ui-response[aria-pressed="true"]::before { content: ''; width: 8px; height: 5px; border-left: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); flex-shrink: 0; }
+  .ui-fab { @apply flex items-center justify-center h-12 w-12 rounded-full bg-belong-purple text-white text-3xl cursor-pointer shadow-soft hover:bg-belong-purpleDark; }
+  .ui-button:focus-visible, .ui-link:focus-visible, .ui-field:focus-visible,
+  .ui-menu-trigger:focus-visible, .ui-disclosure:focus-visible, .ui-fab:focus-visible,
+  .ui-filter:focus-within { outline: 2px solid #843A96; outline-offset: 3px; }
+  .ui-menu-trigger:focus-visible, .ui-link--inverse:focus-visible { outline-color: white; }
+  .ui-button:disabled { @apply opacity-50 cursor-not-allowed; }
+  .discovery-utilities { position: relative; margin-bottom: 16px; min-height: 40px; }
+  .discovery-advanced:not([open]) > .discovery-advanced__panel { display: none; }
+  .discovery-advanced > .discovery-advanced__panel { margin-top: 16px; }
+  .discovery-utilities > fieldset { position: absolute; right: 0; top: 0; }
+  @media (max-width: 420px) {
+    .discovery-utilities { padding-bottom: 52px; }
+    .discovery-utilities > fieldset { top: 48px; }
+    .discovery-advanced > .discovery-advanced__panel { margin-top: 64px; }
+    .discovery-utilities:has(details[open]) { padding-bottom: 0; }
+  }
   .activity-grid {
     display: grid;
     gap: 1.5rem;
@@ -46,7 +96,7 @@
 
   .activity-card {
     display: grid;
-    grid-template-rows: var(--band-1) var(--band-2) var(--band-3) minmax(0, 1fr) 76px;
+    grid-template-rows: var(--band-1) var(--band-2) var(--band-3) minmax(0, 1fr) 112px;
     width: 100%;
     height: var(--card-height);
     background: linear-gradient(135deg, var(--card-primary) 0%, var(--card-secondary) 100%);
@@ -74,32 +124,20 @@
     overflow: hidden;
     overflow-wrap: anywhere;
   }
-  .participation--card { line-height: 16px; }
-  .participation--card .participation__response,
-  .participation--card .participation__counts { flex-wrap: nowrap; }
-  .participation--card .participation__counts form { flex-shrink: 0; }
-  .participation--card .participation__counts { min-height: 24px; }
-  .participation--card .participation__remove { min-height: 24px; padding: 0 5px; }
-  .participation--card .participation__counts p {
+  .participation--card { @apply flex flex-col gap-1 text-xs text-belong-purpleDark; line-height: 16px; }
+  .participation--card .participation__info {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .participation__remove {
-    border: 1px solid currentColor;
-    border-radius: 9999px;
-    min-height: 32px;
-    padding: 0 8px;
-  }
-  .participation__remove:hover { background: rgb(255 255 255 / 0.15); }
   html { scroll-padding-bottom: 5rem; }
   .activity-card button, .activity-card a { scroll-margin-bottom: 5rem; }
   .account-menu summary::-webkit-details-marker { display: none; }
 
   .activity-card__headline {
-    font-size: calc(var(--card-base-font, 16px) * 1.25);
-    line-height: 1.2;
+    font-size: 18px;
+    line-height: 20px;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;

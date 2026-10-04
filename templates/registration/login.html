@@ -33,9 +33,9 @@
         {% if next %}
           <input type="hidden" name="next" value="{{ next }}">
         {% endif %}
-        <button type="submit" class="w-full bg-belong-purple text-white py-3 rounded-full font-semibold transition hover:bg-belong-purpleDark">Sign in</button>
+        <button type="submit" class="ui-button ui-button--primary ui-button--comfortable w-full">Sign in</button>
       </form>
-      <p class="text-sm text-belong-slate/80">Need an account? <a href="{% url 'signup' %}" class="text-belong-purple font-semibold underline">Create account</a></p>
+      <p class="text-sm text-belong-slate/80">Need an account? <a href="{% url 'signup' %}" class="ui-link font-semibold">Create account</a></p>
     </section>
   </div>
 {% endblock %}

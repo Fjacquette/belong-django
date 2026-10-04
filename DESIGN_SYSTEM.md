@@ -239,6 +239,36 @@ visually apparent.
 
 ## 12. Review rule
 
+### Implemented families
+
+`assets/tailwind.css` owns the shared component classes. Use modifiers with the
+base class rather than duplicating height/border/color recipes in templates.
+
+| Role | Classes |
+| --- | --- |
+| Primary action | `ui-button ui-button--primary` |
+| Secondary action | `ui-button ui-button--secondary` |
+| Quiet/private mutation | `ui-button ui-button--quiet` |
+| Card action (36px) | `ui-button--compact` modifier |
+| Form action (44px) | `ui-button--comfortable` modifier |
+| Response state | `ui-button ui-response` with `aria-pressed` |
+| Navigation | `ui-link`; `ui-link--inverse` on dark surfaces |
+| Field | `ui-field`; `ui-check` for standalone checkboxes |
+| Menu/disclosure | `ui-menu-trigger`, `ui-menu-panel`, `ui-disclosure` |
+| Boolean filter | `ui-filter` wrapping a native checkbox |
+| View mode | `ui-segmented`, native radio + `ui-segment` |
+| Floating Create | `ui-fab` (48px) |
+| Geometry | `ui-page-gutter`, `ui-cluster` |
+
+Cards retain 400px height. Their 112px footer has two 36px action rows around a
+16px information line, with 4px internal gaps; card actions use rounded-lg.
+Top bands are 80px identity/logistics + 48px organizer/audience/cost. The 128px
+stack offset exposes both bands on covered cards. Lower bands contain artwork,
+headline/description, and actions. Truncated card values expose full text through
+the shared keyboard/pointer tooltip, retaining native title fallback without JS.
+Advanced filters and view selection share a utility line; mobile wraps by cluster,
+and the expanded filter panel spans the content frame.
+
 A UI change is not complete if it merely "works."
 
 Before presentation, review:

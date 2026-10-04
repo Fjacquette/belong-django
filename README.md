@@ -139,6 +139,25 @@ The ownership migration adds a tracking table; it does not claim legacy records.
 Manually edited seed-owned activity examples may be refreshed on the next run.
 
 ## Tailwind Production Build
+
+`DESIGN_SYSTEM.md` and `assets/tailwind.css` define reusable `ui-*` families for
+actions, navigation, fields, filters, disclosures, menus, and response/view state.
+Use those classes instead of adding a local border/height/color recipe. Default
+controls are 40px, dense card controls 36px, form/detail controls 44px, and the
+floating Create is 48px. Page gutters are shared at 24/32/40px.
+
+Card top bands show name + when/where, then organizer + audience + cost; the
+128px stack offset keeps both visible. The 400px card footer uses compact peer
+response controls, a state/count line, navigational Details, and quiet Hide/Unhide.
+A selected direct response clears on repeat-click; only a response outside the
+direct choices needs the separately labeled Remove action. Full card values are
+available on keyboard focus/hover, including after HTMX updates.
+
+The demo response migration updates only known seed-owned legacy default sets,
+including the former Interested/Count me in/Question trio. Custom choices,
+transferred activities, and all existing response records are preserved. New seeds
+use activity-specific choices and sample responses; no automatic reseed is needed.
+
 For a one-off build (e.g., before deploying), run:
 ```bash
 source .venv/bin/activate

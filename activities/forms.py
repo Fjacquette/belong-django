@@ -100,16 +100,15 @@ class ActivityForm(forms.ModelForm):
         self.fields["group"].help_text = "Optional. Link an activity to a group you organize; participation still follows the activity audience."
         self.fields["location_gps"].help_text = "Latitude, longitude; used for Nearby within 25 miles."
         self.fields["audience"].choices = PILOT_AUDIENCE_CHOICES
-        base_classes = (
-            "mt-1 w-full border border-white/70 rounded-xl px-4 py-2 bg-white "
-            "focus:outline-none focus:ring-2 focus:ring-belong-purple/30 focus:border-belong-purple"
-        )
+        base_classes = "ui-field mt-1"
         for name, field in self.fields.items():
             widget = field.widget
             existing = widget.attrs.get("class", "")
             widget.attrs["class"] = f"{existing} {base_classes}".strip()
             if isinstance(widget, forms.CheckboxSelectMultiple):
                 widget.attrs["class"] = "grid grid-cols-1 gap-2"
+            elif isinstance(widget, forms.CheckboxInput):
+                widget.attrs["class"] = "ui-check"
 
         if self.instance and self.instance.pk and self.instance.available_responses:
             self.fields["available_responses"].initial = self.instance.available_responses

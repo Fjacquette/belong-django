@@ -9,7 +9,7 @@
       </aside>
     {% endif %}
     <section class="flex-1">
-      <a href="{% url 'activities:index' %}" class="text-sm text-belong-purple hover:text-belong-purpleDark">← Back to activities</a>
+      <a href="{% url 'activities:index' %}" class="ui-link text-sm">← Back to activities</a>
       <div class="rounded-[36px] border border-white/60 bg-white/95 mt-4 overflow-hidden shadow-soft">
         <div class="p-8 text-white" style="background: linear-gradient(135deg, {{ activity.display_color_primary }} 0%, {{ activity.display_color_secondary }} 100%);">
           <h1 class="text-4xl font-display leading-tight">{{ activity.title }}</h1>
@@ -29,14 +29,14 @@
         <div class="p-8 space-y-6">
           <div class="grid gap-5 md:grid-cols-2 text-sm text-belong-slate">
             <div>
-              <p class="text-xs uppercase tracking-[0.3em] text-belong-slate/60">Organizer</p>
+              <p class="text-sm font-semibold text-belong-slate">Organizer</p>
               <p class="text-base font-semibold">{{ activity.organizer_name|default:activity.host.get_full_name|default:activity.host.username }}</p>
               {% if activity.location_phone %}
                 <p class="mt-2 text-xs text-belong-slate/60">Day-of contact: {{ activity.location_phone }}</p>
               {% endif %}
             </div>
             <div>
-              <p class="text-xs uppercase tracking-[0.3em] text-belong-slate/60">Schedule</p>
+              <p class="text-sm font-semibold text-belong-slate">Schedule</p>
               {% if activity.freetext_when %}
                 <p class="text-base font-semibold">{{ activity.freetext_when }}</p>
               {% elif activity.starts_at %}
@@ -52,9 +52,9 @@
               {% endif %}
             </div>
             <div>
-              <p class="text-xs uppercase tracking-[0.3em] text-belong-slate/60">Location</p>
+              <p class="text-sm font-semibold text-belong-slate">Location</p>
               {% if activity.location_type == 'online' and activity.location_url %}
-                <p class="text-base font-semibold"><a href="{{ activity.location_url }}" class="text-belong-purple hover:text-belong-purpleDark">Join online</a></p>
+                <p class="text-base font-semibold"><a href="{{ activity.location_url }}" class="ui-link">Join online</a></p>
               {% endif %}
               {% if activity.location_name %}
                 <p class="text-base font-semibold">{{ activity.location_name }}</p>
@@ -72,14 +72,14 @@
             </div>
             <div>
               {% if activity.cost_display %}
-                <p class="text-xs uppercase tracking-[0.3em] text-belong-slate/60">Cost</p>
+                <p class="text-sm font-semibold text-belong-slate">Cost</p>
                 <p class="text-base font-semibold">{{ activity.cost_display }}</p>
               {% endif %}
               {% if activity.capacity %}
-                <p class="text-xs uppercase tracking-[0.3em] text-belong-slate/60 mt-4">Capacity</p>
+                <p class="text-sm font-semibold text-belong-slate mt-4">Capacity</p>
                 <p class="text-base font-semibold">{{ activity.capacity }}</p>
               {% endif %}
-              <p class="text-xs uppercase tracking-[0.3em] text-belong-slate/60 mt-4">Audience</p>
+              <p class="text-sm font-semibold text-belong-slate mt-4">Audience</p>
               <p class="text-base font-semibold">{{ activity.audience|title }}</p>
             </div>
           </div>
@@ -99,7 +99,7 @@
 
           <p class="text-base text-belong-slate leading-relaxed whitespace-pre-line">{{ activity.description }}</p>
           {% if show_group %}
-            <p>With <a href="{{ activity.group.get_absolute_url }}" class="text-belong-purple underline">{{ activity.group.name }}</a></p>
+            <p>With <a href="{{ activity.group.get_absolute_url }}" class="ui-link">{{ activity.group.name }}</a></p>
           {% endif %}
 
           <div class="rounded-2xl border border-white/60 px-5 py-4 bg-white/80">
@@ -109,7 +109,7 @@
       </div>
       {% if friends %}
         <details class="xl:hidden mt-6 text-sm">
-          <summary class="cursor-pointer min-h-11 py-3 text-belong-purple">Who’s around</summary>
+          <summary class="ui-disclosure">Who’s around</summary>
           {% include 'includes/friend_list.html' with friends=friends %}
         </details>
       {% endif %}

@@ -345,7 +345,7 @@ DEMO_DISCOVERY = {'Sailing on weekends!': ('free', '39.267,-76.798', ['intereste
  'Co-ed softball league': ('paid', '40.130,-75.514', ['committed', 'declined']),
  'Greg is bored': ('unknown', '40.028,-75.174', ['interested', 'vote']),
  'Firefighter flashover training': ('paid', '39.962,-75.606', ['committed', 'question']),
- 'Wednesday night paddle': ('paid', '40.248,-75.649', ['interested', 'committed']),
+ 'Wednesday night paddle': ('paid', '40.248,-75.649', ['committed', 'question']),
  'Stroll the Street - Manayunk': ('free', '40.028,-75.225', ['interested', 'more'])}
 for example in ACTIVITY_DATA:
     cost, gps, responses = DEMO_DISCOVERY[example["title"]]
@@ -523,10 +523,11 @@ class Command(BaseCommand):
                 identity=("host",),
             )
 
-            # Seed sample interest from demo user
+            # New sample responses use the activity's first meaningful choice.
+            # Existing responses remain private user state and are never reset.
             seed_record(
                 f"response:{slugify(payload['title'])}:demo", ActivityResponse,
-                {"user": demo, "activity": activity, "status": ActivityResponseStatus.INTERESTED},
+                {"user": demo, "activity": activity, "status": activity.active_responses()[0]},
                 identity=("user", "activity"), update=False,
             )
 

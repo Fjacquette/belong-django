@@ -64,7 +64,10 @@ class ParticipationUITests(TestCase):
                         self.assertNotContains(response, 'aria-pressed="true"')
                         self.assertContains(response, f'>You: {ActivityResponseStatus(status).label}</p>')
                     self.assertContains(response, f'name="variant" value="{variant}"')
-                    self.assertContains(response, f'hx-post="{self.url("leave")}"')
+                    if variant == "detail" or status == "question":
+                        self.assertContains(response, f'hx-post="{self.url("leave")}"')
+                    else:
+                        self.assertNotContains(response, f'hx-post="{self.url("leave")}"')
                     self.assertEqual(ActivityResponse.objects.get(user=self.viewer, activity=self.activity).status, status)
                     self.assertEqual(ActivityResponse.objects.filter(user=self.viewer).count(), 1)
                     self.assertContains(self.client.get(self.url("detail")), f'You: {ActivityResponseStatus(status).label}')
@@ -79,10 +82,10 @@ class ParticipationUITests(TestCase):
     def test_counts_distinguish_interest_from_commitment(self):
         ActivityResponse.objects.create(user=self.host, activity=self.activity, status="interested")
         response = self.client.post(self.url("respond"), {"variant": "detail", "status": "committed"}, HTTP_HX_REQUEST="true")
-        self.assertContains(response, "1 interested · 1 count me in")
+        self.assertContains(response, "Interested: 1; Count me in: 1")
         self.assertContains(response, 'aria-pressed="true"', count=1)
         response = self.client.post(self.url("respond"), {"variant": "detail", "status": "question"}, HTTP_HX_REQUEST="true")
-        self.assertContains(response, "1 interested · 0 count me in")
+        self.assertContains(response, "Interested: 1; Count me in: 0")
 
     def test_removed_choice_keeps_existing_response_visible_and_removable(self):
         ActivityResponse.objects.create(user=self.viewer, activity=self.activity, status="committed")
@@ -109,6 +112,32 @@ class ParticipationUITests(TestCase):
         self.assertContains(response, 'value="committed" aria-pressed="true"')
         self.assertContains(response, 'value="interested" aria-pressed="false"')
         self.assertContains(response, 'aria-pressed="true"', count=1)
+        self.assertNotContains(response, f'hx-post="{self.url("leave")}"')
+        self.assertNotContains(response, '>×</button>')
+        self.assertContains(response, 'ui-button--compact ui-response')
+
+    def test_top_two_bands_expose_logistics_people_audience_and_cost(self):
+        self.activity.headline = "A marketing headline"
+        self.activity.freetext_when = "Saturday morning"
+        self.activity.location_name = "River trail"
+        self.activity.organizer_name = "Janine"
+        self.activity.cost_type = "free"
+        self.activity.save()
+        html = self.client.get(reverse("activities:index")).content.decode()
+        first = html.split('activity-card__band-1', 1)[1].split('activity-card__band-2', 1)[0]
+        second = html.split('activity-card__band-2', 1)[1].split('activity-card__band-3', 1)[0]
+        self.assertIn(self.activity.title, first)
+        self.assertIn("Saturday morning · River trail", first)
+        self.assertNotIn(self.activity.headline, first)
+        for value in ["Janine", "Everyone", "Free"]:
+            self.assertIn(value, second)
+        self.activity.freetext_when = ""
+        self.activity.location_name = ""
+        self.activity.cost_type = "unknown"
+        self.activity.save()
+        page = self.client.get(reverse("activities:index"))
+        self.assertContains(page, "Date TBD · Location TBD")
+        self.assertContains(page, "Cost TBD")
 
     def test_default_activity_offers_only_interested_on_card_and_details(self):
         self.activity.available_responses = []
@@ -155,7 +184,7 @@ class ParticipationUITests(TestCase):
 
     def test_htmx_changes_and_removal_keep_discover_query_in_followup_forms(self):
         destination = self.filtered_discover_url()
-        ActivityResponse.objects.create(user=self.viewer, activity=self.activity, status="interested")
+        ActivityResponse.objects.create(user=self.viewer, activity=self.activity, status="more")
         initial = self.client.get(destination)
         leave_form = initial.content.decode().split(f'action="{self.url("leave")}"', 1)[1].split("</form>", 1)[0]
         next_input = f'<input type="hidden" name="next" value="{escape(destination, quote=True)}">'

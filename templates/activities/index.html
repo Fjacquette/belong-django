@@ -10,7 +10,7 @@
     }
     [data-layout-container][data-layout="with-sidebar"] {
       flex-direction: row;
-      gap: 3rem;
+      gap: 2rem;
       align-items: flex-start;
     }
     [data-friends-column][hidden] {
@@ -52,12 +52,12 @@
         <div class="flex flex-wrap items-center gap-2 lg:flex-nowrap" data-discovery-bar>
           <div class="flex items-center gap-2 w-full lg:w-auto lg:flex-1 min-w-0" data-search-cluster>
             <label for="activity-search" class="sr-only">Find something</label>
-            <input id="activity-search" type="search" name="q" value="{{ query|default:'' }}" placeholder="Find something" class="min-w-0 w-full flex-1 rounded-xl border border-belong-slate/20 bg-white px-3 min-h-10 text-sm" />
-            <button type="submit" data-text-search class="rounded-full border border-belong-purple text-belong-purple px-4 min-h-10 shrink-0">Search</button>
+            <input id="activity-search" type="search" name="q" value="{{ query|default:'' }}" placeholder="Find something" class="ui-field flex-1" />
+            <button type="submit" data-text-search class="ui-button ui-button--primary shrink-0">Search</button>
           </div>
           <div class="flex flex-wrap items-center gap-2 lg:flex-nowrap lg:shrink-0 lg:ml-4" data-quick-cluster>
             {% for filter in quick_filters %}
-              <label class="inline-flex items-center gap-1 rounded-full border border-belong-slate/20 bg-white px-3 min-h-10 text-sm cursor-pointer">
+              <label class="ui-filter">
                 <input type="checkbox" {% if filter.name == 'nearby' %}name="nearby"{% endif %} value="1" {% if filter.active %}checked{% endif %} data-quick-filter="{{ filter.name }}">
                 {{ filter.label }}
               </label>
@@ -71,28 +71,28 @@
       <script src="{% static 'js/card-view.js' %}" defer></script>
 
       <div data-activity-results>
-        <div class="flex flex-wrap items-start justify-between gap-2 mb-3" data-results-utilities>
-        <details class="min-w-0 flex-1 basis-32">
-          <summary class="cursor-pointer min-h-10 text-sm text-belong-purple py-2">Advanced filters</summary>
-          <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 bg-white/70 rounded-xl p-3 text-sm">
-            <label>Category<select form="discovery-filters" name="category" class="block w-full min-w-0 border rounded-lg p-2"><option value="">Any category</option>{% for category in categories %}<option value="{{ category.slug }}" {% if filter_params.category == category.slug %}selected{% endif %}>{{ category.name }}</option>{% endfor %}</select></label>
-            <label>Timing<select form="discovery-filters" name="timing" class="block w-full border rounded-lg p-2"><option value="">Any time</option><option value="today" {% if filter_params.timing == 'today' %}selected{% endif %}>Today</option><option value="upcoming" {% if filter_params.timing == 'upcoming' %}selected{% endif %}>Upcoming</option><option value="dateless" {% if filter_params.timing == 'dateless' %}selected{% endif %}>Open-ended</option></select></label>
-            <label>Location<select form="discovery-filters" name="location" class="block w-full border rounded-lg p-2"><option value="">Any location</option>{% for value,label in location_choices %}<option value="{{ value }}" {% if filter_params.location == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-            <label>Cost<select form="discovery-filters" name="cost" class="block w-full border rounded-lg p-2"><option value="">Any cost</option>{% for value,label in cost_choices %}<option value="{{ value }}" {% if filter_params.cost == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-            <label>Hidden activities<select form="discovery-filters" name="hidden" class="block w-full border rounded-lg p-2"><option value="exclude">Leave hidden out</option><option value="include" {% if filter_params.hidden == 'include' %}selected{% endif %}>Include hidden</option><option value="only" {% if filter_params.hidden == 'only' %}selected{% endif %}>Only hidden</option></select></label>
-            <button form="discovery-filters" type="submit" class="rounded-full border border-belong-purple text-belong-purple px-4 min-h-10 self-end">Apply filters</button>
+        <div class="discovery-utilities" data-results-utilities>
+        <details class="discovery-advanced">
+          <summary class="ui-disclosure">Advanced filters</summary>
+          <div class="discovery-advanced__panel grid gap-4 sm:grid-cols-2 lg:grid-cols-3 bg-white/70 rounded-xl p-4 text-sm">
+            <label>Category<select form="discovery-filters" name="category" class="ui-field block"><option value="">Any category</option>{% for category in categories %}<option value="{{ category.slug }}" {% if filter_params.category == category.slug %}selected{% endif %}>{{ category.name }}</option>{% endfor %}</select></label>
+            <label>Timing<select form="discovery-filters" name="timing" class="ui-field block"><option value="">Any time</option><option value="today" {% if filter_params.timing == 'today' %}selected{% endif %}>Today</option><option value="upcoming" {% if filter_params.timing == 'upcoming' %}selected{% endif %}>Upcoming</option><option value="dateless" {% if filter_params.timing == 'dateless' %}selected{% endif %}>Open-ended</option></select></label>
+            <label>Location<select form="discovery-filters" name="location" class="ui-field block"><option value="">Any location</option>{% for value,label in location_choices %}<option value="{{ value }}" {% if filter_params.location == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+            <label>Cost<select form="discovery-filters" name="cost" class="ui-field block"><option value="">Any cost</option>{% for value,label in cost_choices %}<option value="{{ value }}" {% if filter_params.cost == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+            <label>Hidden activities<select form="discovery-filters" name="hidden" class="ui-field block"><option value="exclude">Leave hidden out</option><option value="include" {% if filter_params.hidden == 'include' %}selected{% endif %}>Include hidden</option><option value="only" {% if filter_params.hidden == 'only' %}selected{% endif %}>Only hidden</option></select></label>
+            <button form="discovery-filters" type="submit" class="ui-button ui-button--primary self-end">Apply filters</button>
           </div>
         </details>
         <fieldset id="card-view-selector" class="ml-auto w-fit shrink-0" hidden>
           <legend class="sr-only">Card view</legend>
-          <div class="inline-flex rounded-full border border-belong-purple bg-white p-0.5 text-sm text-belong-purple">
+          <div class="ui-segmented">
             <label class="cursor-pointer">
               <input type="radio" name="card-view" value="stacked" class="peer sr-only" checked>
-              <span class="block rounded-full px-3 py-2 peer-checked:bg-belong-purple peer-checked:text-white peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2">Stacked</span>
+              <span class="ui-segment">Stacked</span>
             </label>
             <label class="cursor-pointer">
               <input type="radio" name="card-view" value="all" class="peer sr-only">
-              <span class="block rounded-full px-3 py-2 peer-checked:bg-belong-purple peer-checked:text-white peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2">Spread out</span>
+              <span class="ui-segment">Spread out</span>
             </label>
           </div>
         </fieldset>
@@ -131,7 +131,7 @@
       </div>
       {% if friends %}
         <details data-friends-secondary class="text-sm">
-          <summary class="cursor-pointer min-h-11 py-3 text-belong-purple">Who’s around</summary>
+          <summary class="ui-disclosure">Who’s around</summary>
           {% include 'includes/friend_list.html' with friends=friends %}
         </details>
       {% endif %}

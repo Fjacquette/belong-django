@@ -14,6 +14,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.utils import timezone
+from django.utils.formats import date_format
 
 from .forms import ActivityForm
 from .visibility import visible_activities
@@ -45,20 +46,18 @@ def _decorate_activity(activity: Activity) -> None:
     )
     activity.display_category_name = category.name if category else "Belong"
 
-    if activity.headline:
-        activity.display_subline = activity.headline
+    when = date_format(timezone.localtime(activity.starts_at), "D M j, g:i A") if activity.starts_at else activity.freetext_when or "Date TBD"
+    if when.strip().lower() in {"tbd", "tba"}:
+        when = "Date TBD"
+    if activity.location_type == ActivityLocationType.ONLINE:
+        where = "Online"
     else:
-        meta_parts = []
-        if activity.freetext_when:
-            meta_parts.append(activity.freetext_when)
-        if activity.location_city:
-            location = activity.location_city
-            if activity.location_state:
-                location = f"{location}, {activity.location_state}"
-            meta_parts.append(location)
-        elif activity.location_type == ActivityLocationType.ONLINE:
-            meta_parts.append("Online")
-        activity.display_subline = " • ".join(meta_parts)
+        where = activity.location_name or ", ".join(filter(None, [activity.location_city, activity.location_state])) or "Location TBD"
+        if activity.location_type == ActivityLocationType.HYBRID:
+            where += " / Online"
+    activity.display_subline = f"{when} · {where}"
+    activity.display_audience = activity.get_audience_display()
+    activity.display_cost = activity.cost_display or {"free": "Free", "paid": "Paid", "unknown": "Cost TBD"}.get(activity.cost_type, "Cost TBD")
 
 
 def _friend_context(user) -> List[Dict[str, object]]:
@@ -140,7 +139,11 @@ def _build_join_context(request: HttpRequest, activity: Activity) -> Dict[str, o
         "activity": activity,
         "attendee_count": attendee_count,
         "response_count": len(responses),
-        "response_counts_label": "; ".join(f"{label}: {sum(r.status == value for r in responses)}" for value, label in ActivityResponseStatus.choices),
+        "response_counts_label": "; ".join(
+            f"{label}: {sum(r.status == value for r in responses)}"
+            for value, label in ActivityResponseStatus.choices
+            if value in activity.active_responses() or any(r.status == value for r in responses)
+        ),
         "interested_count": interested_count,
         "committed_count": committed_count,
         "joined": activity.is_joined,
