@@ -107,20 +107,9 @@ Who’s around uses width-based page layout independent of matching card counts,
 including zero results. Quick toggles clear their canonical dimension when turned off.
 Existing demo metadata is enriched without reseeding accounts or responses.
 
-The Groups foundation (#21) adds persistent Group and GroupMembership entities,
-separate from legacy personal FriendGroup lists. The floating + discloses Activity
-(primary) and Group (secondary) creation. Groups expose four coherent access modes:
-Open (visible, immediate join), Closed (visible, request approval), Unlisted
-(link/linked activity only, immediate join), and Private (hidden, invitation only).
-Owners/organizers can block membership; a block prevents self-join and cannot be
-cleared by leaving. Invitation acceptance/authority remain #22; acceptance will
-grant membership directly, without a second approval step. Membership rosters are
-visible to active members; organizers approve requests and the owner appoints additional
-organizers. Activities optionally link to a group their creator organizes; group
-membership never gates ordinary activity participation. Email invitations are #22.
-GitHub remains authoritative for merge status; #22 is the next implementation slice.
+The Groups foundation (#21) is merged. Persistent Group and GroupMembership entities are separate from legacy personal FriendGroup lists. The floating + discloses Activity (primary) and Group (secondary) creation. The settled group access modes are Open, Closed, Unlisted, and Private. Activities may link to groups but remain independently visible/participable according to their own audience rules. Invitation mechanics remain #22.
 
-**#28 — Establish and apply a coherent Belong UI design language** is an explicit follow-up for visual/spacing/control consistency. It should inform new UI work, including Groups, but is not a reason to block the current functional slices.
+**#28 — Establish and apply a coherent Belong UI design language** is now the immediate next implementation issue. Fix the activity-card action/footer language first, including removal of stale demo Interested/Count-me-in pairings and the inconsistent mix of response buttons, tiny remove controls, navigation text, and Hide controls. Apply the interaction grammar durably before continuing with #22.
 
 ### Groups / recurring activity sequence
 
@@ -128,7 +117,7 @@ GitHub remains authoritative for merge status; #22 is the next implementation sl
 
 Implementation slices are already defined and are intended to be built, not parked:
 
-- **#21** core Group model and membership implemented in this iteration
+- **#21** core Group model and membership — merged
 - **#22** email invitations and joining
 - **#23** recurring series and specific occurrences
 - **#24** organizer RSVP roster and occurrence lifecycle/cancellation
