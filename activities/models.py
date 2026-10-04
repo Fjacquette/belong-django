@@ -73,8 +73,6 @@ class ActivityResponseStatus(models.TextChoices):
 
 DEFAULT_RESPONSE_CHOICES = [
     ActivityResponseStatus.INTERESTED,
-    ActivityResponseStatus.COMMITTED,
-    ActivityResponseStatus.QUESTION,
 ]
 
 

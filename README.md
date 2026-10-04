@@ -166,10 +166,13 @@ for legacy rows with incorrect metadata. Invalid legacy assets return 404 withou
 rewriting stored data. BinaryField storage is unchanged.
 
 Action URL fields accept only HTTP/HTTPS links (or blank values). Legacy unsafe
-links render as `#`. Default response choices are Interested, Count me in, and
-I have a question; Declined remains an explicit opt-in. The join shortcut prefers
-Interested, then Count me in, and leaves responses unchanged when neither is
-available. Cards offer the first two creator-selected response buttons; activity
+links render as `#`. New activities default only to Interested, a low-friction
+expression of proto-intent.
+Creators explicitly opt into stronger or context-specific choices such as Count me in,
+Tell me more, I have a question, Vote on details, or Cannot make it when appropriate.
+Existing creator-selected choices remain intact. The legacy join shortcut uses the
+first creator-selected choice and remains idempotent; it does not impose an RSVP pair.
+Cards offer the first two creator-selected response buttons; activity
 details show all allowed response buttons.
 Responses update in place with HTMX, can be changed or removed, and keep
 interest separate from commitment. Custom action links remain secondary.
@@ -198,8 +201,9 @@ accounts. Personal browser-test accounts can also be created through signup.
 
 ## Pilot discovery and presence
 
-Discover combines search, Today/Nearby/Online/Free toggles, category, timing,
-location type, structured cost, and hidden-card scope. Pagination retains every
+Discover submits text search only with Search or Enter, never per keystroke. Its
+compact bar combines search with direct Today/Nearby/Online/Free toggles. Advanced
+filters include category, timing, location type, structured cost, and hidden-card scope. Pagination retains every
 filter. Today uses **America/New_York** (including DST), as do datetime-local
 creation fields; open-ended activities do not count as Today. Online includes
 Online and Hybrid. Free means explicitly Free, never inferred from cost prose;

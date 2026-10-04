@@ -46,20 +46,23 @@
     </aside>
     {% endif %}
     <section class="flex flex-1 flex-col gap-8 min-w-0">
-      <form method="get" role="search" id="discovery-filters" class="space-y-3">
-        <label for="activity-search" class="sr-only">Find something</label>
-        <input id="activity-search" type="search" name="q" value="{{ query|default:'' }}" placeholder="Find something" class="min-w-0 w-full rounded-xl border border-belong-slate/20 bg-white px-4 py-3 text-sm" />
+      <form method="get" role="search" id="discovery-filters" class="space-y-1">
         <input type="hidden" name="lat" value="{{ filter_params.lat|default:'' }}">
         <input type="hidden" name="lon" value="{{ filter_params.lon|default:'' }}">
-        <div class="flex flex-wrap gap-2">
-          {% for filter in quick_filters %}
-            <label class="inline-flex items-center gap-1 rounded-full border border-belong-slate/20 bg-white px-3 min-h-10 text-sm cursor-pointer">
-              <input type="checkbox" name="{{ filter.name }}" value="1" {% if filter.active %}checked{% endif %} data-quick-filter>
-              {{ filter.label }}
-            </label>
-          {% endfor %}
+        <div class="flex flex-wrap items-center gap-2 lg:flex-nowrap" data-discovery-bar>
+          <label for="activity-search" class="sr-only">Find something</label>
+          <input id="activity-search" type="search" name="q" value="{{ query|default:'' }}" placeholder="Find something" class="min-w-0 w-full lg:w-auto lg:flex-1 rounded-xl border border-belong-slate/20 bg-white px-3 min-h-10 text-sm" />
+          <div class="flex flex-wrap items-center gap-2 lg:flex-nowrap lg:shrink-0">
+            {% for filter in quick_filters %}
+              <label class="inline-flex items-center gap-1 rounded-full border border-belong-slate/20 bg-white px-3 min-h-10 text-sm cursor-pointer">
+                <input type="checkbox" name="{{ filter.name }}" value="1" {% if filter.active %}checked{% endif %} data-quick-filter>
+                {{ filter.label }}
+              </label>
+            {% endfor %}
+            <button type="submit" class="rounded-full border border-belong-purple text-belong-purple px-4 min-h-10 shrink-0">Search</button>
+          </div>
         </div>
-        <p id="location-feedback" role="status" class="text-sm text-belong-slate/80">{{ filter_warning }}</p>
+        <p id="location-feedback" role="status" class="empty:hidden text-sm text-belong-slate/80">{{ filter_warning }}</p>
         <details {% if filter_params.filters or filter_params.category or filter_params.timing or filter_params.location or filter_params.cost or filter_params.hidden %}open{% endif %}>
           <summary class="cursor-pointer min-h-10 text-sm text-belong-purple py-2">Filters</summary>
           <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 bg-white/70 rounded-xl p-3 text-sm">

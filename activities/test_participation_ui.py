@@ -14,6 +14,7 @@ class ParticipationUITests(TestCase):
         cls.viewer = get_user_model().objects.create_user(username="ui-viewer")
         cls.activity = Activity.objects.create(
             host=cls.host, title="An open-ended walk", description="Find a time together",
+            available_responses=["interested", "committed", "question"],
             action1_label="Organizer website", action1_url="https://example.com/walk",
             action2_label="Route", action2_url="https://example.com/route",
         )
@@ -108,6 +109,18 @@ class ParticipationUITests(TestCase):
         self.assertContains(response, 'value="committed" aria-pressed="true"')
         self.assertContains(response, 'value="interested" aria-pressed="false"')
         self.assertContains(response, 'aria-pressed="true"', count=1)
+
+    def test_default_activity_offers_only_interested_on_card_and_details(self):
+        self.activity.available_responses = []
+        self.activity.save()
+        for url in [reverse("activities:index"), self.url("detail")]:
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertContains(response, 'name="status" value="interested"', count=1)
+                for status in ["committed", "question", "more", "vote", "declined"]:
+                    self.assertNotContains(response, f'name="status" value="{status}"')
+        form = self.client.get(reverse("activities:create")).context["form"]
+        self.assertEqual(form["available_responses"].value(), ["interested"])
 
     def test_later_response_chosen_from_details_remains_visible_on_card(self):
         self.activity.available_responses = ["interested", "committed", "question", "more"]
@@ -213,10 +226,13 @@ class ParticipationUITests(TestCase):
     def test_discover_offers_search_and_categories_without_placeholder_controls(self):
         response = self.client.get(reverse("activities:index"))
         self.assertContains(response, 'role="search"')
+        self.assertContains(response, 'data-discovery-bar')
+        self.assertContains(response, '>Search</button>')
+        self.assertNotContains(response, 'hx-trigger=')
         self.assertContains(response, 'name="q"')
         self.assertContains(response, 'name="category"')
         self.assertNotContains(response, f'href="{reverse("activities:categories")}"')
-        for marker in ['name="arrange"', 'name="sort"', '>Search</button>', "Advanced filter", "(soon)"]:
+        for marker in ['name="arrange"', 'name="sort"', "Advanced filter", "(soon)"]:
             self.assertNotContains(response, marker)
         response = self.client.get(reverse("activities:index"), {"q": "unmatched"})
         self.assertNotContains(response, self.activity.title)

@@ -318,10 +318,7 @@ def respond(request: HttpRequest, pk: int) -> HttpResponse:
 def join(request: HttpRequest, pk: int) -> HttpResponse:
     activity = get_object_or_404(visible_activities(request.user).select_related("host"), pk=pk)
     allowed_statuses = activity.active_responses()
-    default_status = next(
-        (status for status in (ActivityResponseStatus.INTERESTED, ActivityResponseStatus.COMMITTED)
-         if status in allowed_statuses), None,
-    )
+    default_status = next(iter(allowed_statuses), None)
     if default_status is None:
         return _render_join_region(request, activity)
     ActivityResponse.objects.update_or_create(

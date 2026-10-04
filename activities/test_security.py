@@ -213,21 +213,35 @@ class ActionAndResponseTests(TestCase):
         response = self.client.get(reverse("activities:detail", args=[self.activity.pk]))
         self.assertContains(response, 'href="https://example.com/read"')
 
-    def test_form_defaults_match_model_defaults_and_do_not_add_declined(self):
+    def test_creation_defaults_to_only_interested(self):
         form = ActivityForm()
-        self.assertEqual(form.fields["available_responses"].initial, list(DEFAULT_RESPONSE_CHOICES))
+        self.assertEqual(form.fields["available_responses"].initial, ["interested"])
+        self.assertEqual(list(DEFAULT_RESPONSE_CHOICES), ["interested"])
         bound = ActivityForm(data=self.data())
         self.assertTrue(bound.is_valid(), bound.errors)
         activity = bound.save(commit=False)
         activity.host = self.user
         activity.save()
         self.assertEqual(activity.active_responses(), self.activity.active_responses())
-        self.assertNotIn(ActivityResponseStatus.DECLINED, activity.active_responses())
+        self.assertEqual(activity.available_responses, ["interested"])
+        self.assertEqual(activity.active_responses(), ["interested"])
 
-    def test_join_prefers_interested_then_committed_regardless_of_order(self):
+    def test_creator_can_opt_in_to_context_specific_choices_in_order(self):
+        choices = ["vote", "more", "committed", "question"]
+        form = ActivityForm(data=self.data(available_responses=choices))
+        self.assertTrue(form.is_valid(), form.errors)
+        activity = form.save(commit=False)
+        activity.host = self.user
+        activity.save()
+        self.assertEqual(activity.available_responses, choices)
+        self.assertEqual(activity.active_responses(), choices)
+
+    def test_join_respects_creator_selected_order_without_universal_rsvp_pair(self):
         for choices, expected in (
-            (["declined", "committed", "interested"], "interested"),
-            (["declined", "question", "committed"], "committed"),
+            (["vote", "committed", "interested"], "vote"),
+            (["more", "question", "committed"], "more"),
+            (["committed", "interested"], "committed"),
+            (["question"], "question"),
         ):
             with self.subTest(choices=choices):
                 self.activity.available_responses = choices
@@ -236,8 +250,8 @@ class ActionAndResponseTests(TestCase):
                 self.assertEqual(response.status_code, 200)
                 self.assertEqual(ActivityResponse.objects.get(activity=self.activity, user=self.user).status, expected)
 
-    def test_join_without_participation_option_does_not_create_or_change_response(self):
-        for choices in (["declined"], ["question"], ["declined", "question"], ["invalid"], "interested", 42):
+    def test_join_without_valid_choices_does_not_create_or_change_response(self):
+        for choices in (["invalid"], "interested", 42):
             self.activity.available_responses = choices
             self.activity.save()
             with self.subTest(choices=choices):

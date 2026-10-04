@@ -82,8 +82,10 @@ For normal implementation work, Codex must present the exact committed feature H
 **#19** is implemented in this feature iteration; GitHub remains authoritative for merge status.
 Today uses America/New_York; Nearby requires browser location within 25 miles;
 Online includes Hybrid; Free requires explicit free cost. Advanced filters retain
-query state across pages. Hide is private and reversible. Cards expose the first
-two creator-selected responses; Details exposes all, and repeating a selection clears it.
+query state across pages; text search submits only on Search or Enter. Hide is private
+and reversible. New activities default only to Interested; creators explicitly add
+stronger/context-specific responses. Existing choices/order are preserved. Cards expose
+the first two creator-selected responses; Details exposes all, and repeating a selection clears it.
 Presence reflects authenticated HTTP activity: Active within 5 minutes, Idle within
 30, Offline thereafter or without a timestamp, with writes throttled to one minute.
 Existing demo metadata is enriched without reseeding accounts or responses.
