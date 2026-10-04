@@ -4,6 +4,7 @@
       <form method="post" action="{% url 'activities:respond' activity.pk %}" hx-post="{% url 'activities:respond' activity.pk %}" hx-target="#participation-{{ activity.pk }}" hx-swap="outerHTML" class="participation__response flex flex-wrap items-center gap-1">
         {% csrf_token %}
         <input type="hidden" name="variant" value="detail">
+        <input type="hidden" name="next" value="{{ next_path }}">
         {% for option in response_options %}
           <button type="submit" name="status" value="{{ option.value }}" aria-pressed="{% if current_status == option.value %}true{% else %}false{% endif %}" class="min-h-11 rounded-full border border-belong-teal px-4 py-2 text-sm font-semibold {% if current_status == option.value %}bg-belong-teal text-white{% else %}bg-white text-belong-teal{% endif %} hover:opacity-80 focus-visible:outline focus-visible:outline-2">{{ option.label }}</button>
         {% endfor %}
@@ -30,12 +31,17 @@
     {% if variant == 'detail' %}
       <p>{{ interested_count|default:0 }} interested · {{ committed_count|default:0 }} count me in</p>
     {% else %}
+      {% if card_current_status_label %}
+      <p tabindex="0" title="You: {{ card_current_status_label }} · {{ response_counts_label }}" aria-label="You: {{ card_current_status_label }}">You: {{ card_current_status_label }}</p>
+      {% else %}
       <p tabindex="0" title="{{ response_counts_label }}">{{ response_count|default:0 }} response{{ response_count|pluralize }}</p>
+      {% endif %}
     {% endif %}
     {% if current_status %}
       <form method="post" action="{% url 'activities:leave' activity.pk %}" hx-post="{% url 'activities:leave' activity.pk %}" hx-target="#participation-{{ activity.pk }}" hx-swap="outerHTML">
         {% csrf_token %}
         <input type="hidden" name="variant" value="{{ variant|default:'card' }}">
+        <input type="hidden" name="next" value="{{ next_path }}">
         <button type="submit" class="participation__remove underline whitespace-nowrap" aria-label="Remove your response">{% if variant == 'detail' %}Remove response{% else %}×{% endif %}</button>
       </form>
     {% endif %}
@@ -44,7 +50,7 @@
       <form method="post" action="{% url 'activities:hide' activity.pk %}" hx-post="{% url 'activities:hide' activity.pk %}">
         {% csrf_token %}
         <input type="hidden" name="hidden" value="{% if activity.is_hidden %}0{% else %}1{% endif %}">
-          <input type="hidden" name="next" value="{{ next_path }}">
+        <input type="hidden" name="next" value="{{ next_path }}">
         <button type="submit" class="participation__remove whitespace-nowrap" title="{% if activity.is_hidden %}Show this activity again{% else %}Hide privately from your discovery list{% endif %}">{% if activity.is_hidden %}Unhide{% else %}Hide{% endif %}</button>
       </form>
     {% endif %}

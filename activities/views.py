@@ -98,6 +98,15 @@ def _friend_context(user) -> List[Dict[str, object]]:
     return result
 
 
+def _participation_next_path(request: HttpRequest, activity: Activity) -> str:
+    destination = request.POST.get("next", "")
+    if url_has_allowed_host_and_scheme(destination, {request.get_host()}, require_https=request.is_secure()):
+        return destination
+    if request.POST.get("variant") == "detail":
+        return reverse("activities:detail", args=[activity.pk])
+    return reverse("activities:index")
+
+
 def _build_join_context(request: HttpRequest, activity: Activity) -> Dict[str, object]:
     # Reuse discovery's prefetched responses; keep interest distinct from commitment.
     responses = list(activity.responses.all())
@@ -116,6 +125,12 @@ def _build_join_context(request: HttpRequest, activity: Activity) -> Dict[str, o
         )
 
     current_status = current_response.status if current_response else None
+    card_response_options = response_options[:2]
+    card_current_status_label = (
+        RESPONSE_LABELS.get(current_status, "")
+        if current_status and current_status not in [option["value"] for option in card_response_options]
+        else ""
+    )
 
     activity.is_hidden = HiddenActivity.objects.filter(user=request.user, activity=activity).exists()
     activity.is_joined = current_response is not None
@@ -132,8 +147,9 @@ def _build_join_context(request: HttpRequest, activity: Activity) -> Dict[str, o
         "current_status": current_status,
         "current_status_label": RESPONSE_LABELS.get(current_status, ""),
         "response_options": response_options,
-        "card_response_options": response_options[:2],
-        "next_path": request.POST.get("next", reverse("activities:index")) if request.method == "POST" else request.get_full_path(),
+        "card_response_options": card_response_options,
+        "card_current_status_label": card_current_status_label,
+        "next_path": _participation_next_path(request, activity) if request.method == "POST" else request.get_full_path(),
     }
 
 
@@ -151,6 +167,7 @@ def _annotate_join_data(request: HttpRequest, activities: List[Activity]) -> Non
         activity.j_current_status_label = context["current_status_label"]
         activity.j_response_options = context["response_options"]
         activity.j_card_response_options = context["card_response_options"]
+        activity.j_card_current_status_label = context["card_current_status_label"]
 
 
 @login_required
@@ -327,9 +344,7 @@ def _render_join_region(request: HttpRequest, activity: Activity) -> HttpRespons
     variant = "detail" if request.POST.get("variant") == "detail" else "card"
     # UI forms also work when HTMX is unavailable. Preserve the existing fragment API.
     if "variant" in request.POST and request.headers.get("HX-Request") != "true":
-        if variant == "detail":
-            return redirect("activities:detail", pk=activity.pk)
-        return redirect("activities:index")
+        return redirect(_participation_next_path(request, activity))
     context = _build_join_context(request, activity)
     context["variant"] = variant
     return render(request, "activities/_join_region.html", context)
