@@ -140,6 +140,48 @@ class DiscoveryTests(TestCase):
         self.assertEqual(self.ids({'free': '1', 'cost': 'paid', 'online': '1', 'location': 'in_person'}), {self.paid.pk})
         self.assertEqual(self.ids({'today': '1', 'timing': ''}), self.ids({}))
 
+    def test_clearing_each_quick_dimension_restores_results_from_empty_state(self):
+        # One paid, in-person activity scheduled tomorrow: each quick filter excludes it.
+        self.paid.starts_at = NOW + timedelta(days=1)
+        self.paid.save()
+        base = {'q': self.paid.title, 'category': 'outdoors', 'hidden': 'include'}
+        for dimension, value, remaining in [
+            ('timing', 'today', {'cost': 'paid', 'location': 'in_person'}),
+            ('location', 'online_capable', {'cost': 'paid'}),
+            ('cost', 'free', {'location': 'in_person'}),
+        ]:
+            with self.subTest(dimension=dimension):
+                baseline = {**base, **remaining}
+                self.assertEqual(self.ids(baseline), {self.paid.pk})
+                self.assertEqual(self.ids({**baseline, dimension: value}), set())
+                response = self.discover({**baseline, dimension: ''})
+                self.assertEqual({a.pk for a in response.context['activities']}, {self.paid.pk})
+                self.assertEqual(response.context['filter_params'][dimension], '')
+                for name, expected in baseline.items():
+                    self.assertEqual(response.context['filter_params'][name], expected)
+                self.assertFalse(any(item['active'] for item in response.context['quick_filters']))
+        baseline = {**base, 'cost': 'paid', 'location': 'in_person'}
+        self.assertEqual(self.ids({**baseline, 'nearby': '1', 'lat': '0', 'lon': '0'}), set())
+        response = self.discover({**baseline, 'lat': '', 'lon': ''})
+        self.assertEqual({a.pk for a in response.context['activities']}, {self.paid.pk})
+        self.assertNotIn('nearby', response.context['filter_params'])
+        self.assertNotIn('lat', response.context['filter_params'])
+        self.assertNotIn('lon', response.context['filter_params'])
+
+    def test_empty_results_keep_friends_and_page_layout_available(self):
+        Friendship.make_pair(self.viewer, self.host)
+        populated = self.discover()
+        empty = self.discover({'q': 'No matching activity'})
+        self.assertEqual(empty.context['friends'], populated.context['friends'])
+        self.assertContains(empty, 'No activities match')
+        self.assertContains(empty, 'data-activity-frame')
+        self.assertContains(empty, 'data-activity-results')
+        self.assertContains(empty, 'data-friends-column')
+        self.assertContains(empty, 'data-friends-secondary')
+        self.assertContains(empty, 'js/discovery-layout.js')
+        self.assertContains(empty, 'js/discovery.js')
+        self.assertNotContains(empty, 'class="activity-grid w-full"')
+
     def test_card_tooltips_details_private_buttons_and_floating_create(self):
         self.near.title = 'Long activity title ' * 8
         self.near.summary = 'Full summary ' * 20

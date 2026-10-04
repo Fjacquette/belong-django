@@ -103,6 +103,8 @@ stronger/context-specific responses. Existing choices/order are preserved. Cards
 the first two creator-selected responses; Details exposes all, and repeating a selection clears it.
 Presence reflects authenticated HTTP activity: Active within 5 minutes, Idle within
 30, Offline thereafter or without a timestamp, with writes throttled to one minute.
+Who’s around uses width-based page layout independent of matching card counts,
+including zero results. Quick toggles clear their canonical dimension when turned off.
 Existing demo metadata is enriched without reseeding accounts or responses.
 
 The next planned product work is the Groups / recurring activity sequence below.

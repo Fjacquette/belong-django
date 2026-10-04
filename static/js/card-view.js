@@ -3,9 +3,6 @@
   const toggle = document.getElementById('card-view-toggle');
   if (!root || !toggle) return;
   const items = Array.from(root.querySelectorAll('[data-stack-item]'));
-  const layout = document.querySelector('[data-layout-container]');
-  const sidebar = document.querySelector('[data-friends-column]');
-  const secondary = document.querySelector('[data-friends-secondary]');
   const minWidth = Number(root.dataset.cardMinWidth);
   const gap = Number(root.dataset.stackGap);
   const maxColumns = Math.min(Number(root.dataset.maxColumns), items.length);
@@ -14,15 +11,6 @@
   items.forEach(item => item.classList.add('activity-stack__layer'));
   const columns = () => Math.max(1, Math.min(maxColumns, Math.floor((root.clientWidth + gap) / (minWidth + gap))));
   function applyLayout() {
-    if (sidebar) {
-      sidebar.hidden = window.innerWidth < 1024;
-      layout.dataset.layout = sidebar.hidden ? 'no-sidebar' : 'with-sidebar';
-      if (!sidebar.hidden && columns() < 2) {
-        sidebar.hidden = true;
-        layout.dataset.layout = 'no-sidebar';
-      }
-      if (secondary) secondary.hidden = !sidebar.hidden;
-    }
     const count = columns();
     root.dataset.stackColumns = count;
     root.dataset.view = showAll ? 'all' : 'stacked';
@@ -55,6 +43,6 @@
     try { localStorage.setItem('belong-card-view', showAll ? 'all' : 'stacked'); } catch (_) {}
     applyLayout();
   });
-  window.addEventListener('resize', applyLayout);
+  window.addEventListener('belong:discovery-layout', applyLayout);
   applyLayout();
 }());

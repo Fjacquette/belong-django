@@ -45,7 +45,7 @@
       {% include 'includes/friend_list.html' with friends=friends %}
     </aside>
     {% endif %}
-    <section class="flex flex-1 flex-col gap-6 min-w-0" data-activity-frame>
+    <section class="flex flex-1 flex-col gap-6 min-w-0" data-activity-frame data-card-min-width="{{ card_layout.min_width }}">
       <form method="get" role="search" id="discovery-filters" data-query="{{ query|default:'' }}" class="space-y-1">
         <input type="hidden" name="lat" value="{{ filter_params.lat|default:'' }}">
         <input type="hidden" name="lon" value="{{ filter_params.lon|default:'' }}">
@@ -81,8 +81,10 @@
         </div>
       </form>
       <script src="{% static 'js/discovery.js' %}" defer></script>
+      <script src="{% static 'js/discovery-layout.js' %}" defer></script>
       <script src="{% static 'js/card-view.js' %}" defer></script>
 
+      <div data-activity-results>
       {% if activities %}
         <div class="activity-grid w-full"
              data-stack-root
@@ -114,6 +116,7 @@
           </div>
         </div>
       {% endif %}
+      </div>
       {% if friends %}
         <details data-friends-secondary class="text-sm">
           <summary class="cursor-pointer min-h-11 py-3 text-belong-purple">Who’s around</summary>

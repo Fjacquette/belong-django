@@ -209,7 +209,8 @@ values override conflicting legacy quick URL parameters. Advanced filters stays 
 until opened. Show all / Stack cards is a client-side view preference, persisted locally,
 that switches between a non-overlapping grid and piles without querying the server. Advanced
 filters include category, timing, location type, structured cost, and hidden-card scope. Pagination retains every
-filter. Today uses **America/New_York** (including DST), as do datetime-local
+filter. Empty results retain the same Discover/friends layout; turning a quick
+filter off restores results under the remaining search and filters. Today uses **America/New_York** (including DST), as do datetime-local
 creation fields; open-ended activities do not count as Today. Online includes
 Online and Hybrid. Free means explicitly Free, never inferred from cost prose;
 legacy activities start as Unknown.
