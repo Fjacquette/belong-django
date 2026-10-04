@@ -172,3 +172,34 @@ remains versioned.
 
 Demo credentials are development-only and belong to the explicitly seeded
 accounts. Personal browser-test accounts can also be created through signup.
+
+## Pilot discovery and presence
+
+Discover combines search, Today/Nearby/Online/Free toggles, category, timing,
+location type, structured cost, and hidden-card scope. Pagination retains every
+filter. Today uses **America/New_York** (including DST), as do datetime-local
+creation fields; open-ended activities do not count as Today. Online includes
+Online and Hybrid. Free means explicitly Free, never inferred from cost prose;
+legacy activities start as Unknown.
+
+Nearby asks for browser location when enabled, searches within **25 miles** using
+Haversine distance and `location_gps` in `latitude, longitude` format, and ignores
+missing/invalid activity coordinates. Denied, missing, or invalid device location
+leaves Nearby off with feedback. Device coordinates remain in the discovery query,
+not the user's profile. This is a local pilot filter, not production geospatial search.
+Demo fixtures contain curated cost/coordinates and varied response choices. A
+migration fills missing coordinates/unknown cost only on known seed-owned examples;
+custom GPS/explicit costs and untracked activities are preserved. It does not reseed
+accounts, images, schedules, or responses.
+
+Hide is a unique private user/activity preference. It never changes a participation
+response or informs the organizer. Normal discovery excludes hidden activities;
+Filters can include/show only hidden cards, whose Unhide action reverses the preference.
+Creators choose from six response types: Interested, Count me in, I have a question,
+Cannot make it, Tell me more, and Vote on details. The first two chosen appear directly
+on cards; Details exposes all. Clicking the selected response again clears it.
+
+Presence records authenticated HTTP requests, throttled to at most one update per
+minute: **Active** within 5 minutes, **Idle** within 30, **Offline** after 30 minutes
+or with no recorded activity. Creating a profile or changing a status does not mark
+someone Active. These are activity-based hints, not real-time/socket connection state.

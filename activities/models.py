@@ -56,11 +56,19 @@ PILOT_AUDIENCE_CHOICES = [
 ]
 
 
+class ActivityCostType(models.TextChoices):
+    UNKNOWN = "unknown", "Unknown"
+    FREE = "free", "Free"
+    PAID = "paid", "Paid"
+
+
 class ActivityResponseStatus(models.TextChoices):
     INTERESTED = "interested", "Interested"
     COMMITTED = "committed", "Count me in"
     QUESTION = "question", "I have a question"
     DECLINED = "declined", "Cannot make it"
+    MORE = "more", "Tell me more"
+    VOTE = "vote", "Vote on details"
 
 
 DEFAULT_RESPONSE_CHOICES = [
@@ -124,6 +132,7 @@ class Activity(models.Model):
     allow_friend_invites = models.BooleanField(default=True)
     allow_friend_of_friend_invites = models.BooleanField(default=False)
     is_personal_invitation = models.BooleanField(default=False)
+    cost_type = models.CharField(max_length=12, choices=ActivityCostType.choices, default=ActivityCostType.UNKNOWN)
     cost_display = models.CharField(max_length=120, blank=True)
     cost_has_details = models.BooleanField(default=False)
     accommodations = models.TextField(blank=True)
@@ -218,3 +227,12 @@ class ActivityResponse(models.Model):
 
     def __str__(self) -> str:  # pragma: no cover
         return f"{self.user} -> {self.activity} ({self.status})"
+
+
+class HiddenActivity(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="hidden_activities")
+    activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name="hidden_preferences")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("user", "activity"), name="unique_hidden_activity")]

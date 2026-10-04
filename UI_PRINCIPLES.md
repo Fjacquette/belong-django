@@ -9,3 +9,4 @@
 - Mobile is a first-class layout, not desktop squeezed narrower.
 - Avoid redundant labels, headers, badges, and explanations when context already communicates meaning.
 - Belong is not Facebook, Reddit, Meetup, or a generic SaaS dashboard.
+- Navigation uses links; mutations use buttons. Peer state-change actions share one button family. Hide is private state, separate from participation.

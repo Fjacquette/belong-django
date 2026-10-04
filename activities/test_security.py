@@ -71,7 +71,7 @@ class AudienceTests(TestCase):
         activity = self.activities[ActivityVisibility.FRIENDS]
         response = self.client.get(reverse("activities:index"), {"q": activity.description})
 
-        self.assertContains(response, "No activities yet")
+        self.assertContains(response, "No activities match")
         self.assertNotContains(response, activity.title)
         self.assertEqual(response.context["page_obj"].paginator.count, 0)
 
@@ -160,7 +160,7 @@ class ActionAndResponseTests(TestCase):
     def data(self, **overrides):
         return {
             "title": "New activity", "description": "Basic activity", "location_type": "tbd",
-            "audience": "everyone", "host": self.user.pk, **overrides,
+            "audience": "everyone", "cost_type": "unknown", "host": self.user.pk, **overrides,
         }
 
     def test_forms_model_and_admin_reject_unsafe_action_urls(self):

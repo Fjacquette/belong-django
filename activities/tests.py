@@ -95,6 +95,7 @@ class ActivityLoopTests(TestCase):
             reverse("activities:create"),
             {
                 "title": "Play a board game",
+                "cost_type": "unknown",
                 "description": "Choose a game and a time together.",
                 "location_type": ActivityLocationType.TBD,
                 "audience": ActivityVisibility.EVERYONE,

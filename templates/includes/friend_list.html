@@ -7,13 +7,11 @@
         {% else %}
           <span aria-hidden="true">{{ friend.user.get_full_name|default:friend.user.username|slice:":1"|upper }}</span>
         {% endif %}
-        {% if friend.is_recent %}
-          <span class="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-belong-teal" title="Active recently"><span class="sr-only">Active recently</span></span>
-        {% endif %}
       </div>
       <div class="flex-1 min-w-0 text-xs text-belong-slate/70">
-        <p title="{{ friend.user.get_full_name|default:friend.user.username }}" class="text-sm font-semibold text-belong-slate truncate">{{ friend.user.get_full_name|default:friend.user.username }}</p>
-        {% if friend.status %}<p class="truncate" title="{{ friend.status }}">{{ friend.status }}</p>{% endif %}
+        <p tabindex="0" title="{{ friend.user.get_full_name|default:friend.user.username }}" class="text-sm font-semibold text-belong-slate truncate">{{ friend.user.get_full_name|default:friend.user.username }}</p>
+        {% if friend.status %}<p tabindex="0" class="truncate" title="{{ friend.status }}">{{ friend.status }}</p>{% endif %}
+        <p class="flex items-center gap-1 text-belong-slate/70" title="{{ friend.presence_help }}"><span aria-hidden="true" class="h-1.5 w-1.5 rounded-full {% if friend.presence == 'Active' %}bg-belong-teal{% elif friend.presence == 'Idle' %}bg-belong-purple{% else %}bg-belong-slate/40{% endif %}"></span>{{ friend.presence }}</p>
         {% if friend.last_active %}<p class="text-belong-slate/60">{{ friend.last_active|timesince }} ago</p>{% endif %}
       </div>
     </div>

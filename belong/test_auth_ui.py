@@ -53,7 +53,8 @@ class AuthScreenTests(TestCase):
         header = response.content.decode().split("<header", 1)[1].split("</header>", 1)[0]
         primary = header.split("<details", 1)[0]
         self.assertIn("Discover", primary)
-        self.assertIn(">Create</a>", primary)
+        self.assertNotIn(">Create</a>", primary)
+        self.assertContains(response, 'aria-label="Create activity"')
         self.assertNotIn("Logout", primary)
         self.assertNotIn("Categories", header)
         account = header.split("<details", 1)[1]

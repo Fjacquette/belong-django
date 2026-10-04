@@ -4,6 +4,7 @@
   <div class="flex flex-col lg:flex-row gap-10">
     {% if friends %}
       <aside class="hidden xl:block w-[220px] flex-shrink-0">
+        <p class="text-sm text-belong-slate/70 mb-2">Who’s around</p>
         {% include 'includes/friend_list.html' with friends=friends %}
       </aside>
     {% endif %}

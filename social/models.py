@@ -13,7 +13,7 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     status_text = models.CharField(max_length=160, blank=True)
     is_visible = models.BooleanField(default=True)
-    last_active_at = models.DateTimeField(default=timezone.now)
+    last_active_at = models.DateTimeField(null=True, blank=True)
     status_updated_at = models.DateTimeField(default=timezone.now)
     avatar_image = models.ForeignKey(
         "media_assets.ImageAsset",

@@ -7,6 +7,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
+from django.utils.http import url_has_allowed_host_and_scheme
+from .discovery import filter_activities
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -17,6 +19,8 @@ from .forms import ActivityForm
 from .visibility import visible_activities
 from .models import (
     Activity,
+    ActivityCostType,
+    HiddenActivity,
     ActivityCategory,
     ActivityLocationType,
     ActivityResponse,
@@ -78,14 +82,17 @@ def _friend_context(user) -> List[Dict[str, object]]:
     now = timezone.now()
     result = []
     for profile in profiles:
-        last_active = profile.last_active_at or profile.status_updated_at
+        last_active = profile.last_active_at
+        age = (now - last_active) if last_active else None
+        presence = "Active" if age is not None and age <= timedelta(minutes=5) else "Idle" if age is not None and age <= timedelta(minutes=30) else "Offline"
         result.append(
             {
                 "user": profile.user,
                 "profile": profile,
                 "status": profile.status_text,
                 "last_active": last_active,
-                "is_recent": last_active and (now - last_active) <= timedelta(minutes=20),
+                "presence": presence,
+                "presence_help": "Authenticated activity within 5 minutes" if presence == "Active" else "Authenticated activity within 30 minutes" if presence == "Idle" else "No authenticated activity within 30 minutes",
             }
         )
     return result
@@ -110,24 +117,23 @@ def _build_join_context(request: HttpRequest, activity: Activity) -> Dict[str, o
 
     current_status = current_response.status if current_response else None
 
+    activity.is_hidden = HiddenActivity.objects.filter(user=request.user, activity=activity).exists()
     activity.is_joined = current_response is not None
     activity.attendee_count = attendee_count
 
     return {
         "activity": activity,
         "attendee_count": attendee_count,
+        "response_count": len(responses),
+        "response_counts_label": "; ".join(f"{label}: {sum(r.status == value for r in responses)}" for value, label in ActivityResponseStatus.choices),
         "interested_count": interested_count,
         "committed_count": committed_count,
         "joined": activity.is_joined,
         "current_status": current_status,
         "current_status_label": RESPONSE_LABELS.get(current_status, ""),
         "response_options": response_options,
-        "card_response_options": [
-            option
-            for value in (ActivityResponseStatus.INTERESTED, ActivityResponseStatus.COMMITTED)
-            for option in response_options
-            if option["value"] == value
-        ],
+        "card_response_options": response_options[:2],
+        "next_path": request.POST.get("next", reverse("activities:index")) if request.method == "POST" else request.get_full_path(),
     }
 
 
@@ -136,6 +142,8 @@ def _annotate_join_data(request: HttpRequest, activities: List[Activity]) -> Non
         _decorate_activity(activity)
         context = _build_join_context(request, activity)
         activity.j_attendee_count = context["attendee_count"]
+        activity.j_response_count = context["response_count"]
+        activity.j_response_counts_label = context["response_counts_label"]
         activity.j_interested_count = context["interested_count"]
         activity.j_committed_count = context["committed_count"]
         activity.j_joined = context["joined"]
@@ -159,11 +167,22 @@ def index(request: HttpRequest) -> HttpResponse:
         )
     )
 
-    category_slug = request.GET.get("category")
+    params = request.GET.copy()
+    hidden_mode = params.get("hidden", "exclude")
+    hidden_ids = HiddenActivity.objects.filter(user=request.user).values("activity_id")
+    if hidden_mode == "only":
+        activities_qs = activities_qs.filter(pk__in=hidden_ids)
+    elif hidden_mode != "include":
+        activities_qs = activities_qs.exclude(pk__in=hidden_ids)
+    activities_qs, nearby, filter_warning = filter_activities(activities_qs, params)
+    if not nearby:
+        for name in ("nearby", "lat", "lon"):
+            params.pop(name, None)
+    category_slug = params.get("category")
     if category_slug:
         activities_qs = activities_qs.filter(category__slug=category_slug)
 
-    query = request.GET.get("q")
+    query = params.get("q")
     if query:
         activities_qs = activities_qs.filter(
             Q(title__icontains=query)
@@ -180,6 +199,11 @@ def index(request: HttpRequest) -> HttpResponse:
 
     activities = list(page_obj.object_list)
     _annotate_join_data(request, activities)
+    hidden_set = set(hidden_ids.values_list("activity_id", flat=True))
+    for activity in activities:
+        activity.is_hidden = activity.pk in hidden_set
+    pagination_params = params.copy()
+    pagination_params.pop("page", None)
 
     context = {
         "page_obj": page_obj,
@@ -187,6 +211,13 @@ def index(request: HttpRequest) -> HttpResponse:
         "friends": _friend_context(request.user),
         "categories": ActivityCategory.objects.all().order_by("name"),
         "active_category": category_slug,
+        "filter_params": params,
+        "filter_warning": filter_warning,
+        "quick_filters": [{"name": name, "label": label, "active": params.get(name) == "1"}
+                          for name, label in [("today", "Today"), ("nearby", "Nearby"), ("online", "Online"), ("free", "Free")]],
+        "location_choices": ActivityLocationType.choices,
+        "cost_choices": ActivityCostType.choices,
+        "pagination_query": pagination_params.urlencode(),
         "query": query,
     }
     return render(request, "activities/index.html", context)
@@ -257,11 +288,11 @@ def respond(request: HttpRequest, pk: int) -> HttpResponse:
     if not status or status not in allowed:
         return _render_join_region(request, activity)
 
-    ActivityResponse.objects.update_or_create(
-        user=request.user,
-        activity=activity,
-        defaults={"status": status},
-    )
+    existing = ActivityResponse.objects.filter(user=request.user, activity=activity).first()
+    if existing and existing.status == status:
+        existing.delete()
+    else:
+        ActivityResponse.objects.update_or_create(user=request.user, activity=activity, defaults={"status": status})
     return _render_join_region(request, activity)
 
 
@@ -302,3 +333,19 @@ def _render_join_region(request: HttpRequest, activity: Activity) -> HttpRespons
     context = _build_join_context(request, activity)
     context["variant"] = variant
     return render(request, "activities/_join_region.html", context)
+
+
+@login_required
+@require_POST
+def hide(request: HttpRequest, pk: int) -> HttpResponse:
+    activity = get_object_or_404(visible_activities(request.user), pk=pk)
+    if request.POST.get("hidden") == "0":
+        HiddenActivity.objects.filter(user=request.user, activity=activity).delete()
+    else:
+        HiddenActivity.objects.get_or_create(user=request.user, activity=activity)
+    destination = request.POST.get("next", "")
+    if not url_has_allowed_host_and_scheme(destination, {request.get_host()}, require_https=request.is_secure()):
+        destination = reverse("activities:index")
+    if request.headers.get("HX-Request") == "true":
+        return HttpResponse(headers={"HX-Refresh": "true"})
+    return redirect(destination)
