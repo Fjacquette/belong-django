@@ -14,6 +14,7 @@ from scripts.local_env import (
     initialize_local_config,
     local_environment,
     refresh_test,
+    present_test,
     start,
     test_checkout as browser_checkout,
 )
@@ -128,12 +129,17 @@ class BrowserWorktreeTests(SimpleTestCase):
         self.git(self.origin, "init", "-b", "master")
         self.git(self.origin, "config", "user.name", "Local Test")
         self.git(self.origin, "config", "user.email", "test@example.invalid")
-        (self.origin / ".gitignore").write_text(".worktrees/\n.env.local\n.django-secret-key\n*.sqlite3\n")
+        (self.origin / ".gitignore").write_text(".worktrees/\n.belong-runtime/\n.env.local\n.django-secret-key\n*.sqlite3\n")
         (self.origin / "source.txt").write_text("initial master\n")
         self.git(self.origin, "add", ".")
         self.git(self.origin, "commit", "-m", "Initial master")
         self.git(root, "clone", str(self.origin), str(self.repo))
         self.git(self.repo, "switch", "-c", "feature-under-development")
+        self.git(self.repo, "config", "user.name", "Local Test")
+        self.git(self.repo, "config", "user.email", "test@example.invalid")
+        free_port = patch("scripts.browser_server.require_free_port")
+        free_port.start()
+        self.addCleanup(free_port.stop)
 
     def git(self, root, *args):
         return subprocess.run(
@@ -220,3 +226,78 @@ class BrowserWorktreeTests(SimpleTestCase):
                 with self.assertRaisesMessage(ValueError, "separate database"):
                     start(self.repo, environment)
                 self.assertEqual(shared_db.read_bytes(), b"preserve this data")
+
+    def test_present_feature_and_return_to_master_preserve_main_and_test_data(self):
+        refresh_test(self.repo)
+        checkout = browser_checkout(self.repo)
+        files = [checkout / name for name in (".env.local", ".django-secret-key", "db.sqlite3")]
+        files[-1].write_bytes(b"persistent test data")
+        original = [p.read_bytes() for p in files]
+        (self.repo / "source.txt").write_text("finished feature")
+        self.git(self.repo, "commit", "-am", "Feature")
+        feature = git_output(self.repo, "rev-parse", "HEAD")
+        with patch("scripts.local_env.prepare", return_value=({}, None)), patch("scripts.browser_server.launch") as launch:
+            present_test(self.repo)
+            launch.assert_called_once_with(self.repo, checkout, {}, feature)
+        self.assertEqual(git_output(checkout, "rev-parse", "HEAD"), feature)
+        self.assertEqual(git_output(checkout, "branch", "--show-current"), "")
+        self.advance_master()
+        refresh_test(self.repo)
+        self.assertEqual(git_output(checkout, "branch", "--show-current"), "browser-test")
+        self.assertEqual(git_output(checkout, "rev-parse", "HEAD"), git_output(self.origin, "rev-parse", "HEAD"))
+        self.assertEqual(git_output(self.repo, "rev-parse", "HEAD"), feature)
+        self.assertEqual(git_output(self.repo, "branch", "--show-current"), "feature-under-development")
+        self.assertEqual([p.read_bytes() for p in files], original)
+
+    def test_present_creates_detached_worktree_without_fetching_or_changing_dev(self):
+        with patch("scripts.local_env.prepare", return_value=({}, None)), patch("scripts.browser_server.launch"):
+            present_test(self.repo)
+        self.assertEqual(git_output(browser_checkout(self.repo), "rev-parse", "HEAD"), git_output(self.repo, "rev-parse", "HEAD"))
+        refresh_test(self.repo)
+        self.assertEqual(git_output(browser_checkout(self.repo), "branch", "--show-current"), "browser-test")
+
+    def test_present_refuses_dirty_main_or_test_source(self):
+        (self.repo / "source.txt").write_text("unfinished")
+        with self.assertRaisesMessage(ValueError, "uncommitted source"):
+            present_test(self.repo)
+        self.assertFalse(browser_checkout(self.repo).exists())
+        self.git(self.repo, "restore", "source.txt")
+        refresh_test(self.repo)
+        (browser_checkout(self.repo) / "source.txt").write_text("test work")
+        with patch("scripts.browser_server.stop") as stop:
+            with self.assertRaisesMessage(ValueError, "source changes"):
+                present_test(self.repo)
+            stop.assert_not_called()
+
+    def test_present_refuses_untracked_main_source(self):
+        (self.repo / "unfinished.py").write_text("source")
+        with self.assertRaisesMessage(ValueError, "uncommitted source"):
+            present_test(self.repo)
+
+    def test_present_preserves_ignored_files_when_feature_tracks_them(self):
+        refresh_test(self.repo)
+        checkout = browser_checkout(self.repo)
+        before = (checkout / ".env.local").read_bytes()
+        (self.repo / ".env.local").write_text("different config")
+        self.git(self.repo, "add", "-f", ".env.local")
+        self.git(self.repo, "commit", "-m", "Conflicting source")
+        with self.assertRaises(subprocess.CalledProcessError):
+            present_test(self.repo)
+        self.assertEqual((checkout / ".env.local").read_bytes(), before)
+
+    def test_detached_local_commits_are_not_abandoned(self):
+        with patch("scripts.local_env.prepare", return_value=({}, None)), patch("scripts.browser_server.launch"):
+            present_test(self.repo)
+        checkout = browser_checkout(self.repo)
+        (checkout / "source.txt").write_text("local test commit")
+        self.git(checkout, "commit", "-am", "Preserve test work")
+        commit = git_output(checkout, "rev-parse", "HEAD")
+        with self.assertRaisesMessage(ValueError, "local commits"):
+            refresh_test(self.repo)
+        self.assertEqual(git_output(checkout, "rev-parse", "HEAD"), commit)
+
+    def test_refresh_restarts_a_managed_server_at_master(self):
+        refresh_test(self.repo)
+        with patch("scripts.browser_server.stop", return_value=True), patch("scripts.local_env.prepare", return_value=({}, None)), patch("scripts.browser_server.launch") as launch:
+            refresh_test(self.repo)
+            launch.assert_called_once_with(self.repo, browser_checkout(self.repo), {}, git_output(self.repo, "rev-parse", "origin/master"))
