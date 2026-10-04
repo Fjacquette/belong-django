@@ -33,3 +33,6 @@ wheels/
 Thumbs.db
 *:Zone.Identifier
 *.log
+
+# Persistent local browser-test checkout
+/.worktrees/
