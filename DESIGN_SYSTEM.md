@@ -105,40 +105,79 @@ Use checkbox semantics with a consistent filter-chip visual family and obvious
 selected state. Do **not** use a row of boolean chips when the underlying concepts
 are really multi-valued filter dimensions.
 
-### Discovery dimension selector
-Purpose: choose one value from a compact multi-valued discovery dimension.
-Use native select/combobox semantics and the standard field/control geometry.
-Changing a discovery dimension applies immediately; free-text search remains
-explicit and submits only on Search/Enter.
+### Discovery facet menus
 
-Current visible discovery dimensions:
-- **When:** Any time / Now / Today / Tomorrow / This week / This weekend / Open-ended
-- **Where:** Anywhere / Near me / Online. Keep this a single flat selector.
-  - Anywhere applies no location constraint.
-  - Near me uses the current 25-mile pilot radius and matches in-person or hybrid activities with usable coordinates.
-  - Online matches online or hybrid activities.
-  Do not expose an `In person` option: physical participation is already implied by
-  the proximity choice, and a separate implementation-mode filter adds UI without
-  expressing a distinct user intent.
-- **Cost:** Any / Free / Paid / Unknown
-- **Open to:** Any / Everyone / Friends only / Friends of friends
+Discovery filters are **faceted multi-select menus**, not ordinary single-select
+dropdowns.
+
+Each visible facet is one compact menu trigger. Opening it reveals independent
+checkbox choices. The user may select zero, one, or several choices within a facet.
+
+Semantics:
+- zero selections in a facet = no restriction for that dimension; do not add fake
+  `Any` / `Anywhere` choices just to represent the empty state
+- multiple choices within one facet combine with **OR**
+- different facets combine with **AND**
+- changes apply immediately
+- free-text search remains explicit and submits only on Search/Enter
+- the closed trigger must visibly summarize active state (for example a short value
+  when one choice is selected, or a count when several are selected)
+- menus must use native checkbox semantics and remain keyboard/touch accessible
+
+Current visible facets:
+
+**When**
+- Now
+- Today
+- Tomorrow
+- This week
+- This weekend
+- Open-ended
+
+**Where**
+- Online
+- Under 1 mile
+- 1–3 miles
+- 3–5 miles
+- 5–10 miles
+- 10–25 miles
+- 25+ miles
+
+Distance buckets represent approximate physical distance from the user's location.
+In-person activities match the appropriate distance bucket. Hybrid activities may
+match both Online and their physical-distance bucket. Activities without usable
+coordinates cannot match a distance bucket.
+
+**Cost**
+- Free
+- $1–10
+- $11–25
+- $26–50
+- $51–100
+- $100+
+
+Cost is an accessibility dimension, not merely Free/Paid decoration. Filtering must
+be backed by structured numeric cost data; do not infer tiers by parsing arbitrary
+display text. Preserve a human-readable cost display for card copy, but add structured
+numeric amount/range data to the activity model/forms as needed. Unknown/unstructured
+cost does not silently match a numeric tier.
+
+**Open to**
+- Everyone
+- Friends only
+- Friends of friends
 
 Free-text search answers the primary **what** question. Category remains part of the
-data/search model but is not a permanently visible discovery selector by default.
-If category browsing later proves important, surface it contextually rather than
-adding another always-visible control.
+data/search model but is not a permanently visible discovery facet by default.
 
-These are canonical dimensions. Do not duplicate the same state elsewhere.
+The product does **not** need an Advanced filters panel while these facets cover the
+active discovery dimensions. Hidden activities remain private list-management state
+with a separate quiet recovery control.
 
-The current product does **not** need an Advanced filters panel once these selectors
-exist. Remove it rather than preserving an empty abstraction.
-
-Hidden activities are not a discovery dimension; they are private list-management
-state. Give them a separate quiet recovery control such as `Show hidden` / `Hidden
-activities`, visually and semantically distinct from the discovery selectors.
-Future genuinely advanced search capabilities (for example custom date ranges) may
-justify a new secondary control later, but do not keep an Advanced filters panel in
-anticipation of hypothetical features.
+This tiered model is intentional: Belong is designed for people whose mobility and
+means may be constrained. A free or $5 activity within a mile is materially different
+from a $100 activity several miles away; the interface must preserve that distinction
+rather than collapsing cost to Free/Paid or distance to Nearby/Not nearby.
 
 ### Mutually exclusive view selector
 Purpose: choose exactly one display mode.
