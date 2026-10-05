@@ -316,11 +316,14 @@ base class rather than duplicating height/border/color recipes in templates.
 | Floating Create | `ui-fab` (48px) |
 | Geometry | `ui-page-gutter`, `ui-cluster` |
 
-Cards retain 400px height. Their 112px footer has two 36px action rows around a
-16px information line, with 4px internal gaps; card actions use rounded-lg.
-Top bands are 80px identity/logistics + 48px organizer/audience/cost. The 128px
-stack offset exposes both bands on covered cards. Lower bands contain artwork,
-headline/description, and actions. Truncated card values expose full text through
+Cards retain 400px height and the baseline 80/48/128/80/64px bands. Their
+64px footer has one 36px action row and a 16px information line, with a 4px
+internal gap and 4px vertical padding; card actions use rounded-lg. Direct
+response toggles share the row with the Actions disclosure for private mutations
+and removal of a later response. Details navigation belongs in the body band.
+Top bands are 80px title/subtitle + 48px organizer/audience and when/where/cost.
+The 128px stack offset exposes both bands on covered cards. Lower bands contain
+artwork, description/navigation, and actions. Truncated card values expose full text through
 the shared keyboard/pointer tooltip, retaining native title fallback without JS.
 Advanced filters and view selection share a utility line; mobile wraps by cluster,
 and the expanded filter panel spans the content frame.
