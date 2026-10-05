@@ -141,58 +141,120 @@ Do not introduce unrelated blue/gray component-library colors into normal produc
 Color cannot be the only state indicator. Selected/pressed controls must also expose
 state through fill, border, text, shape, check/radio state, or another visible cue.
 
-## 7. Activity-card information hierarchy
+## 7. Activity-card architecture and information hierarchy
 
-The first one or two card bands must answer the user's first-pass decision questions
-without requiring Details, **without discarding the activity's useful subtitle/headline**.
+The historical Belong card prototypes are the visual/product reference for card
+architecture. Preserve their useful structure while applying the current design
+system and current product semantics.
 
-When known, these facts belong in the top two bands:
-1. activity/event name
-2. subtitle/headline
-3. organizer
-4. intended audience / who it is open to
-5. cost
-6. time/date
-7. location or Online
+### Overall proportions
 
-Recommended hierarchy:
+The card is a portrait-format scanning object. The current width is useful; allow
+the standard card to become somewhat taller so information and actions do not fight
+for space.
 
-### Band 1 — identity
-- activity title: dominant, max two lines
-- activity subtitle/headline directly beneath it when present
+Use **approximately 440px standard height at the current preferred desktop width**
+as the next baseline. Tune only through browser review; do not widen a card merely
+because result count is low. The target should remain comfortable on modern phones.
 
-The title may remain the navigation link to Details, but it must **not** use a
-permanent underlined-link treatment. The card title is an established navigation
-pattern; use normal title typography with hover/focus affordance instead of making
-the headline look like body-copy hyperlink text.
+### Band 1 — activity identity + primary logistics
 
-### Band 2 — people + logistics
-Use the compact metadata area for two scannable lines, for example:
-- `Janine · Friends of friends`
-- `Sat Oct 10, 10 AM · Ridley Creek · Free`
+Band 1 contains:
+- the **activity/event name**
+- directly beneath it, a compact **when · where** subheader
 
-This band must communicate organizer, audience, cost, when, and where/Online when
-known. An organizer avatar is optional and must not crowd out those facts.
+When and where are the most important first-pass facts after the activity name.
+This deliberately follows the strongest historical Belong prototypes.
 
-Use explicit, human-readable fallbacks when information is unresolved:
-- Date TBD / Anytime
-- Location TBD / Online
-- Cost TBD or Free/Paid where structured data supports it
+Examples:
+`Sat Oct 10, 10 AM · Ridley Creek`
+`Now · Online`
+`Date TBD · Hershey, PA`
 
-Do not move the subtitle/headline into the description band merely to make room for
-metadata. The top of the card should retain both identity/personality and decision
-information.
+Do not use the generic `headline` field as a card subtitle. It may remain in the
+data model/details, but it is not entitled to scarce card space.
 
-Truncation may be used for density, but every truncated value must expose the full
-value on hover/focus as already required by UI_PRINCIPLES.md.
+The title may navigate to Details, but it should retain title typography rather
+than permanent underlined-link styling.
+
+A two-color gradient/fade using the card's primary/secondary colors is an
+encouraged Belong treatment where it works visually.
+
+### Band 2 — organizer + participation context
+
+Band 2 contains the remaining high-value decision information:
+1. organizer
+2. audience / who it is open to
+3. cost
+
+Two compact readable lines are usually sufficient, for example:
+`Organized by Janine Smith`
+`Friends of friends · Free`
+
+The organizer avatar is optional. Use it only when it does not force core metadata
+to truncate. The information outranks decoration.
+
+Core decision facts must be understandable without hover/focus. Shorten presentation,
+rebalance lines, or remove decoration before truncating essential meaning.
+
+Use explicit unresolved states such as Date TBD, Location TBD, Online, Cost TBD.
+
+### Band 3 — image
+
+The image remains a major visual element and should not be cannibalized to make room
+for controls. Preserve roughly the original/prototype visual prominence.
+
+Artwork uses `object-cover`, so some cropping is inherent. Do not shrink the image
+viewport so far that normal subject matter is routinely cut off.
+
+### Band 4 — useful description
+
+Band 4 should have enough height for several useful lines of description.
+
+- Prefer roughly 4–6 readable lines at standard card size.
+- Do not spend this band on a generic subtitle/headline.
+- Optional external/context link(s) may appear here only when they materially help
+  understand the activity; do not crowd the description with platform controls.
+
+### Band 5 — take action
+
+Band 5 is reserved for **one or two actions specific to this activity**.
+
+Examples from historical prototypes include:
+- I'm interested
+- Tell me more
+- Join on Discord
+- Join the club
+- Not for me
+
+Rules:
+- maximum two primary actions on the card
+- labels must be fully readable; never ellipsize action labels
+- actions use one coherent button geometry/family
+- stateful response actions expose selected state
+- external/action links rendered as primary activity actions may use the same
+  footprint but must expose their navigation/external semantics appropriately
+- do not place Details, Hide/Unhide, generic Actions, response counts, or other
+  platform utility controls in the take-action band
+- if the activity has more than two possible responses/actions, choose the one or
+  two most useful direct actions and expose the rest on Details
+
+Platform utilities are secondary to the activity itself:
+- Details is available through the title/card navigation pattern and/or another
+  clearly separated navigation affordance outside Band 5
+- Hide/Unhide and other private/infrequent platform actions belong in a secondary
+  card utility/menu outside Band 5
+- response counts are information, not actions
+
+The card should visually answer:
+**What is this? Who is it for? When/where is it? What will it cost? What can I do?**
 
 ## 7A. Activity-card sizing and grid behavior
 
 Activity cards are fixed-format scanning objects, not fluid content panels. Their
 visual proportions must remain stable as the result count changes.
 
-- Define a preferred card width and a maximum card width from the existing card layout
-  variables/design tokens.
+- Define a preferred/max card width from the existing card layout variables/design tokens.
 - A single matching activity must render as one normal-width card; it must **not**
   stretch to fill the entire activity-results frame.
 - Card/grid columns may become narrower down to the defined mobile/minimum width when
@@ -204,60 +266,28 @@ visual proportions must remain stable as the result count changes.
   centering a lone card in a way that breaks alignment with search/results controls.
 - Stacked and Spread out modes use the same underlying card width; view mode changes
   overlap/layout only, not card proportions.
+- **Stacked mode must expose all of Bands 1 and 2 on every card in the pile.** The
+  stack offset should therefore equal (or closely track) the combined height of the
+  first two bands. A covered card must still reveal activity name, when/where,
+  organizer, audience, and cost.
 - Filtering from many results to one or zero must not cause surrounding controls,
   Who's around, gutters, or card geometry to jump unpredictably.
 
-A card's information density and band hierarchy are designed around this stable width;
-responsive behavior should adapt columns/wrapping rather than turn the card into a
-full-width banner.
+## 8. Activity-card actions and secondary utilities
 
-## 8. Activity-card actions
+The take-action band follows Band 5 rules above. Secondary platform controls must
+remain secondary and must not re-enter that band.
 
-Card actions are a distinct compact system, not a collection of unrelated controls.
+- current selected response must be visible
+- clicking a selected direct response may clear it
+- if a historical/current response is no longer directly offered, show that state
+  coherently on Details rather than cluttering the compact card
+- secondary card utilities use one consistent secondary-actions pattern outside the
+  take-action band
+- do not mix response buttons, menu triggers, tiny mutation controls, and navigation
+  links in one row merely because they all happen to be clickable
 
-- response choices shown directly are peer state-changing actions and use one compact
-  button family/height
-- current selected response must be visually obvious
-- clicking the selected visible response may clear it; do not also show a tiny remove X
-- if the current response is not directly shown, display the current state clearly and
-  provide a coherent change/remove action
-- response counts are information, never controls
-- **the bottom action band contains actions, not navigation links**
-- Details is navigation and must live outside the response/action button row, such as
-  the descriptive/body band or another clearly separated navigation affordance
-- Hide/Unhide is a quiet private mutation; use the quiet-action family or an appropriate
-  secondary-actions menu
-- do not mix full-size pills, tiny buttons, icon-only cancellation, and pseudo-links
-  arbitrarily in one footer
-- the compact Actions disclosure shares the response row; its action panel opens
-  above the footer within the card, leaving room for a state/count line
-- do not add a second full row of controls merely to fit every possible action; use
-  hierarchy, Details, or a secondary-actions menu for less-frequent actions
-
-Compactness comes from hierarchy and omission, not from shrinking random controls
-or taking space away from the activity image.
-
-## 8A. Card band geometry
-
-The 400px card's visual balance is part of the Belong design. Do not grow controls
-by cannibalizing the image.
-
-Baseline proportions are the pre-redesign proportions:
-- Band 1: 20% / 80px
-- Band 2: 12% / 48px
-- **Image band: 32% / 128px**
-- descriptive/body band: 20% / 80px
-- **action/footer band: 16% / 64px**
-
-The image band should remain approximately 128px on the standard desktop card.
-Do not reduce it to 96px to make room for a multi-row footer.
-
-The footer should fit its primary card actions within the compact action allocation.
-If it does not fit, simplify the action hierarchy rather than increasing the footer
-and shrinking the image.
-
-Artwork uses `object-cover`, so cropping is already inherent; reducing the image
-viewport compounds that crop and is not an acceptable way to solve control layout.
+Compactness comes from hierarchy and omission, not from shrinking random controls.
 
 ## 9. Forms
 
@@ -294,39 +324,6 @@ Keyboard focus must be visible. State must be exposed to assistive technology an
 visually apparent.
 
 ## 12. Review rule
-
-### Implemented families
-
-`assets/tailwind.css` owns the shared component classes. Use modifiers with the
-base class rather than duplicating height/border/color recipes in templates.
-
-| Role | Classes |
-| --- | --- |
-| Primary action | `ui-button ui-button--primary` |
-| Secondary action | `ui-button ui-button--secondary` |
-| Quiet/private mutation | `ui-button ui-button--quiet` |
-| Card action (36px) | `ui-button--compact` modifier |
-| Form action (44px) | `ui-button--comfortable` modifier |
-| Response state | `ui-button ui-response` with `aria-pressed` |
-| Navigation | `ui-link`; `ui-link--inverse` on dark surfaces |
-| Field | `ui-field`; `ui-check` for standalone checkboxes |
-| Menu/disclosure | `ui-menu-trigger`, `ui-menu-panel`, `ui-disclosure` |
-| Boolean filter | `ui-filter` wrapping a native checkbox |
-| View mode | `ui-segmented`, native radio + `ui-segment` |
-| Floating Create | `ui-fab` (48px) |
-| Geometry | `ui-page-gutter`, `ui-cluster` |
-
-Cards retain 400px height and the baseline 80/48/128/80/64px bands. Their
-64px footer has one 36px action row and a 16px information line, with a 4px
-internal gap and 4px vertical padding; card actions use rounded-lg. Direct
-response toggles share the row with the Actions disclosure for private mutations
-and removal of a later response. Details navigation belongs in the body band.
-Top bands are 80px title/subtitle + 48px organizer/audience and when/where/cost.
-The 128px stack offset exposes both bands on covered cards. Lower bands contain
-artwork, description/navigation, and actions. Truncated card values expose full text through
-the shared keyboard/pointer tooltip, retaining native title fallback without JS.
-Advanced filters and view selection share a utility line; mobile wraps by cluster,
-and the expanded filter panel spans the content frame.
 
 A UI change is not complete if it merely "works."
 
