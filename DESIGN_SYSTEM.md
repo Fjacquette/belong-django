@@ -113,7 +113,11 @@ explicit and submits only on Search/Enter.
 
 Current visible discovery dimensions:
 - **When:** Any time / Now / Today / Tomorrow / This week / This weekend / Open-ended
-- **Where:** combines location mode and proximity; examples include Anywhere / Nearby / Online / In person. A Nearby choice may expose a radius such as 5 / 10 / 25 / 50 miles without creating a second permanent top-level selector.
+- **Where:** Anywhere / Near me / Online / In person. Selecting Near me reveals a
+  secondary radius choice such as 5 / 10 / 25 / 50 miles without creating a second
+  permanent top-level selector. Hybrid activities may match both Online and In person
+  because both participation modes are available. Nearby matching should include
+  in-person or hybrid activities with usable coordinates.
 - **Cost:** Any / Free / Paid / Unknown
 - **Open to:** Any / Everyone / Friends only / Friends of friends
 
@@ -220,8 +224,11 @@ Two compact readable lines are usually sufficient, for example:
 `Organized by Janine Smith`
 `Friends of friends · Free`
 
-The organizer avatar is optional. Use it only when it does not force core metadata
-to truncate. The information outranks decoration.
+The organizer/profile image is part of the social identity of the activity and should
+remain in Band 2 when available. Use the compact avatar treatment from the original
+Belong cards and design the metadata lines around it. Do not remove the organizer
+image merely to make a poor metadata layout fit; instead shorten/rebalance metadata
+presentation while keeping the core facts readable.
 
 Core decision facts must be understandable without hover/focus. Shorten presentation,
 rebalance lines, or remove decoration before truncating essential meaning.
