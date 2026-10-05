@@ -2,7 +2,7 @@
 <div class="activity-card relative rounded-[22px] border border-white/60 shadow-soft overflow-hidden"
      style="--card-primary: {{ primary }}; --card-secondary: {{ secondary }};">
   <div class="activity-card__band-1 flex flex-col justify-center gap-1 items-center text-center text-white font-body" style="padding: 8px 12px;">
-    <h2 class="activity-card__headline font-body font-semibold w-full"><a href="{% url 'activities:detail' activity.pk %}" title="{{ activity.title }}" class="ui-link ui-link--inverse">{{ activity.title }}</a></h2>
+    <h2 class="activity-card__headline font-body font-semibold w-full"><a href="{% url 'activities:detail' activity.pk %}" title="{{ activity.title }}" class="activity-card__title-link">{{ activity.title }}</a></h2>
     {% if activity.display_subline %}
       <p tabindex="0" title="{{ activity.display_subline }}" class="activity-card__subtitle font-body text-white truncate w-full">{{ activity.display_subline }}</p>
     {% endif %}
@@ -20,8 +20,8 @@
         {% endif %}
       </div>
       <div class="min-w-0 flex-1 text-left">
-        <p tabindex="0" title="{{ activity.organizer_name|default:activity.host.get_full_name|default:activity.host.username }}" class="truncate font-body activity-card__meta"><span class="sr-only">Organized by </span><strong class="font-semibold">{{ activity.organizer_name|default:activity.host.get_full_name|default:activity.host.username }}</strong></p>
-        <p tabindex="0" title="{{ activity.display_audience }} · {{ activity.display_cost }}" class="truncate activity-card__meta">{{ activity.display_audience }} · {{ activity.display_cost }}</p>
+        <p tabindex="0" title="{{ activity.organizer_name|default:activity.host.get_full_name|default:activity.host.username }} · {{ activity.display_audience }}" class="truncate font-body activity-card__meta"><span class="sr-only">Organized by </span><strong class="font-semibold">{{ activity.organizer_name|default:activity.host.get_full_name|default:activity.host.username }}</strong> · {{ activity.display_audience }}</p>
+        <p tabindex="0" title="{{ activity.display_when_where }} · {{ activity.display_cost }}" class="truncate activity-card__meta">{{ activity.display_when_where }} · {{ activity.display_cost }}</p>
       </div>
     </div>
   </div>
@@ -35,13 +35,15 @@
     {% endif %}
   </div>
   <div class="activity-card__band-4 flex flex-col justify-center gap-1 bg-white/70 text-black font-body activity-card__body" style="padding: 4px 12px;">
-    {% if activity.headline %}<p class="truncate text-xs font-semibold" tabindex="0" title="{{ activity.headline }}">{{ activity.headline }}</p>{% endif %}
-    <p tabindex="0" title="{{ activity.description }}" aria-label="{{ activity.description }}" class="activity-card__description{% if activity.action1_url or activity.headline %} activity-card__description--with-action{% endif %}">{{ activity.description|truncatechars:320 }}</p>
+    <p tabindex="0" title="{{ activity.description }}" aria-label="{{ activity.description }}" class="activity-card__description">{{ activity.description|truncatechars:320 }}</p>
+    <div class="ui-cluster text-xs flex-nowrap shrink-0">
+      <a href="{% url 'activities:detail' activity.pk %}" title="Full details and all response choices" class="ui-link shrink-0">Details</a>
     {% if activity.action1_url %}
       <a href="{{ activity.action1_href }}" title="{{ activity.action1_label|default:'More information' }}" class="ui-link block text-xs truncate shrink-0">{{ activity.action1_label|default:'More information' }}</a>
     {% endif %}
+    </div>
   </div>
-  <div class="activity-card__band-5 bg-white/90 flex items-center justify-center activity-card__cta" style="padding: 8px 12px;">
+  <div class="activity-card__band-5 bg-white/90 flex items-center justify-center activity-card__cta" style="padding: 4px 12px;">
     {% include 'activities/_join_region.html' with activity=activity variant='card' %}
   </div>
 </div>

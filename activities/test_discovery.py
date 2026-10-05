@@ -208,7 +208,7 @@ class DiscoveryTests(TestCase):
         response = self.discover({'q':'Long activity'})
         self.assertContains(response, f'title="{self.near.title}"')
         self.assertContains(response, f'title="{self.near.description}"')
-        self.assertContains(response, f'title="{self.near.organizer_name}"')
+        self.assertContains(response, f'title="{self.near.organizer_name} · {self.near.get_audience_display()}"')
         self.assertContains(response, 'Full details and all response choices')
         self.assertContains(response, '>Details</a>')
         self.assertContains(response, '>Hide</button>')

@@ -229,6 +229,8 @@ Card actions are a distinct compact system, not a collection of unrelated contro
   secondary-actions menu
 - do not mix full-size pills, tiny buttons, icon-only cancellation, and pseudo-links
   arbitrarily in one footer
+- the compact Actions disclosure shares the response row; its action panel opens
+  above the footer within the card, leaving room for a state/count line
 - do not add a second full row of controls merely to fit every possible action; use
   hierarchy, Details, or a secondary-actions menu for less-frequent actions
 

@@ -1,0 +1,16 @@
+  <div class="participation__utilities {% if variant == 'detail' %}ui-cluster{% else %}flex flex-col gap-2{% endif %}">
+    {% if current_status and variant == 'detail' or card_current_status_label %}
+      <form method="post" action="{% url 'activities:leave' activity.pk %}" hx-post="{% url 'activities:leave' activity.pk %}" hx-target="#participation-{{ activity.pk }}" hx-swap="outerHTML">
+        {% csrf_token %}
+        <input type="hidden" name="variant" value="{{ variant|default:'card' }}">
+        <input type="hidden" name="next" value="{{ next_path }}">
+        <button type="submit" class="ui-button ui-button--quiet {% if variant == 'detail' %}ui-button--comfortable{% else %}ui-button--compact{% endif %}" aria-label="Remove your response" title="Remove your response">{% if variant == 'detail' %}Remove response{% else %}Remove{% endif %}</button>
+      </form>
+    {% endif %}
+    <form method="post" action="{% url 'activities:hide' activity.pk %}" hx-post="{% url 'activities:hide' activity.pk %}">
+      {% csrf_token %}
+      <input type="hidden" name="hidden" value="{% if activity.is_hidden %}0{% else %}1{% endif %}">
+      <input type="hidden" name="next" value="{{ next_path }}">
+      <button type="submit" class="ui-button ui-button--quiet {% if variant == 'detail' %}ui-button--comfortable{% else %}ui-button--compact{% endif %}" title="{% if activity.is_hidden %}Show this activity again{% else %}Hide privately from your discovery list{% endif %}">{% if activity.is_hidden %}Unhide{% else %}Hide{% endif %}</button>
+    </form>
+  </div>

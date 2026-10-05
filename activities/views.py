@@ -55,7 +55,8 @@ def _decorate_activity(activity: Activity) -> None:
         where = activity.location_name or ", ".join(filter(None, [activity.location_city, activity.location_state])) or "Location TBD"
         if activity.location_type == ActivityLocationType.HYBRID:
             where += " / Online"
-    activity.display_subline = f"{when} · {where}"
+    activity.display_subline = activity.headline
+    activity.display_when_where = f"{when} · {where}"
     activity.display_audience = activity.get_audience_display()
     activity.display_cost = activity.cost_display or {"free": "Free", "paid": "Paid", "unknown": "Cost TBD"}.get(activity.cost_type, "Cost TBD")
 

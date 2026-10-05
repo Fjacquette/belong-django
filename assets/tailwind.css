@@ -96,7 +96,7 @@
 
   .activity-card {
     display: grid;
-    grid-template-rows: var(--band-1) var(--band-2) var(--band-3) minmax(0, 1fr) 112px;
+    grid-template-rows: var(--band-1) var(--band-2) var(--band-3) minmax(0, 1fr) var(--band-5);
     width: 100%;
     height: var(--card-height);
     background: linear-gradient(135deg, var(--card-primary) 0%, var(--card-secondary) 100%);
@@ -116,7 +116,6 @@
     overflow-wrap: anywhere;
     line-height: 18px;
   }
-  .activity-card__description--with-action { -webkit-line-clamp: 1; }
   .activity-card__summary {
     display: -webkit-box;
     -webkit-line-clamp: 4;
@@ -124,6 +123,18 @@
     overflow: hidden;
     overflow-wrap: anywhere;
   }
+  .activity-card__title-link { @apply text-white no-underline; }
+  .activity-card__title-link:hover { @apply underline; }
+  .activity-card__title-link:focus-visible { @apply underline outline outline-2 outline-offset-2 outline-white; }
+  .participation__menu > summary:focus-visible { outline-color: #843A96; }
+  .participation__menu-panel {
+    position: absolute;
+    right: 12px;
+    bottom: var(--band-5);
+    z-index: 10;
+    max-width: calc(100% - 24px);
+  }
+  .participation__menu:not([open]) .participation__menu-panel { display: none; }
   .participation--card { @apply flex flex-col gap-1 text-xs text-belong-purpleDark; line-height: 16px; }
   .participation--card .participation__info {
     min-width: 0;

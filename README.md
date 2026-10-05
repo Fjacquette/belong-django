@@ -146,9 +146,11 @@ Use those classes instead of adding a local border/height/color recipe. Default
 controls are 40px, dense card controls 36px, form/detail controls 44px, and the
 floating Create is 48px. Page gutters are shared at 24/32/40px.
 
-Card top bands show name + when/where, then organizer + audience + cost; the
-128px stack offset keeps both visible. The 400px card footer uses compact peer
-response controls, a state/count line, navigational Details, and quiet Hide/Unhide.
+Card top bands show title + subtitle, then organizer/audience + when/where/cost;
+the 128px stack offset keeps both visible. The 400px card retains its 128px image
+and 64px footer. Compact peer responses share one row with an Actions disclosure
+for quiet Hide/Unhide and removal of a later response, followed by a state/count
+line. Details is navigation in the descriptive body band.
 A selected direct response clears on repeat-click; only a response outside the
 direct choices needs the separately labeled Remove action. Full card values are
 available on keyboard focus/hover, including after HTMX updates.

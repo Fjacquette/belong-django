@@ -127,10 +127,17 @@ class ParticipationUITests(TestCase):
         first = html.split('activity-card__band-1', 1)[1].split('activity-card__band-2', 1)[0]
         second = html.split('activity-card__band-2', 1)[1].split('activity-card__band-3', 1)[0]
         self.assertIn(self.activity.title, first)
-        self.assertIn("Saturday morning · River trail", first)
-        self.assertNotIn(self.activity.headline, first)
-        for value in ["Janine", "Everyone", "Free"]:
+        self.assertIn(self.activity.headline, first)
+        self.assertNotIn("Saturday morning · River trail", first)
+        self.assertNotIn('class="ui-link', first)
+        for value in ["Janine", "Everyone", "Saturday morning · River trail", "Free"]:
             self.assertIn(value, second)
+        body = html.split('activity-card__band-4', 1)[1].split('activity-card__band-5', 1)[0]
+        footer = html.split('activity-card__band-5', 1)[1].split('</section>', 1)[0]
+        self.assertIn('>Details</a>', body)
+        self.assertNotIn('<a ', footer)
+        self.assertIn('participation__menu', footer)
+        self.assertNotIn(self.activity.headline, body)
         self.activity.freetext_when = ""
         self.activity.location_name = ""
         self.activity.cost_type = "unknown"
