@@ -113,11 +113,13 @@ explicit and submits only on Search/Enter.
 
 Current visible discovery dimensions:
 - **When:** Any time / Now / Today / Tomorrow / This week / This weekend / Open-ended
-- **Where:** Anywhere / Near me (25 mi) / Online / In person. Keep this a single flat
-  selector; do not reveal a second radius control. The 25-mile pilot radius is the
-  current Nearby behavior. Hybrid activities may match both Online and In person
-  because both participation modes are available. Near me should include in-person
-  or hybrid activities with usable coordinates inside 25 miles.
+- **Where:** Anywhere / Near me / Online. Keep this a single flat selector.
+  - Anywhere applies no location constraint.
+  - Near me uses the current 25-mile pilot radius and matches in-person or hybrid activities with usable coordinates.
+  - Online matches online or hybrid activities.
+  Do not expose an `In person` option: physical participation is already implied by
+  the proximity choice, and a separate implementation-mode filter adds UI without
+  expressing a distinct user intent.
 - **Cost:** Any / Free / Paid / Unknown
 - **Open to:** Any / Everyone / Friends only / Friends of friends
 
