@@ -150,11 +150,16 @@ coordinates cannot match a distance bucket.
 
 **Cost**
 - Free
-- $1–10
-- $11–25
-- $26–50
-- $51–100
-- $100+
+- $ = $1–10
+- $ = $11–25
+- $$ = $26–50
+- $$ = $51–100
+- $$$ = $100+
+
+Use the dollar-sign count as the visible shorthand in compact filter UI. Keep the
+underlying numeric ranges explicit in labels/tooltips/accessibility text where useful.
+When an activity has a known exact cost, the card should prefer the actual human-readable
+amount rather than replacing it with only the tier shorthand.
 
 Cost is an accessibility dimension, not merely Free/Paid decoration. Filtering must
 be backed by structured numeric cost data; do not infer tiers by parsing arbitrary
