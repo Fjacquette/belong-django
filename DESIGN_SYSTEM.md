@@ -100,10 +100,89 @@ Visual: standard or compact control with chevron and explicit expanded state.
 Examples: Advanced filters.
 
 ### Independent boolean filter
-Purpose: on/off filter that may coexist with peers.
+Purpose: a genuinely binary on/off dimension that may coexist with peers.
 Use checkbox semantics with a consistent filter-chip visual family and obvious
-selected state.
-Examples: Today, Nearby, Online, Free.
+selected state. Do **not** use a row of boolean chips when the underlying concepts
+are really multi-valued filter dimensions.
+
+### Discovery facet menus
+
+Discovery filters are **faceted multi-select menus**, not ordinary single-select
+dropdowns.
+
+Each visible facet is one compact menu trigger. Opening it reveals independent
+checkbox choices. The user may select zero, one, or several choices within a facet.
+
+Semantics:
+- zero selections in a facet = no restriction for that dimension; do not add fake
+  `Any` / `Anywhere` choices just to represent the empty state
+- multiple choices within one facet combine with **OR**
+- different facets combine with **AND**
+- changes apply immediately
+- free-text search remains explicit and submits only on Search/Enter
+- the closed trigger must visibly summarize active state (for example a short value
+  when one choice is selected, or a count when several are selected)
+- menus must use native checkbox semantics and remain keyboard/touch accessible
+
+Current visible facets:
+
+**When**
+- Now
+- Today
+- Tomorrow
+- This week
+- This weekend
+- Open-ended
+
+**Where**
+- Online
+- Under 1 mile
+- 1–3 miles
+- 3–5 miles
+- 5–10 miles
+- 10–25 miles
+- 25+ miles
+
+Distance buckets represent approximate physical distance from the user's location.
+In-person activities match the appropriate distance bucket. Hybrid activities may
+match both Online and their physical-distance bucket. Activities without usable
+coordinates cannot match a distance bucket.
+
+**Cost**
+- Free
+- $ = $1–10
+- $ = $11–25
+- $$ = $26–50
+- $$ = $51–100
+- $$$ = $100+
+
+Use the dollar-sign count as the visible shorthand in compact filter UI. Keep the
+underlying numeric ranges explicit in labels/tooltips/accessibility text where useful.
+When an activity has a known exact cost, the card should prefer the actual human-readable
+amount rather than replacing it with only the tier shorthand.
+
+Cost is an accessibility dimension, not merely Free/Paid decoration. Filtering must
+be backed by structured numeric cost data; do not infer tiers by parsing arbitrary
+display text. Preserve a human-readable cost display for card copy, but add structured
+numeric amount/range data to the activity model/forms as needed. Unknown/unstructured
+cost does not silently match a numeric tier.
+
+**Open to**
+- Everyone
+- Friends only
+- Friends of friends
+
+Free-text search answers the primary **what** question. Category remains part of the
+data/search model but is not a permanently visible discovery facet by default.
+
+The product does **not** need an Advanced filters panel while these facets cover the
+active discovery dimensions. Hidden activities remain private list-management state
+with a separate quiet recovery control.
+
+This tiered model is intentional: Belong is designed for people whose mobility and
+means may be constrained. A free or $5 activity within a mile is materially different
+from a $100 activity several miles away; the interface must preserve that distinction
+rather than collapsing cost to Free/Paid or distance to Nearby/Not nearby.
 
 ### Mutually exclusive view selector
 Purpose: choose exactly one display mode.
@@ -191,8 +270,11 @@ Two compact readable lines are usually sufficient, for example:
 `Organized by Janine Smith`
 `Friends of friends · Free`
 
-The organizer avatar is optional. Use it only when it does not force core metadata
-to truncate. The information outranks decoration.
+The organizer/profile image is part of the social identity of the activity and should
+remain in Band 2 when available. Use the compact avatar treatment from the original
+Belong cards and design the metadata lines around it. Do not remove the organizer
+image merely to make a poor metadata layout fit; instead shorten/rebalance metadata
+presentation while keeping the core facts readable.
 
 Core decision facts must be understandable without hover/focus. Shorten presentation,
 rebalance lines, or remove decoration before truncating essential meaning.
