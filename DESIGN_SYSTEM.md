@@ -283,6 +283,9 @@ Use explicit unresolved states such as Date TBD, Location TBD, Online, Cost TBD.
 
 ### Band 3 — image
 
+Band 3 is the activity image. **Do not overlay controls, dropdowns, menus, counts,
+badges, or platform utilities on the image.**
+
 The image remains a major visual element and should not be cannibalized to make room
 for controls. Preserve roughly the original/prototype visual prominence.
 
@@ -322,11 +325,12 @@ Rules:
   two most useful direct actions and expose the rest on Details
 
 Platform utilities are secondary to the activity itself:
-- Details is available through the title/card navigation pattern and/or another
-  clearly separated navigation affordance outside Band 5
-- Hide/Unhide and other private/infrequent platform actions belong in a secondary
-  card utility/menu outside Band 5
-- response counts are information, not actions
+- Details is available through the title/card navigation pattern
+- do **not** add a generic card utility menu merely to house leftover controls
+- Hide/Unhide, response removal, and similar private/infrequent housekeeping may live
+  on the activity detail page rather than occupying discovery-card space
+- response counts are information, not actions, and need not appear on the compact
+  discovery card
 
 The card should visually answer:
 **What is this? Who is it for? When/where is it? What will it cost? What can I do?**
@@ -364,8 +368,9 @@ remain secondary and must not re-enter that band.
 - clicking a selected direct response may clear it
 - if a historical/current response is no longer directly offered, show that state
   coherently on Details rather than cluttering the compact card
-- secondary card utilities use one consistent secondary-actions pattern outside the
-  take-action band
+- prefer omitting secondary platform utilities from the compact discovery card
+  entirely; place them on Details unless a later product need justifies card-level access
+- do not place menu triggers or utility overlays in the image band
 - do not mix response buttons, menu triggers, tiny mutation controls, and navigation
   links in one row merely because they all happen to be clickable
 
