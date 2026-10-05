@@ -112,15 +112,24 @@ Changing a discovery dimension applies immediately; free-text search remains
 explicit and submits only on Search/Enter.
 
 Current discovery dimensions:
-- **When:** Any time / Today / Tomorrow / This week / This weekend / Open-ended
+- **When:** Any time / Now / Today / Tomorrow / This week / This weekend / Open-ended
 - **Distance:** Anywhere / within 5 / 10 / 25 / 50 miles
 - **Format:** Any / In person / Online-capable / Hybrid
 - **Cost:** Any / Free / Paid / Unknown
 - **Open to:** Any / Everyone / Friends only / Friends of friends
+- **Category:** Any / supported activity categories
 
-These are canonical dimensions. Do not duplicate the same state in an Advanced
-filters panel. Advanced filters is reserved for secondary dimensions such as
-Category, hidden activities, and future custom date/range controls.
+These are canonical dimensions. Do not duplicate the same state elsewhere.
+
+The current product does **not** need an Advanced filters panel once these selectors
+exist. Remove it rather than preserving an empty abstraction.
+
+Hidden activities are not a discovery dimension; they are private list-management
+state. Give them a separate quiet recovery control such as `Show hidden` / `Hidden
+activities`, visually and semantically distinct from the discovery selectors.
+Future genuinely advanced search capabilities (for example custom date ranges) may
+justify a new secondary control later, but do not keep an Advanced filters panel in
+anticipation of hypothetical features.
 
 ### Mutually exclusive view selector
 Purpose: choose exactly one display mode.
