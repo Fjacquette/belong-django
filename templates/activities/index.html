@@ -43,35 +43,39 @@
             <input id="activity-search" type="search" name="q" value="{{ query|default:'' }}" placeholder="Find something" class="ui-field flex-1" />
             <button type="submit" data-text-search class="ui-button ui-button--primary shrink-0">Search</button>
           </div>
-          <div class="flex flex-wrap items-center gap-2 lg:flex-nowrap lg:shrink-0 lg:ml-4" data-quick-cluster>
-            {% for filter in quick_filters %}
-              <label class="ui-filter">
-                <input type="checkbox" {% if filter.name == 'nearby' %}name="nearby"{% endif %} value="1" {% if filter.active %}checked{% endif %} data-quick-filter="{{ filter.name }}">
-                {{ filter.label }}
-              </label>
-            {% endfor %}
-          </div>
         </div>
+        <div class="discovery-facets">
+          {% for facet in facets %}
+            <details class="ui-facet" data-facet="{{ facet.name }}">
+              <summary class="ui-disclosure{% if facet.active %} ui-facet--active{% endif %}">{{ facet.summary }}</summary>
+              <div class="ui-facet__panel ui-menu-panel">
+                <fieldset>
+                  <legend class="sr-only">{{ facet.label }}</legend>
+                  {% for option in facet.options %}
+                    <label class="ui-facet__option"{% if option.help %} title="{{ option.help }}"{% endif %}>
+                      <input class="ui-check" type="checkbox" name="{{ facet.name }}" value="{{ option.value }}"{% if option.selected %} checked{% endif %}{% if option.distance %} data-distance{% endif %}>
+                      <span>{{ option.label }}{% if option.help %}<span class="sr-only"> — {{ option.help }}</span>{% endif %}</span>
+                    </label>
+                  {% endfor %}
+                </fieldset>
+              </div>
+            </details>
+          {% endfor %}
+        </div>
+        <input type="hidden" name="location_notice" value="">
+        {% if filter_params.category %}<input type="hidden" name="category" value="{{ filter_params.category }}">{% endif %}
+        <input type="hidden" name="hidden" value="{{ filter_params.hidden|default:'exclude' }}">
+        <noscript><button type="submit" class="ui-button ui-button--secondary">Apply filters</button></noscript>
         <p id="location-feedback" role="status" class="empty:hidden text-sm text-belong-slate/80">{{ filter_warning }}</p>
       </form>
-      <script src="{% static 'js/discovery.js' %}" defer></script>
+      <script src="{% static 'js/discovery.js' %}?v=facets-1" defer></script>
       <script src="{% static 'js/discovery-layout.js' %}" defer></script>
       <script src="{% static 'js/card-view.js' %}" defer></script>
       <script src="{% static 'js/card-actions.js' %}" defer></script>
 
       <div data-activity-results>
         <div class="discovery-utilities" data-results-utilities>
-        <details class="discovery-advanced">
-          <summary class="ui-disclosure">Advanced filters</summary>
-          <div class="discovery-advanced__panel grid gap-4 sm:grid-cols-2 lg:grid-cols-3 bg-white/70 rounded-xl p-4 text-sm">
-            <label>Category<select form="discovery-filters" name="category" class="ui-field block"><option value="">Any category</option>{% for category in categories %}<option value="{{ category.slug }}" {% if filter_params.category == category.slug %}selected{% endif %}>{{ category.name }}</option>{% endfor %}</select></label>
-            <label>Timing<select form="discovery-filters" name="timing" class="ui-field block"><option value="">Any time</option><option value="today" {% if filter_params.timing == 'today' %}selected{% endif %}>Today</option><option value="upcoming" {% if filter_params.timing == 'upcoming' %}selected{% endif %}>Upcoming</option><option value="dateless" {% if filter_params.timing == 'dateless' %}selected{% endif %}>Open-ended</option></select></label>
-            <label>Location<select form="discovery-filters" name="location" class="ui-field block"><option value="">Any location</option>{% for value,label in location_choices %}<option value="{{ value }}" {% if filter_params.location == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-            <label>Cost<select form="discovery-filters" name="cost" class="ui-field block"><option value="">Any cost</option>{% for value,label in cost_choices %}<option value="{{ value }}" {% if filter_params.cost == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-            <label>Hidden activities<select form="discovery-filters" name="hidden" class="ui-field block"><option value="exclude">Leave hidden out</option><option value="include" {% if filter_params.hidden == 'include' %}selected{% endif %}>Include hidden</option><option value="only" {% if filter_params.hidden == 'only' %}selected{% endif %}>Only hidden</option></select></label>
-            <button form="discovery-filters" type="submit" class="ui-button ui-button--primary self-end">Apply filters</button>
-          </div>
-        </details>
+        <button type="submit" form="discovery-filters" name="hidden" value="{% if filter_params.hidden == 'include' or filter_params.hidden == 'only' %}exclude{% else %}include{% endif %}" class="ui-button ui-button--quiet" aria-pressed="{% if filter_params.hidden == 'include' or filter_params.hidden == 'only' %}true{% else %}false{% endif %}">{% if filter_params.hidden == 'include' or filter_params.hidden == 'only' %}Hide hidden{% else %}Show hidden{% endif %}</button>
         <fieldset id="card-view-selector" class="ml-auto w-fit shrink-0" hidden>
           <legend class="sr-only">Card view</legend>
           <div class="ui-segmented">

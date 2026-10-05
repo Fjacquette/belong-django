@@ -151,10 +151,10 @@ coordinates cannot match a distance bucket.
 **Cost**
 - Free
 - $ = $1–10
-- $ = $11–25
-- $$ = $26–50
-- $$ = $51–100
-- $$$ = $100+
+- $$ = $11–25
+- $$$ = $26–50
+- $$$$ = $51–100
+- $$$$$ = $100+
 
 Use the dollar-sign count as the visible shorthand in compact filter UI. Keep the
 underlying numeric ranges explicit in labels/tooltips/accessibility text where useful.
@@ -405,7 +405,36 @@ Prefer native elements first.
 Keyboard focus must be visible. State must be exposed to assistive technology and
 visually apparent.
 
-## 12. Implemented card patterns
+## 12. Implemented discovery facets
+
+`ui-facet` wraps a native details/summary trigger and checkbox fieldset. The
+`ui-facet__panel` uses the menu family; `ui-facet__option` has standard 40px
+checkbox targets. Triggers show a selected count (or the cost shorthand) and an
+active border/background. Mobile uses two columns; desktop uses a compact cluster.
+Checkbox changes submit immediately and preserve the applied search text, open
+facet and keyboard position. Search/Enter commits text. Without JS, Apply filters
+submits the same checkbox values. Show hidden is a separate quiet list control.
+
+Repeated `when`, `where`, `cost`, and `audience` parameters are the canonical
+facet state and survive pagination and response changes. Empty facets are unrestricted.
+Now means an event currently between its start/end, a start within the last two
+hours with no end, or explicit dateless `Now` intent. Today/Tomorrow use the pilot
+local calendar; This week runs from today through Sunday; This weekend covers the
+current or next Saturday/Sunday. No arbitrary time prose is parsed.
+
+Physical distance buckets are [0,1), [1,3), [3,5), [5,10), [10,25), [25,infinity)
+in miles. Only in-person/hybrid activities with valid coordinates match them.
+Online/hybrid match Online; OR permits both modes. Geolocation denial clears only
+distance choices, preserving Online and other facets with visible feedback.
+
+`cost_amount` is an optional nonnegative exact USD amount. Paid tiers use positive
+amounts through 10, then (10,25], (25,50], (50,100], and over 100, keeping decimal
+prices and boundary values disjoint. Free uses explicit free cost type. Forms
+reject contradictory free/paid/unknown numeric costs. Arbitrary cost display text
+and unknown numeric amounts never determine tiers. Exact/display costs remain on
+cards. Only matching tracked, owner-preserved authored demo prices are populated.
+
+## 13. Implemented card patterns
 
 - Geometry: 440px height, preferred/max width 258px, 112/48/128/104/48px bands.
   The 160px stack offset reveals all identity/logistics and participation context.
@@ -425,7 +454,7 @@ visually apparent.
 - The description has up to five lines; a current response or material external
   link may use a line. The generic headline stays off the card surface.
 
-## 13. Review rule
+## 14. Review rule
 
 A UI change is not complete if it merely "works."
 

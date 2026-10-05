@@ -349,7 +349,8 @@ DEMO_DISCOVERY = {'Sailing on weekends!': ('free', '39.267,-76.798', ['intereste
  'Stroll the Street - Manayunk': ('free', '40.028,-75.225', ['interested', 'more'])}
 for example in ACTIVITY_DATA:
     cost, gps, responses = DEMO_DISCOVERY[example["title"]]
-    example.update(cost_type=cost, location_gps=gps, available_responses=responses)
+    example.update(cost_type=cost, location_gps=gps, available_responses=responses,
+                   cost_amount={"Co-ed softball league": 60, "Firefighter flashover training": 100, "Wednesday night paddle": 10}.get(example["title"], 0 if cost == "free" else None))
 
 
 class Command(BaseCommand):
@@ -498,6 +499,7 @@ class Command(BaseCommand):
                     allow_friend_of_friend_invites=payload.get("allow_friend_of_friend_invites", False),
                     is_personal_invitation=payload.get("is_personal_invitation", False),
                     cost_type=payload["cost_type"],
+                    cost_amount=payload.get("cost_amount"),
                     cost_display=payload.get("cost_display", ""),
                     cost_has_details=payload.get("cost_has_details", False),
                     accommodations=payload.get("accommodations", ""),

@@ -194,6 +194,7 @@ class DemoSeedingTests(TestCase):
         for example in ACTIVITY_DATA:
             activity = Activity.objects.get(title=example['title'])
             self.assertEqual(activity.available_responses, example['available_responses'])
+            self.assertEqual(activity.cost_amount, example['cost_amount'])
             self.assertNotEqual(activity.available_responses, ['interested', 'committed'])
             self.assertIn(activity.responses.get().status, activity.available_responses)
 
@@ -269,3 +270,36 @@ class DemoSeedingTests(TestCase):
         self.assertEqual(real_response.status, 'interested')
         reconcile(apps, None)
         self.assertEqual({r.pk: r.status for r in ActivityResponse.objects.all()}, after)
+
+    def test_structured_cost_migration_preserves_custom_and_untracked_data(self):
+        from importlib import import_module
+        from django.apps import apps
+        from decimal import Decimal
+        self.seed()
+        populate = import_module('activities.migrations.0012_demo_structured_cost').populate_demo_amounts
+        activity = Activity.objects.get(title='Firefighter flashover training')
+        activity.cost_amount = None
+        activity.save()
+        custom = Activity.objects.get(title='Wednesday night paddle')
+        custom.cost_amount = None
+        custom.cost_display = 'Custom quoted cost'
+        custom.save()
+        personal = Activity.objects.create(host=activity.host, title=activity.title, description='Personal', cost_type='paid', cost_display='$100')
+        transferred = Activity.objects.get(title='Co-ed softball league')
+        transferred.cost_amount = None
+        transferred.host = get_user_model().objects.get(username='belong_demo')
+        transferred.save()
+        responses = list(ActivityResponse.objects.values())
+        populate(apps, None)
+        for obj in [activity, custom, personal, transferred]:
+            obj.refresh_from_db()
+        self.assertEqual(activity.cost_amount, Decimal('100'))
+        self.assertIsNone(custom.cost_amount)
+        self.assertIsNone(personal.cost_amount)
+        self.assertIsNone(transferred.cost_amount)
+        self.assertEqual(list(ActivityResponse.objects.values()), responses)
+        activity.cost_amount = Decimal('75')
+        activity.save()
+        populate(apps, None)
+        activity.refresh_from_db()
+        self.assertEqual(activity.cost_amount, Decimal('75'))

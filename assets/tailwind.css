@@ -43,15 +43,19 @@
   .ui-filter:focus-within { outline: 2px solid #843A96; outline-offset: 3px; }
   .ui-menu-trigger:focus-visible, .ui-link--inverse:focus-visible { outline-color: white; }
   .ui-button:disabled { @apply opacity-50 cursor-not-allowed; }
-  .discovery-utilities { position: relative; margin-bottom: 16px; min-height: 40px; }
-  .discovery-advanced:not([open]) > .discovery-advanced__panel { display: none; }
-  .discovery-advanced > .discovery-advanced__panel { margin-top: 16px; }
-  .discovery-utilities > fieldset { position: absolute; right: 0; top: 0; }
-  @media (max-width: 420px) {
-    .discovery-utilities { padding-bottom: 52px; }
-    .discovery-utilities > fieldset { top: 48px; }
-    .discovery-advanced > .discovery-advanced__panel { margin-top: 64px; }
-    .discovery-utilities:has(details[open]) { padding-bottom: 0; }
+  .discovery-utilities { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 16px; }
+  .discovery-facets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding-top: 8px; }
+  .ui-facet { position: relative; min-width: 0; }
+  .ui-facet > summary { width: 100%; }
+  .ui-facet--active { @apply border-belong-purple bg-belong-purple/10; }
+  .ui-facet__panel { position: absolute; top: calc(100% + 8px); left: 0; z-index: 200; width: min(240px, calc(100vw - 48px)); }
+  .ui-facet:nth-child(even) .ui-facet__panel { left: auto; right: 0; }
+  .ui-facet:not([open]) .ui-facet__panel { display: none; }
+  .ui-facet__option { @apply flex items-center gap-2 min-h-10 text-sm cursor-pointer; }
+  .ui-facet__option:has(input:checked) { @apply text-belong-purple font-semibold; }
+  @media (min-width: 640px) {
+    .discovery-facets { display: flex; flex-wrap: wrap; }
+    .ui-facet:nth-child(even) .ui-facet__panel { left: 0; right: auto; }
   }
   .activity-grid {
     display: grid;

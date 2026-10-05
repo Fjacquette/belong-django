@@ -270,7 +270,7 @@ class ParticipationUITests(TestCase):
         self.assertContains(response, '>Search</button>')
         self.assertNotContains(response, 'hx-trigger=')
         self.assertContains(response, 'name="q"')
-        self.assertContains(response, 'name="category"')
+        self.assertNotContains(response, 'name="category"')
         self.assertNotContains(response, f'href="{reverse("activities:categories")}"')
         for marker in ['name="arrange"', 'name="sort"', "(soon)"]:
             self.assertNotContains(response, marker)

@@ -30,7 +30,7 @@ class ActivityForm(forms.ModelForm):
         required=False,
         initial=list(DEFAULT_RESPONSE_CHOICES),
         widget=forms.CheckboxSelectMultiple,
-        help_text="Choose what intent is useful for this activity. The first two appear on its card; all choices appear in Details.",
+        help_text="Choose what intent is useful for this activity. One or two complete choices appear on its card when they fit; all choices appear in Details.",
     )
 
     class Meta:
@@ -65,6 +65,7 @@ class ActivityForm(forms.ModelForm):
             "allow_friend_of_friend_invites",
             "is_personal_invitation",
             "cost_type",
+            "cost_amount",
             "cost_display",
             "cost_has_details",
             "accommodations",
@@ -98,7 +99,7 @@ class ActivityForm(forms.ModelForm):
             Q(owner=user) | Q(memberships__user=user, memberships__role="organizer", memberships__status="active")
         ).distinct() if user and user.is_authenticated else Group.objects.none()
         self.fields["group"].help_text = "Optional. Link an activity to a group you organize; participation still follows the activity audience."
-        self.fields["location_gps"].help_text = "Latitude, longitude; used for Nearby within 25 miles."
+        self.fields["location_gps"].help_text = "Latitude, longitude; used for discovery distance tiers."
         self.fields["audience"].choices = PILOT_AUDIENCE_CHOICES
         base_classes = "ui-field mt-1"
         for name, field in self.fields.items():
@@ -118,6 +119,19 @@ class ActivityForm(forms.ModelForm):
         self.fields["organizer_image"].queryset = ImageAsset.objects.filter(
             purpose=ImageAssetPurpose.ORGANIZER
         )
+
+    def clean(self):
+        data = super().clean()
+        amount = data.get('cost_amount')
+        kind = data.get('cost_type')
+        if amount is not None:
+            if kind == 'free' and amount != 0:
+                self.add_error('cost_amount', 'A free activity must have a zero cost.')
+            elif kind != 'free' and amount == 0:
+                self.add_error('cost_type', 'Choose Free for a zero cost.')
+            elif kind == 'unknown':
+                self.add_error('cost_type', 'Choose Paid when the numeric cost is known.')
+        return data
 
     def clean_location_gps(self):
         from .discovery import coordinates

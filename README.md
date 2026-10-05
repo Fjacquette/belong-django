@@ -138,6 +138,27 @@ the entire run. Resolve the conflict without deleting personal data, then retry.
 The ownership migration adds a tracking table; it does not claim legacy records.
 Manually edited seed-owned activity examples may be refreshed on the next run.
 
+## Discover facets and structured costs
+
+Discover has four checkbox menus: When, Where, Cost and Open to. Multiple choices
+within a menu OR together; menus AND together. An empty menu is unrestricted.
+Changes apply immediately while Search/Enter commits text. Menus preserve keyboard
+position across filter submissions; without JavaScript use Apply filters. Show hidden
+is a separate private list control. There is no Advanced filters or top-level Category.
+
+Where offers Online and distance buckets under 1 / 1–3 / 3–5 / 5–10 / 10–25 / 25+
+miles. Distances require browser location and valid activity coordinates; only
+in-person/hybrid activities match physical buckets. Hybrid also matches Online.
+Denied/unavailable geolocation clears distance choices with feedback and preserves
+other selections. Repeated facet values survive pagination and participation changes.
+
+Paid tiers use the optional exact USD `cost_amount` field, with Free and $ through
+$$$$$ shorthand. Decimal amounts use disjoint positive ranges through 10, 25, 50,
+100 and over 100. Existing arbitrary display strings are never parsed for filtering.
+Human-readable/exact costs remain visible on cards. The schema migration leaves
+existing amounts unknown; the demo migration populates only authored prices on
+tracked activities with unchanged ownership/type/display and no existing amount.
+
 ## Tailwind Production Build
 
 `DESIGN_SYSTEM.md` and `assets/tailwind.css` define reusable `ui-*` families for
@@ -147,8 +168,8 @@ controls are 40px, dense card controls 36px, form/detail controls 44px, and the
 floating Create is 48px. Page gutters are shared at 24/32/40px.
 
 Cards are 440px tall at a stable preferred/max width of 258px. Band 1 shows the
-name plus readable when/where; Band 2 shows organizer and audience/cost without
-an avatar competing for space. The 160px stack offset exposes both top bands.
+name plus readable when/where; Band 2 shows organizer and audience/cost with
+a compact organizer avatar. The 160px stack offset exposes both top bands.
 The 128px image and 104px description region preserve the portrait balance.
 The 48px take-action band contains only one or two complete response labels;
 a second choice appears only when it fits without clipping. Remaining choices
@@ -266,37 +287,20 @@ restriction. Existing pending memberships are retained rather than auto-approved
 
 ## Pilot discovery and presence
 
-Discover submits text search only with Search or Enter, never per keystroke. Its
-compact bar keeps Search beside the text field, separate from direct quick toggles.
-Today, Free, and Online share the canonical timing, cost, and online-capable location
-scopes with Advanced filters; Nearby is a separate proximity state. Explicit canonical
-values override conflicting legacy quick URL parameters. Advanced filters stays closed
-until opened. Stacked / Spread out is a client-side view preference, persisted locally,
-on the utility line with Advanced filters above the activity results. Its bordered selector makes the active mode explicit and
-switches between a non-overlapping grid and piles without querying the server. Advanced
-filters include category, timing, location type, structured cost, and hidden-card scope. Pagination retains every
-filter. Empty results retain the same Discover/friends layout; turning a quick
-filter off restores results under the remaining search and filters. Today uses **America/New_York** (including DST), as do datetime-local
-creation fields; open-ended activities do not count as Today. Online includes
-Online and Hybrid. Free means explicitly Free, never inferred from cost prose;
-legacy activities start as Unknown.
+Discover uses the four faceted menus described above. Search submits only on
+Search/Enter. Stacked / Spread out is a local view preference on the results utility
+line; it changes overlap without querying the server. Empty results keep the same
+Discover/friends layout and menus so individual selections can be cleared.
+Time filters and datetime-local creation fields use America/New_York, including DST.
+Device coordinates stay in the query, not the user's profile; distance uses Haversine
+on valid latitude/longitude. These are pilot filters, not a geospatial service.
 
-Nearby asks for browser location when enabled, searches within **25 miles** using
-Haversine distance and `location_gps` in `latitude, longitude` format, and ignores
-missing/invalid activity coordinates. Denied, missing, or invalid device location
-leaves Nearby off with feedback. Device coordinates remain in the discovery query,
-not the user's profile. This is a local pilot filter, not production geospatial search.
-Demo fixtures contain curated cost/coordinates and varied response choices. A
-migration fills missing coordinates/unknown cost only on known seed-owned examples;
-custom GPS/explicit costs and untracked activities are preserved. It does not reseed
-accounts, images, schedules, or responses.
-
-Hide is a unique private user/activity preference. It never changes a participation
-response or informs the organizer. Normal discovery excludes hidden activities;
-Advanced filters can include/show only hidden cards, whose Unhide action reverses the preference.
-Creators choose from six response types: Interested, Count me in, I have a question,
-Cannot make it, Tell me more, and Vote on details. The first two chosen appear directly
-on cards; Details exposes all. Clicking the selected response again clears it.
+Hide is a unique private user/activity preference. It never changes a response or
+informs the organizer. Normal discovery excludes hidden activities; the separate
+Show hidden control permits recovery with Unhide. Creators choose from six response
+types: Interested, Count me in, I have a question, Cannot make it, Tell me more, and
+Vote on details. One or two whole labels appear directly when they fit; Details
+exposes all. Repeating a selected response clears it.
 
 Presence records authenticated HTTP requests, throttled to at most one update per
 minute: **Active** within 5 minutes, **Idle** within 30, **Offline** after 30 minutes

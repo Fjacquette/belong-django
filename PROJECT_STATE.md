@@ -54,8 +54,7 @@ Additional current decisions:
 - Less chrome, more meaning. Cooper/Tufte-style restraint is intentional.
 - Group controls by the user's task, not by backend object.
 - Search/discovery should help answer "what do I feel like doing?"
-- Discover owns filtering; Categories is a filter dimension, not a competing primary destination.
-- Quick discovery filters should include Today, Nearby, Online, and Free with real pilot-grade backend support.
+- Discover uses four multi-select facets: When, Where, Cost, Open to. Category remains in the data/search model without a permanent control.
 - Create should be a floating **+** primary action rather than a peer navigation link.
 - Friends/presence should quietly communicate "Who's around" with Active / Idle / Offline states.
 - Activity cards should remain compact and rapidly scannable.
@@ -94,14 +93,17 @@ For normal implementation work, Codex must present the exact committed feature H
 ### Discovery iteration
 
 **#19 is complete and merged.**
-Today uses America/New_York; Nearby requires browser location within 25 miles;
-Online includes Hybrid; Free requires explicit free cost. Advanced filters retain
-query state across pages; quick shortcuts share canonical advanced dimensions.
-Text search submits only on Search or Enter in its own cluster. Advanced filters is
-collapsed until opened; the explicit Stacked / Spread out selector on the results utility line changes only local view state. Hide is private
-and reversible. New activities default only to Interested; creators explicitly add
-stronger/context-specific responses. Existing choices/order are preserved. Cards expose
-the first two creator-selected responses; Details exposes all, and repeating a selection clears it.
+Discover now uses four immediate multi-select facets: When, Where, Cost, Open to.
+Selections OR within a facet and AND across facets; empty means unrestricted.
+Search remains explicit. Time uses the pilot local calendar and documented Now
+semantics. Physical distance buckets require browser coordinates; Online includes
+Hybrid. Numeric USD cost_amount backs the dollar-sign cost tiers, preserving human
+cost_display. Audience selects the exact activity audience, not viewer eligibility.
+Advanced filters and permanent Category controls are removed; Show hidden is a
+separate private recovery control. Repeated facet values survive pagination and
+participation redirects. Existing data is preserved; only authored matching
+seed-owned demo prices are populated. Cards retain organizer avatars and readable
+metadata. One/two complete direct responses fit the card; Details exposes all.
 Presence reflects authenticated HTTP activity: Active within 5 minutes, Idle within
 30, Offline thereafter or without a timestamp, with writes throttled to one minute.
 Who’s around uses width-based page layout independent of matching card counts,

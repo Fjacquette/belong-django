@@ -7,13 +7,16 @@
       <p tabindex="0" title="{{ activity.display_when_where }}" class="activity-card__subtitle font-body text-white w-full">{{ activity.display_when_where }}</p>
     {% endif %}
   </div>
-  <div class="activity-card__band-2 relative text-black font-body activity-card__meta" style="padding: 8px 12px;">
+  <div class="activity-card__band-2 relative text-black font-body activity-card__meta" style="padding: 4px 12px;">
     <div class="absolute inset-0 bg-white/70"></div>
-    <div class="relative h-full flex items-center gap-2">
-      <div class="min-w-0 flex-1 text-left">
-        <p tabindex="0" class="font-body activity-card__meta"><span class="sr-only">Organized by </span><strong class="font-semibold">{{ activity.organizer_name|default:activity.host.get_full_name|default:activity.host.username }}</strong></p>
-        <p tabindex="0" class="activity-card__meta">{{ activity.display_audience }} · {{ activity.display_cost }}</p>
+    <div class="relative">
+      <div class="flex items-center gap-2 min-h-6">
+        <div class="h-6 w-6 shrink-0 rounded-full overflow-hidden bg-white border border-white/80">
+          {% if activity.organizer_image_url %}<img src="{{ activity.organizer_image_url }}" alt="" class="h-full w-full object-cover">{% else %}<span class="h-full w-full flex items-center justify-center text-belong-purple font-semibold">{{ activity.organizer_name|default:activity.host.username|slice:':1'|upper }}</span>{% endif %}
+        </div>
+        <p class="font-body activity-card__meta"><span class="sr-only">Organized by </span><strong class="font-semibold">{{ activity.organizer_name|default:activity.host.get_full_name|default:activity.host.username }}</strong></p>
       </div>
+      <p class="activity-card__meta">{{ activity.display_audience }} · {{ activity.display_cost }}</p>
     </div>
   </div>
   <div class="activity-card__band-3 relative">

@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
 from django.utils.http import url_has_allowed_host_and_scheme
-from .discovery import canonical_filters, filter_activities
+from .discovery import canonical_filters, filter_activities, facet_context
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -57,7 +57,7 @@ def _decorate_activity(activity: Activity) -> None:
             where += " / Online"
     activity.display_when_where = f"{when} · {where}"
     activity.display_audience = activity.get_audience_display()
-    activity.display_cost = activity.cost_display or {"free": "Free", "paid": "Paid", "unknown": "Cost TBD"}.get(activity.cost_type, "Cost TBD")
+    activity.display_cost = activity.cost_display or (f"${activity.cost_amount:g}" if activity.cost_amount is not None and activity.cost_type == "paid" else "") or {"free": "Free", "paid": "Paid", "unknown": "Cost TBD"}.get(activity.cost_type, "Cost TBD")
 
 
 def _friend_context(user) -> List[Dict[str, object]]:
@@ -233,10 +233,7 @@ def index(request: HttpRequest) -> HttpResponse:
         "active_category": category_slug,
         "filter_params": params,
         "filter_warning": filter_warning,
-        "quick_filters": [{"name": name, "label": label, "active": params.get(dimension) == value}
-                          for name, label, dimension, value in [("today", "Today", "timing", "today"), ("nearby", "Nearby", "nearby", "1"), ("online", "Online", "location", "online_capable"), ("free", "Free", "cost", "free")]],
-        "location_choices": [("online_capable", "Online or hybrid"), *ActivityLocationType.choices],
-        "cost_choices": ActivityCostType.choices,
+        "facets": facet_context(params),
         "pagination_query": pagination_params.urlencode(),
         "query": query,
     }
