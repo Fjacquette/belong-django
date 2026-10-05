@@ -144,42 +144,44 @@ state through fill, border, text, shape, check/radio state, or another visible c
 ## 7. Activity-card information hierarchy
 
 The first one or two card bands must answer the user's first-pass decision questions
-without requiring Details.
+without requiring Details, **without discarding the activity's useful subtitle/headline**.
 
-When known, these six facts belong in the top two bands:
+When known, these facts belong in the top two bands:
 1. activity/event name
-2. organizer
-3. intended audience / who it is open to
-4. cost
-5. time/date
-6. location or Online
+2. subtitle/headline
+3. organizer
+4. intended audience / who it is open to
+5. cost
+6. time/date
+7. location or Online
 
 Recommended hierarchy:
 
-### Band 1 — identity + immediate logistics
+### Band 1 — identity
 - activity title: dominant, max two lines
-- compact secondary line: **when · where**
-  - examples: `Sat Oct 10, 10 AM · Ridley Creek`
-  - `Now · Online`
-  - `Date TBD · Hershey, PA`
+- activity subtitle/headline directly beneath it when present
 
-Do not spend Band 1 on a marketing headline while date/location are buried below.
-A headline/summary can move lower when space is constrained.
+The title may remain the navigation link to Details, but it must **not** use a
+permanent underlined-link treatment. The card title is an established navigation
+pattern; use normal title typography with hover/focus affordance instead of making
+the headline look like body-copy hyperlink text.
 
-### Band 2 — people + participation context
-- organizer identity/name
-- audience
-- cost
+### Band 2 — people + logistics
+Use the compact metadata area for two scannable lines, for example:
+- `Janine · Friends of friends`
+- `Sat Oct 10, 10 AM · Ridley Creek · Free`
 
-Keep this compact, normally one or two metadata lines. Example:
-`Janine · Friends of friends · Free`
-
-If an organizer avatar is useful, it must not crowd out the text facts above.
+This band must communicate organizer, audience, cost, when, and where/Online when
+known. An organizer avatar is optional and must not crowd out those facts.
 
 Use explicit, human-readable fallbacks when information is unresolved:
 - Date TBD / Anytime
 - Location TBD / Online
 - Cost TBD or Free/Paid where structured data supports it
+
+Do not move the subtitle/headline into the description band merely to make room for
+metadata. The top of the card should retain both identity/personality and decision
+information.
 
 Truncation may be used for density, but every truncated value must expose the full
 value on hover/focus as already required by UI_PRINCIPLES.md.
@@ -220,13 +222,40 @@ Card actions are a distinct compact system, not a collection of unrelated contro
 - if the current response is not directly shown, display the current state clearly and
   provide a coherent change/remove action
 - response counts are information, never controls
-- Details is navigation and uses the navigation-link family
-- Hide/Unhide is a quiet private action; use the quiet-action family or an appropriate
+- **the bottom action band contains actions, not navigation links**
+- Details is navigation and must live outside the response/action button row, such as
+  the descriptive/body band or another clearly separated navigation affordance
+- Hide/Unhide is a quiet private mutation; use the quiet-action family or an appropriate
   secondary-actions menu
 - do not mix full-size pills, tiny buttons, icon-only cancellation, and pseudo-links
   arbitrarily in one footer
+- do not add a second full row of controls merely to fit every possible action; use
+  hierarchy, Details, or a secondary-actions menu for less-frequent actions
 
-Compactness comes from hierarchy and omission, not from shrinking random controls.
+Compactness comes from hierarchy and omission, not from shrinking random controls
+or taking space away from the activity image.
+
+## 8A. Card band geometry
+
+The 400px card's visual balance is part of the Belong design. Do not grow controls
+by cannibalizing the image.
+
+Baseline proportions are the pre-redesign proportions:
+- Band 1: 20% / 80px
+- Band 2: 12% / 48px
+- **Image band: 32% / 128px**
+- descriptive/body band: 20% / 80px
+- **action/footer band: 16% / 64px**
+
+The image band should remain approximately 128px on the standard desktop card.
+Do not reduce it to 96px to make room for a multi-row footer.
+
+The footer should fit its primary card actions within the compact action allocation.
+If it does not fit, simplify the action hierarchy rather than increasing the footer
+and shrinking the image.
+
+Artwork uses `object-cover`, so cropping is already inherent; reducing the image
+viewport compounds that crop and is not an acceptable way to solve control layout.
 
 ## 9. Forms
 
