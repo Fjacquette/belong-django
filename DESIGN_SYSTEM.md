@@ -157,32 +157,39 @@ Use **approximately 440px standard height at the current preferred desktop width
 as the next baseline. Tune only through browser review; do not widen a card merely
 because result count is low. The target should remain comfortable on modern phones.
 
-### Band 1 — activity identity
+### Band 1 — activity identity + primary logistics
 
-Band 1 is for the **activity/event name**.
+Band 1 contains:
+- the **activity/event name**
+- directly beneath it, a compact **when · where** subheader
 
-- Do not reserve a generic subtitle/headline line in this band.
-- The current `headline` field may remain in the data model, but it is not a
-  required card-surface element.
-- The title may navigate to Details, but it should retain title typography rather
-  than permanent underlined-link styling.
-- A two-color gradient/fade using the card's primary/secondary colors is an
-  encouraged Belong treatment where it works visually.
+When and where are the most important first-pass facts after the activity name.
+This deliberately follows the strongest historical Belong prototypes.
 
-### Band 2 — compact decision metadata
+Examples:
+`Sat Oct 10, 10 AM · Ridley Creek`
+`Now · Online`
+`Date TBD · Hershey, PA`
 
-Band 2 should carry more information than recent implementations. Three compact,
-readable lines are acceptable.
+Do not use the generic `headline` field as a card subtitle. It may remain in the
+data model/details, but it is not entitled to scarce card space.
 
-Preferred order:
+The title may navigate to Details, but it should retain title typography rather
+than permanent underlined-link styling.
+
+A two-color gradient/fade using the card's primary/secondary colors is an
+encouraged Belong treatment where it works visually.
+
+### Band 2 — organizer + participation context
+
+Band 2 contains the remaining high-value decision information:
 1. organizer
-2. audience / who it is open to + cost
-3. when + where / Online
+2. audience / who it is open to
+3. cost
 
-Example:
+Two compact readable lines are usually sufficient, for example:
 `Organized by Janine Smith`
 `Friends of friends · Free`
-`Sat Oct 10, 10 AM · Ridley Creek`
 
 The organizer avatar is optional. Use it only when it does not force core metadata
 to truncate. The information outranks decoration.
@@ -259,6 +266,10 @@ visual proportions must remain stable as the result count changes.
   centering a lone card in a way that breaks alignment with search/results controls.
 - Stacked and Spread out modes use the same underlying card width; view mode changes
   overlap/layout only, not card proportions.
+- **Stacked mode must expose all of Bands 1 and 2 on every card in the pile.** The
+  stack offset should therefore equal (or closely track) the combined height of the
+  first two bands. A covered card must still reveal activity name, when/where,
+  organizer, audience, and cost.
 - Filtering from many results to one or zero must not cause surrounding controls,
   Who's around, gutters, or card geometry to jump unpredictably.
 
