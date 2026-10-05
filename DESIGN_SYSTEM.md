@@ -323,7 +323,27 @@ Prefer native elements first.
 Keyboard focus must be visible. State must be exposed to assistive technology and
 visually apparent.
 
-## 12. Review rule
+## 12. Implemented card patterns
+
+- Geometry: 440px height, preferred/max width 258px, 112/48/128/104/48px bands.
+  The 160px stack offset reveals all identity/logistics and participation context.
+- Card title: `activity-card__title-link`, normal title type with hover/focus underline.
+- Primary responses: `ui-button ui-button--compact ui-response`, complete 12px labels.
+  The first choice works without JavaScript. `card-actions.js` exposes a second
+  choice only when both full labels plus selected-state check fit. Remaining
+  choices stay available on Details. HTMX refreshes the entire card's state.
+- Secondary utilities: `card-utilities`, an image-corner native disclosure with a
+  white/slate `card-utilities__trigger` and chevron, distinct from purple responses.
+  Its panel contains Details, response information and quiet private mutations.
+- Details navigation: `ui-navigation`, a separated, semibold link with an arrow,
+  visible focus and hover affordance. The title also routes directly to Details.
+- Current response: the first direct response exposes pressed state. A
+  `card-current-response` line in the body identifies later/historical choices,
+  including a second choice that might not fit. Utilities permit response removal.
+- The description has up to five lines; a current response or material external
+  link may use a line. The generic headline stays off the card surface.
+
+## 13. Review rule
 
 A UI change is not complete if it merely "works."
 

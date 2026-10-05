@@ -15,7 +15,7 @@
     const count = columns();
     root.dataset.stackColumns = count;
     root.dataset.view = showAll ? 'all' : 'stacked';
-    root.style.gridTemplateColumns = `repeat(${count}, minmax(0, 1fr))`;
+    root.style.gridTemplateColumns = `repeat(${count}, minmax(0, ${Math.min(minWidth, root.clientWidth)}px))`;
     root.replaceChildren();
     if (showAll) {
       root.append(...items);

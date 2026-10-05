@@ -112,11 +112,13 @@ The Groups foundation (#21) is merged. Persistent Group and GroupMembership enti
 
 **#28** implements the shared control families documented in `DESIGN_SYSTEM.md`
 and `assets/tailwind.css`, applied across Discover, activity cards/details, Create,
-account menus, and group forms/actions. Card top bands preserve title/subtitle
-and expose organizer/audience/logistics/cost. The 128px image and 64px footer
-retain the card balance: direct response toggles plus a secondary-actions
-disclosure, with Details navigation in the body. Known legacy seed-owned response defaults are migrated to
-activity-specific choices without altering responses or custom choices. GitHub is
+account menus, and group forms/actions. Cards use the historical portrait hierarchy:
+name + readable when/where, then organizer/audience/cost, a substantial image,
+useful description and one/two fully readable activity actions. The 440px card
+retains its 258px preferred/max width; 160px overlap exposes both top bands.
+Secondary platform utilities live over the image. Generic headlines stay on Details.
+Known seed-owned choices and stale sample responses are reconciled without altering
+real/custom/transferred data. GitHub is
 authoritative for merge status; #22 follows this visual-system iteration.
 
 ### Groups / recurring activity sequence

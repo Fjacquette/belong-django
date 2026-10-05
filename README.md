@@ -146,18 +146,23 @@ Use those classes instead of adding a local border/height/color recipe. Default
 controls are 40px, dense card controls 36px, form/detail controls 44px, and the
 floating Create is 48px. Page gutters are shared at 24/32/40px.
 
-Card top bands show title + subtitle, then organizer/audience + when/where/cost;
-the 128px stack offset keeps both visible. The 400px card retains its 128px image
-and 64px footer. Compact peer responses share one row with an Actions disclosure
-for quiet Hide/Unhide and removal of a later response, followed by a state/count
-line. Details is navigation in the descriptive body band.
-A selected direct response clears on repeat-click; only a response outside the
-direct choices needs the separately labeled Remove action. Full card values are
-available on keyboard focus/hover, including after HTMX updates.
+Cards are 440px tall at a stable preferred/max width of 258px. Band 1 shows the
+name plus readable when/where; Band 2 shows organizer and audience/cost without
+an avatar competing for space. The 160px stack offset exposes both top bands.
+The 128px image and 104px description region preserve the portrait balance.
+The 48px take-action band contains only one or two complete response labels;
+a second choice appears only when it fits without clipping. Remaining choices
+are on Details. Title navigation and an image-corner utility disclosure provide
+Details, counts, Hide/Unhide and later-response removal outside the action band.
+A selected direct response clears on repeat-click. Current state is visible through
+the first direct button or a body line for later choices; full truncated descriptive
+values remain available on focus/hover.
 
 The demo response migration updates only known seed-owned legacy default sets,
 including the former Interested/Count me in/Question trio. Custom choices,
-transferred activities, and all existing response records are preserved. New seeds
+transferred activities, and real/custom response records are preserved. A follow-up
+migration reconciles only tracked stale sample Interested responses against the
+exact curated choices, demo user and organizer ownership. New seeds
 use activity-specific choices and sample responses; no automatic reseed is needed.
 
 For a one-off build (e.g., before deploying), run:

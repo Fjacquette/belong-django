@@ -19,20 +19,8 @@
     [data-stack-root] {
       display: grid;
       gap: var(--stack-gap, 1.5rem);
-      justify-content: center;
-      grid-template-columns: repeat(1, minmax(var(--card-min-width, var(--card-width)), 1fr));
-    }
-    [data-stack-root][data-stack-columns="2"] {
-      grid-template-columns: repeat(2, minmax(var(--card-min-width, var(--card-width)), 1fr));
-    }
-    [data-stack-root][data-stack-columns="3"] {
-      grid-template-columns: repeat(3, minmax(var(--card-min-width, var(--card-width)), 1fr));
-    }
-    [data-stack-root][data-stack-columns="4"] {
-      grid-template-columns: repeat(4, minmax(var(--card-min-width, var(--card-width)), 1fr));
-    }
-    [data-stack-root][data-stack-columns="5"] {
-      grid-template-columns: repeat(5, minmax(var(--card-min-width, var(--card-width)), 1fr));
+      justify-content: start;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--card-width)), var(--card-width)));
     }
     [data-stack-column] {
       position: relative;
@@ -69,6 +57,7 @@
       <script src="{% static 'js/discovery.js' %}" defer></script>
       <script src="{% static 'js/discovery-layout.js' %}" defer></script>
       <script src="{% static 'js/card-view.js' %}" defer></script>
+      <script src="{% static 'js/card-actions.js' %}" defer></script>
 
       <div data-activity-results>
         <div class="discovery-utilities" data-results-utilities>

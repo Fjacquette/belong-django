@@ -1,4 +1,4 @@
-<div id="participation-{{ activity.pk }}" class="w-full {% if variant == 'detail' %}space-y-3{% else %}participation--card{% endif %}" aria-label="Participation in {{ activity.title }}" aria-live="polite">
+<div {% if variant == 'detail' %}id="participation-{{ activity.pk }}" aria-live="polite"{% endif %} class="w-full {% if variant == 'detail' %}space-y-3{% endif %}" aria-label="Participation in {{ activity.title }}">
   {% if variant == 'detail' %}
     {% if response_options %}
       <form method="post" action="{% url 'activities:respond' activity.pk %}" hx-post="{% url 'activities:respond' activity.pk %}" hx-target="#participation-{{ activity.pk }}" hx-swap="outerHTML" class="participation__response ui-cluster">
@@ -14,33 +14,19 @@
     {% endif %}
     <p class="text-sm">{% if current_status %}You: {{ current_status_label }}{% else %}No response yet{% endif %}</p>
   {% else %}
-    <div class="participation__controls flex items-center gap-2">
     {% if card_response_options %}
-      <form method="post" action="{% url 'activities:respond' activity.pk %}" hx-post="{% url 'activities:respond' activity.pk %}" hx-target="#participation-{{ activity.pk }}" hx-swap="outerHTML" class="participation__response flex items-center gap-2 min-w-0 flex-1">
+      <form method="post" action="{% url 'activities:respond' activity.pk %}" hx-post="{% url 'activities:respond' activity.pk %}" hx-target="#participation-{{ activity.pk }}" hx-swap="outerHTML" class="participation__response card-response">
         {% csrf_token %}
         <input type="hidden" name="variant" value="card">
         <input type="hidden" name="next" value="{{ next_path }}">
         {% for option in card_response_options %}
-          <button type="submit" name="status" value="{{ option.value }}" aria-pressed="{% if current_status == option.value %}true{% else %}false{% endif %}" title="{{ option.label }}{% if current_status == option.value %} — select again to clear{% endif %}" class="ui-button ui-button--compact ui-response min-w-0 flex-1"><span class="truncate">{{ option.label }}</span></button>
+          <button type="submit" name="status" value="{{ option.value }}" aria-pressed="{% if current_status == option.value %}true{% else %}false{% endif %}" title="{{ option.label }}{% if current_status == option.value %} — select again to clear{% endif %}" class="ui-button ui-button--compact ui-response{% if not forloop.first %} card-response__optional{% endif %}"{% if not forloop.first %} hidden{% endif %}>{{ option.label }}</button>
         {% endfor %}
       </form>
-    {% else %}
-      <p class="min-h-9 flex items-center min-w-0 flex-1">No response choices available.</p>
     {% endif %}
-    <details class="participation__menu shrink-0">
-      <summary class="ui-menu-trigger ui-button--compact ui-disclosure" aria-label="More actions for {{ activity.title }}">Actions</summary>
-      <div class="participation__menu-panel ui-menu-panel">
-        {% include 'activities/_participation_actions.html' %}
-      </div>
-    </details>
-    </div>
   {% endif %}
   {% if variant == 'detail' %}
     <p class="text-sm" title="{{ response_counts_label }}">{{ response_count|default:0 }} response{{ response_count|pluralize }} · {{ response_counts_label }}</p>
-  {% elif card_current_status_label %}
-    <p class="participation__info" tabindex="0" title="You: {{ card_current_status_label }} · {{ response_counts_label }}" aria-label="You: {{ card_current_status_label }}">You: {{ card_current_status_label }}</p>
-  {% else %}
-    <p class="participation__info" tabindex="0" title="{{ response_counts_label }}">{{ response_count|default:0 }} response{{ response_count|pluralize }}</p>
   {% endif %}
   {% if variant == 'detail' %}{% include 'activities/_participation_actions.html' %}{% endif %}
   {% if variant == 'detail' %}

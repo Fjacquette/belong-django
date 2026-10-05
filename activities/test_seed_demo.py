@@ -240,3 +240,32 @@ class DemoSeedingTests(TestCase):
         personal.refresh_from_db()
         self.assertEqual((demo.cost_type,demo.location_gps), ('paid','41,-76'))
         self.assertEqual((personal.cost_type,personal.location_gps), ('unknown',''))
+
+    def test_reconcile_only_stale_tracked_demo_responses(self):
+        from importlib import import_module
+        from django.apps import apps
+        self.seed()
+        reconcile = import_module('activities.migrations.0010_reconcile_demo_sample_responses').reconcile_demo_responses
+        repair = Activity.objects.get(title='Firefighter flashover training')
+        custom = Activity.objects.get(title='Co-ed softball league')
+        transferred = Activity.objects.get(title='Wednesday night paddle')
+        missing_tracking = Activity.objects.get(title='Need help moving')
+        for activity in [repair, custom, transferred, missing_tracking]:
+            activity.responses.update(status='interested')
+        custom.available_responses = ['question']
+        custom.save()
+        transferred.host = get_user_model().objects.get(username='belong_demo')
+        transferred.save()
+        DemoSeedRecord.objects.filter(key='response:need-help-moving:demo').delete()
+        real = get_user_model().objects.create_user(username='real-viewer')
+        real_response = ActivityResponse.objects.create(activity=repair, user=real, status='interested')
+        before = {r.pk: r.status for r in ActivityResponse.objects.all()}
+        reconcile(apps, None)
+        sample = repair.responses.exclude(user=real).get()
+        self.assertEqual(sample.status, 'committed')
+        after = {r.pk: r.status for r in ActivityResponse.objects.all()}
+        self.assertEqual({k: v for k, v in after.items() if k != sample.pk}, {k: v for k, v in before.items() if k != sample.pk})
+        real_response.refresh_from_db()
+        self.assertEqual(real_response.status, 'interested')
+        reconcile(apps, None)
+        self.assertEqual({r.pk: r.status for r in ActivityResponse.objects.all()}, after)

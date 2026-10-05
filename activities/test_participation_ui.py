@@ -64,10 +64,7 @@ class ParticipationUITests(TestCase):
                         self.assertNotContains(response, 'aria-pressed="true"')
                         self.assertContains(response, f'>You: {ActivityResponseStatus(status).label}</p>')
                     self.assertContains(response, f'name="variant" value="{variant}"')
-                    if variant == "detail" or status == "question":
-                        self.assertContains(response, f'hx-post="{self.url("leave")}"')
-                    else:
-                        self.assertNotContains(response, f'hx-post="{self.url("leave")}"')
+                    self.assertContains(response, f'hx-post="{self.url("leave")}"')
                     self.assertEqual(ActivityResponse.objects.get(user=self.viewer, activity=self.activity).status, status)
                     self.assertEqual(ActivityResponse.objects.filter(user=self.viewer).count(), 1)
                     self.assertContains(self.client.get(self.url("detail")), f'You: {ActivityResponseStatus(status).label}')
@@ -112,7 +109,7 @@ class ParticipationUITests(TestCase):
         self.assertContains(response, 'value="committed" aria-pressed="true"')
         self.assertContains(response, 'value="interested" aria-pressed="false"')
         self.assertContains(response, 'aria-pressed="true"', count=1)
-        self.assertNotContains(response, f'hx-post="{self.url("leave")}"')
+        self.assertContains(response, f'hx-post="{self.url("leave")}"')
         self.assertNotContains(response, '>×</button>')
         self.assertContains(response, 'ui-button--compact ui-response')
 
@@ -127,16 +124,23 @@ class ParticipationUITests(TestCase):
         first = html.split('activity-card__band-1', 1)[1].split('activity-card__band-2', 1)[0]
         second = html.split('activity-card__band-2', 1)[1].split('activity-card__band-3', 1)[0]
         self.assertIn(self.activity.title, first)
-        self.assertIn(self.activity.headline, first)
-        self.assertNotIn("Saturday morning · River trail", first)
+        self.assertNotIn(self.activity.headline, first)
+        self.assertIn("Saturday morning · River trail", first)
         self.assertNotIn('class="ui-link', first)
-        for value in ["Janine", "Everyone", "Saturday morning · River trail", "Free"]:
+        for value in ["Janine", "Everyone", "Free"]:
             self.assertIn(value, second)
         body = html.split('activity-card__band-4', 1)[1].split('activity-card__band-5', 1)[0]
         footer = html.split('activity-card__band-5', 1)[1].split('</section>', 1)[0]
-        self.assertIn('>Details</a>', body)
+        self.assertNotIn('>Details', body)
         self.assertNotIn('<a ', footer)
-        self.assertIn('participation__menu', footer)
+        self.assertNotIn('card-utilities', footer)
+        self.assertNotIn('card-current-response', footer)
+        self.assertNotIn('Details', footer)
+        self.assertNotIn('responses</p>', footer)
+        self.assertLessEqual(footer.count('name="status"'), 2)
+        self.assertNotIn('truncate', footer)
+        self.assertNotIn('>Hide', footer)
+        self.assertIn('card-utilities', html)
         self.assertNotIn(self.activity.headline, body)
         self.activity.freetext_when = ""
         self.activity.location_name = ""
