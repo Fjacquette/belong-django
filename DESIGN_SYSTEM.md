@@ -183,8 +183,13 @@ Do not move the subtitle/headline into the description band merely to make room 
 metadata. The top of the card should retain both identity/personality and decision
 information.
 
-Truncation may be used for density, but every truncated value must expose the full
-value on hover/focus as already required by UI_PRINCIPLES.md.
+Core decision facts in the top two bands must be understandable without hover or
+focus. Tooltips are a fallback for unusually long values, not a substitute for
+showing the essential information. Before truncating core metadata, shorten its
+presentation, rebalance the two metadata lines, or remove decorative elements such
+as the organizer avatar. Truncation may still be used for genuinely long names or
+locations when the essential meaning remains visible; every truncated value must
+expose the full value on hover/focus as required by UI_PRINCIPLES.md.
 
 ## 7A. Activity-card sizing and grid behavior
 
@@ -217,6 +222,9 @@ Card actions are a distinct compact system, not a collection of unrelated contro
 
 - response choices shown directly are peer state-changing actions and use one compact
   button family/height
+- interactive/action labels must never be ellipsized into ambiguous fragments; if the
+  available width cannot fit multiple direct response labels legibly, show fewer direct
+  choices and expose the remainder through Details or the appropriate secondary flow
 - current selected response must be visually obvious
 - clicking the selected visible response may clear it; do not also show a tiny remove X
 - if the current response is not directly shown, display the current state clearly and
