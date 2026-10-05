@@ -100,10 +100,27 @@ Visual: standard or compact control with chevron and explicit expanded state.
 Examples: Advanced filters.
 
 ### Independent boolean filter
-Purpose: on/off filter that may coexist with peers.
+Purpose: a genuinely binary on/off dimension that may coexist with peers.
 Use checkbox semantics with a consistent filter-chip visual family and obvious
-selected state.
-Examples: Today, Nearby, Online, Free.
+selected state. Do **not** use a row of boolean chips when the underlying concepts
+are really multi-valued filter dimensions.
+
+### Discovery dimension selector
+Purpose: choose one value from a compact multi-valued discovery dimension.
+Use native select/combobox semantics and the standard field/control geometry.
+Changing a discovery dimension applies immediately; free-text search remains
+explicit and submits only on Search/Enter.
+
+Current discovery dimensions:
+- **When:** Any time / Today / Tomorrow / This week / This weekend / Open-ended
+- **Distance:** Anywhere / within 5 / 10 / 25 / 50 miles
+- **Format:** Any / In person / Online-capable / Hybrid
+- **Cost:** Any / Free / Paid / Unknown
+- **Open to:** Any / Everyone / Friends only / Friends of friends
+
+These are canonical dimensions. Do not duplicate the same state in an Advanced
+filters panel. Advanced filters is reserved for secondary dimensions such as
+Category, hidden activities, and future custom date/range controls.
 
 ### Mutually exclusive view selector
 Purpose: choose exactly one display mode.
