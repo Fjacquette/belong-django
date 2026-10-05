@@ -111,13 +111,16 @@ Use native select/combobox semantics and the standard field/control geometry.
 Changing a discovery dimension applies immediately; free-text search remains
 explicit and submits only on Search/Enter.
 
-Current discovery dimensions:
+Current visible discovery dimensions:
 - **When:** Any time / Now / Today / Tomorrow / This week / This weekend / Open-ended
-- **Distance:** Anywhere / within 5 / 10 / 25 / 50 miles
-- **Format:** Any / In person / Online-capable / Hybrid
+- **Where:** combines location mode and proximity; examples include Anywhere / Nearby / Online / In person. A Nearby choice may expose a radius such as 5 / 10 / 25 / 50 miles without creating a second permanent top-level selector.
 - **Cost:** Any / Free / Paid / Unknown
 - **Open to:** Any / Everyone / Friends only / Friends of friends
-- **Category:** Any / supported activity categories
+
+Free-text search answers the primary **what** question. Category remains part of the
+data/search model but is not a permanently visible discovery selector by default.
+If category browsing later proves important, surface it contextually rather than
+adding another always-visible control.
 
 These are canonical dimensions. Do not duplicate the same state elsewhere.
 
