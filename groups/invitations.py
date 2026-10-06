@@ -57,9 +57,22 @@ def issue_invitation(group, inviter, email, request):
         return True
 
 
+def pending_invitation(request):
+    reference = request.session.get('pending_group_invitation')
+    if not isinstance(reference, int) or isinstance(reference, bool):
+        return None
+    return GroupInvitation.objects.select_related('group', 'inviter__profile').filter(pk=reference).first()
+
+
 def accept_invitation(token, user):
+    invitation = find_invitation(token)
+    return accept_reference(invitation.pk if invitation else None, user)
+
+
+def accept_reference(reference, user):
+    # Internal only: reference must come from a previously validated bearer link/session.
     with transaction.atomic():
-        invitation = find_invitation(token)
+        invitation = GroupInvitation.objects.filter(pk=reference).first()
         if not invitation:
             raise ValidationError('This invitation is unavailable.')
         group = Group.objects.select_for_update().get(pk=invitation.group_id)
@@ -106,15 +119,16 @@ def accept_invitation(token, user):
 
 
 def finish_pending(request):
-    token = request.session.get('group_invitation')
-    if not token:
+    invitation = pending_invitation(request)
+    if not invitation:
+        request.session.pop('pending_group_invitation', None)
         return None
     from django.contrib import messages
     try:
-        group = accept_invitation(token, request.user)
+        group = accept_reference(invitation.pk, request.user)
     except ValidationError as error:
         messages.error(request, error.messages[0])
-        return reverse('groups:invitation', args=[token])
-    request.session.pop('group_invitation', None)
+        return reverse('groups:pending_invitation')
+    request.session.pop('pending_group_invitation', None)
     messages.success(request, 'Invitation accepted.' if group else 'This invitation was already used.')
     return group.get_absolute_url() if group else reverse('activities:index')

@@ -1,3 +1,4 @@
+from belong.test_helpers import create_legacy_user
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -37,7 +38,7 @@ class AuthScreenTests(TestCase):
         response = self.client.post(reverse("login"), {"username": "unknown", "password": "incorrect", "next": destination})
         self.assertContains(response, "Please enter a correct email and password")
         self.assertContains(response, f'name="next" value="{destination}"')
-        get_user_model().objects.create_user(username="auth-review", password="test-only-password-13")
+        create_legacy_user(username="auth-review", password="test-only-password-13")
         response = self.client.post(reverse("login"), {"username": "auth-review", "password": "test-only-password-13", "next": destination})
         self.assertRedirects(response, destination)
 
@@ -47,7 +48,7 @@ class AuthScreenTests(TestCase):
         self.assertFalse(get_user_model().objects.filter(username="new-reviewer").exists())
 
     def test_authenticated_product_navigation_is_retained(self):
-        user = get_user_model().objects.create_user(username="navigation-review")
+        user = create_legacy_user(username="navigation-review")
         self.client.force_login(user)
         response = self.client.get(reverse("activities:index"))
         header = response.content.decode().split("<header", 1)[1].split("</header>", 1)[0]
@@ -75,7 +76,7 @@ class AuthScreenTests(TestCase):
         self.assertEqual(get_user_model().objects.get(email='new.person@example.com').email, 'new.person@example.com')
 
     def test_normal_signup_rejects_email_already_claimed_case_insensitively(self):
-        get_user_model().objects.create_user('existing-email', email='Existing@Example.com')
+        create_legacy_user('existing-email', email='Existing@Example.com')
         response = self.client.post(reverse('signup'), {'username': 'duplicate-email', 'email': 'existing@example.COM',
                                     'password1': 'Testing-normal-817!', 'password2': 'Testing-normal-817!'})
         self.assertContains(response, 'Sign in instead')

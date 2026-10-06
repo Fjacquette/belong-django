@@ -1,3 +1,4 @@
+from belong.test_helpers import create_legacy_user
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -15,9 +16,9 @@ class ActivityLoopTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         User = get_user_model()
-        cls.host = User.objects.create_user(username="host")
-        cls.participant = User.objects.create_user(username="participant")
-        cls.other_user = User.objects.create_user(username="other")
+        cls.host = create_legacy_user(username="host")
+        cls.participant = create_legacy_user(username="participant")
+        cls.other_user = create_legacy_user(username="other")
         cls.activity = Activity.objects.create(
             host=cls.host,
             title="Walk together",

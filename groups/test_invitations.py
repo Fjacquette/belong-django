@@ -1,3 +1,4 @@
+from belong.test_helpers import create_legacy_user
 from datetime import timedelta
 from unittest.mock import patch
 
@@ -16,9 +17,9 @@ from .models import Group, GroupInvitation, GroupMembership
 class InvitationTests(TestCase):
     def setUp(self):
         U = get_user_model()
-        self.owner = U.objects.create_user('janine', email='janine@example.com', password='Testing-only-817!')
-        self.user = U.objects.create_user('invitee', email='hiker@example.com', password='Testing-only-817!')
-        self.wrong = U.objects.create_user('wrong', email='other@example.com')
+        self.owner = create_legacy_user('janine', email='janine@example.com', password='Testing-only-817!')
+        self.user = create_legacy_user('invitee', email='hiker@example.com', password='Testing-only-817!')
+        self.wrong = create_legacy_user('wrong', email='other@example.com')
         self.group = Group.objects.create(name='Private hikes', description='Secret trails', owner=self.owner, access='private')
         GroupMembership.objects.create(group=self.group, user=self.owner, role='organizer')
         self.client.force_login(self.owner)
@@ -78,14 +79,14 @@ class InvitationTests(TestCase):
         token = self.send()
         self.client.logout()
         self.assertRedirects(self.client.post(self.url(token), {'auth': 'login'}), reverse('login'))
-        self.assertIn('group_invitation', self.client.session)
+        self.assertIn('pending_group_invitation', self.client.session)
         response = self.client.post(reverse('login'), {'username': 'janine@example.com', 'password': 'Testing-only-817!'})
-        self.assertRedirects(response, self.url(token))
-        self.assertIn('group_invitation', self.client.session)
+        self.assertRedirects(response, reverse('groups:pending_invitation'))
+        self.assertIn('pending_group_invitation', self.client.session)
         self.client.post(self.url(token), {'auth': 'switch'})
         response = self.client.post(reverse('login'), {'username': 'hiker@example.com', 'password': 'Testing-only-817!'})
         self.assertRedirects(response, self.group.get_absolute_url())
-        self.assertNotIn('group_invitation', self.client.session)
+        self.assertNotIn('pending_group_invitation', self.client.session)
 
     def test_signup_preserves_invitation_through_errors_and_rejects_changed_email(self):
         token = self.send('new@example.com')
@@ -98,7 +99,7 @@ class InvitationTests(TestCase):
         self.assertFalse(get_user_model().objects.filter(username='new-hiker').exists())
         data['email'] = 'NEW@example.com'
         self.assertRedirects(self.client.post(reverse('signup'), data), reverse('verification_status'))
-        self.assertIn('group_invitation', self.client.session)
+        self.assertIn('pending_group_invitation', self.client.session)
         from belong.email_verification import digest
         from social.models import EmailVerification
         import re
@@ -125,7 +126,30 @@ class InvitationTests(TestCase):
         self.assertRedirects(self.client.get(reverse('verification_status')), self.group.get_absolute_url())
         user = get_user_model().objects.get(email='cross-browser@example.com')
         self.assertTrue(self.group.memberships.filter(user=user, status='active').exists())
-        self.assertNotIn('group_invitation', self.client.session)
+        self.assertNotIn('pending_group_invitation', self.client.session)
+
+    def test_unverified_invitee_keeps_nonsecret_reference_until_verification(self):
+        import re
+        from django.core import mail
+        from django.contrib.sessions.models import Session
+        token = self.send()
+        self.user.profile.legacy_access = False
+        self.user.profile.email_verified_at = None
+        self.user.profile.save()
+        self.client.force_login(self.user)
+        page = self.client.get(self.url(token))
+        self.assertContains(page, 'Verify email and accept')
+        self.assertRedirects(self.client.post(self.url(token)), reverse('verification_status'))
+        session = self.client.session
+        self.assertEqual(session['pending_group_invitation'], GroupInvitation.objects.get().pk)
+        self.assertNotIn('group_invitation', session)
+        decoded = Session.objects.get(session_key=session.session_key).get_decoded()
+        self.assertNotIn(token, str(decoded))
+        self.assertFalse(self.group.memberships.filter(user=self.user, status='active').exists())
+        self.client.post(reverse('verification_status'), {'email': self.user.email})
+        proof = re.search(r'/accounts/verify/([^/]+)/', mail.outbox[-1].body).group(1)
+        self.assertRedirects(self.client.post(reverse('verify_email', args=[proof])), self.group.get_absolute_url())
+        self.assertTrue(self.group.memberships.filter(user=self.user, status='active').exists())
 
     def test_existing_email_signup_requires_login(self):
         token = self.send(); self.client.logout()
@@ -175,7 +199,7 @@ class InvitationTests(TestCase):
         self.assertContains(self.client.get(self.group.get_absolute_url()), 'email could not be sent')
 
     def test_legacy_blank_email_binds_only_on_explicit_acceptance(self):
-        legacy = get_user_model().objects.create_user('legacy-signup')
+        legacy = create_legacy_user('legacy-signup')
         token = self.send('legacy@example.com')
         self.client.force_login(legacy)
         page = self.client.get(self.url(token))
@@ -192,7 +216,7 @@ class InvitationTests(TestCase):
         self.assertEqual(GroupInvitation.objects.get().accepted_by, legacy)
 
     def test_blank_email_login_binds_from_prior_explicit_acceptance(self):
-        legacy = get_user_model().objects.create_user('legacy-login', password='Testing-only-817!')
+        legacy = create_legacy_user('legacy-login', password='Testing-only-817!')
         token = self.send('legacy@example.com')
         self.client.logout()
         # Following a link/login alone is not acceptance.
@@ -206,7 +230,7 @@ class InvitationTests(TestCase):
         legacy.refresh_from_db(); self.assertEqual(legacy.email, 'legacy@example.com')
 
     def test_blank_email_conflict_does_not_bind_or_join(self):
-        legacy = get_user_model().objects.create_user('legacy-conflict')
+        legacy = create_legacy_user('legacy-conflict')
         self.user.email = 'HIKER@EXAMPLE.COM'; self.user.save()
         token = self.send()
         self.client.force_login(legacy)
@@ -218,7 +242,7 @@ class InvitationTests(TestCase):
         self.assertEqual(GroupInvitation.objects.get().status, 'pending')
 
     def test_invalid_or_blocked_invitation_cannot_bind_blank_email(self):
-        legacy = get_user_model().objects.create_user('legacy-invalid')
+        legacy = create_legacy_user('legacy-invalid')
         token = self.send('legacy@example.com')
         invite = GroupInvitation.objects.get()
         for status in ['revoked', 'accepted']:
@@ -233,7 +257,7 @@ class InvitationTests(TestCase):
         self.assertEqual(self.group.memberships.get(user=legacy).status, 'blocked')
 
     def test_nonblank_email_is_never_overwritten_and_stale_user_is_reread(self):
-        legacy = get_user_model().objects.create_user('stale-email')
+        legacy = create_legacy_user('stale-email')
         token = self.send('legacy@example.com')
         get_user_model().objects.filter(pk=legacy.pk).update(email='different@example.com')
         with self.assertRaises(ValidationError): accept_invitation(token, legacy)

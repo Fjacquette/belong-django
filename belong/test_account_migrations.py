@@ -36,3 +36,31 @@ class AccountMigrationTests(TransactionTestCase):
             self.assertEqual((pair.user_a_id, pair.user_b_id), (a.pk, b.pk))
         finally:
             MigrationExecutor(connection).migrate(latest)
+
+    def test_raw_invitation_sessions_are_scrubbed_to_nonsecret_reference(self):
+        from datetime import timedelta
+        import hashlib
+        from django.contrib.sessions.backends.db import SessionStore
+        from django.utils import timezone
+        executor = MigrationExecutor(connection)
+        latest = executor.loader.graph.leaf_nodes()
+        previous = [('social', '0005_canonical_email'), ('groups', '0004_group_default_activity_image_group_image'), ('sessions', '0001_initial')]
+        executor.migrate(previous)
+        try:
+            apps = executor.loader.project_state(previous).apps
+            owner = apps.get_model('auth', 'User').objects.create(username='session-migration-owner')
+            group = apps.get_model('groups', 'Group').objects.create(name='Keep invitation', owner_id=owner.pk)
+            token = 'legacy-session-test-only-token'
+            invitation = apps.get_model('groups', 'GroupInvitation').objects.create(group_id=group.pk, inviter_id=owner.pk, email='invited@example.com', token_digest=hashlib.sha256(token.encode()).hexdigest(), expires_at=timezone.now()+timedelta(hours=1))
+            store = SessionStore()
+            Session = apps.get_model('sessions', 'Session')
+            Session.objects.create(session_key='a'*32, session_data=store.encode({'group_invitation': token, 'other_state': 'preserved'}), expire_date=timezone.now()+timedelta(days=1))
+            Session.objects.create(session_key='b'*32, session_data=store.encode({'group_invitation': 'invalid-token'}), expire_date=timezone.now()+timedelta(days=1))
+            executor = MigrationExecutor(connection)
+            executor.migrate(latest)
+            Session = executor.loader.project_state(latest).apps.get_model('sessions', 'Session')
+            data = store.decode(Session.objects.get(pk='a'*32).session_data)
+            self.assertEqual(data, {'pending_group_invitation': invitation.pk, 'other_state': 'preserved'})
+            self.assertNotIn('group_invitation', store.decode(Session.objects.get(pk='b'*32).session_data))
+        finally:
+            MigrationExecutor(connection).migrate(latest)

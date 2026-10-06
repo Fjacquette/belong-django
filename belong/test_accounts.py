@@ -102,7 +102,8 @@ class AccountTests(TestCase):
         self.assertContains(bad, 'correct email and password')
         self.assertRedirects(self.client.post(reverse('login'), {'username': 'PERSON@EXAMPLE.com', 'password': self.password}), reverse('activities:index'))
         self.client.logout()
-        legacy = get_user_model().objects.create_user('legacy-local', password=self.password)
+        from belong.test_helpers import create_legacy_user
+        legacy = create_legacy_user('legacy-local', password=self.password)
         with override_settings(ALLOW_LEGACY_ACCOUNTS=False):
             self.assertContains(self.client.post(reverse('login'), {'username': legacy.username, 'password': self.password}), 'correct email and password')
         with override_settings(ALLOW_LEGACY_ACCOUNTS=True):

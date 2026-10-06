@@ -1,3 +1,4 @@
+from belong.test_helpers import create_legacy_user
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
@@ -15,9 +16,9 @@ class GroupTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         User = get_user_model()
-        cls.owner = User.objects.create_user(username="janine")
-        cls.member = User.objects.create_user(username="hiker")
-        cls.outsider = User.objects.create_user(username="visitor")
+        cls.owner = create_legacy_user(username="janine")
+        cls.member = create_legacy_user(username="hiker")
+        cls.outsider = create_legacy_user(username="visitor")
         cls.group = Group.objects.create(name="Hikes with Janine", owner=cls.owner, access=GroupAccess.OPEN)
         cls.owner_membership = GroupMembership.objects.create(group=cls.group, user=cls.owner, role=MemberRole.ORGANIZER)
         cls.membership = GroupMembership.objects.create(group=cls.group, user=cls.member)

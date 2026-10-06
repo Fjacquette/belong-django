@@ -97,7 +97,11 @@ Invitations remain pending through verification and finish afterward. Account
 settings edits identity, coarse home area, normalized square avatar, pending email
 (with password confirmation), and password. Organization labels grant no privileges.
 Nonempty emails are case-insensitively unique at the database level. Existing local
-accounts have explicit dev/test-only legacy compatibility; no fake email backfill.
+accounts have explicit migration/demo-only legacy compatibility in dev/test; new
+user signals grant none. Missing BELONG_ENV fails closed as production. SQLite uses
+IMMEDIATE transactions. Invitation sessions retain a signed ID, never a bearer
+token; legacy session tokens are scrubbed. Avatars have a 25 MP decode ceiling.
+No fake email backfill.
 #41 can now build the header identity menu from these profile values.
 
 ## Current implementation sequence

@@ -47,10 +47,10 @@ class BrandLoginView(LoginView):
 
 @require_http_methods(['GET', 'POST'])
 def signup(request):
-    from groups.invitations import find_invitation, usable
+    from groups.invitations import pending_invitation, usable
     if request.user.is_authenticated:
         return redirect('activities:index' if request.user.profile.can_use_belong else 'verification_status')
-    invitation = find_invitation(request.session.get('group_invitation', ''))
+    invitation = pending_invitation(request)
     kwargs = {'invited_email': invitation.email} if usable(invitation) else {}
     form_class = InvitedUserCreationForm if kwargs else StyledUserCreationForm
     form = form_class(request.POST or None, **kwargs)
@@ -73,8 +73,8 @@ def verification_status(request):
         from groups.invitations import finish_pending
         return redirect(finish_pending(request) or 'account_settings')
     profile = request.user.profile
-    from groups.invitations import find_invitation, usable
-    invitation = find_invitation(request.session.get('group_invitation', ''))
+    from groups.invitations import pending_invitation, usable
+    invitation = pending_invitation(request)
     invited = usable(invitation) and invitation.email == request.user.email.strip().lower()
     form = VerificationEmailForm(request.POST or None, initial={'email': profile.pending_email or request.user.email})
     if invited:

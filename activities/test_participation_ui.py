@@ -1,3 +1,4 @@
+from belong.test_helpers import create_legacy_user
 from html import escape
 from unittest.mock import PropertyMock, patch
 
@@ -11,8 +12,8 @@ from .models import Activity, ActivityResponse, ActivityResponseStatus
 class ParticipationUITests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.host = get_user_model().objects.create_user(username="ui-host")
-        cls.viewer = get_user_model().objects.create_user(username="ui-viewer")
+        cls.host = create_legacy_user(username="ui-host")
+        cls.viewer = create_legacy_user(username="ui-viewer")
         cls.activity = Activity.objects.create(
             host=cls.host, title="An open-ended walk", description="Find a time together",
             available_responses=["interested", "committed", "question"],

@@ -1,3 +1,4 @@
+from belong.test_helpers import create_legacy_user
 from io import StringIO
 
 from django.contrib.auth import get_user_model
@@ -78,7 +79,7 @@ class DemoSeedingTests(TestCase):
 
     def test_unrelated_accounts_activities_categories_and_uploaded_images_survive_unchanged(self):
         # Legacy account names and matching titles/filenames must not imply seed ownership.
-        user = get_user_model().objects.create_user(username="admin", password="private-password")
+        user = create_legacy_user(username="admin", password="private-password")
         profile = user.profile
         profile.status_text = "Personal status"
         profile.is_visible = False
@@ -133,7 +134,7 @@ class DemoSeedingTests(TestCase):
         self.assertEqual(Activity.objects.count(), len(ACTIVITY_DATA))
 
     def test_conflicting_account_is_preserved_and_entire_seed_rolls_back(self):
-        user = get_user_model().objects.create_user(username="belong_demo", password="personal-password")
+        user = create_legacy_user(username="belong_demo", password="personal-password")
         original = get_user_model().objects.filter(pk=user.pk).values().get()
 
         with self.assertRaisesMessage(CommandError, "Existing data conflicts"):
@@ -146,7 +147,7 @@ class DemoSeedingTests(TestCase):
 
     def test_reassigned_demo_activity_is_not_overwritten(self):
         self.seed()
-        user = get_user_model().objects.create_user(username="owner")
+        user = create_legacy_user(username="owner")
         activity = self.first_demo_activity()
         activity.host = user
         activity.save()
@@ -258,7 +259,7 @@ class DemoSeedingTests(TestCase):
         transferred.host = get_user_model().objects.get(username='belong_demo')
         transferred.save()
         DemoSeedRecord.objects.filter(key='response:need-help-moving:demo').delete()
-        real = get_user_model().objects.create_user(username='real-viewer')
+        real = create_legacy_user(username='real-viewer')
         real_response = ActivityResponse.objects.create(activity=repair, user=real, status='interested')
         before = {r.pk: r.status for r in ActivityResponse.objects.all()}
         reconcile(apps, None)

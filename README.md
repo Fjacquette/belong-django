@@ -401,17 +401,24 @@ The local console email backend prints links in the ignored server log; configur
 `DJANGO_EMAIL_BACKEND` and `DJANGO_DEFAULT_FROM_EMAIL` for actual delivery.
 
 Account settings manages profile, coarse home area, avatar, email and password.
-Profile images are decoded and limited to 5 MB, orientation-normalized, center
+Profile images are decoded and limited to 5 MB, limited to 25 million decoded pixels before decoding, orientation-normalized, center
 cropped to 256×256, stripped of metadata and stored as PROFILE_AVATAR PNG assets.
 Email changes require the current password and retain the current login until the
 pending address is verified. Organization labels confer no additional permissions.
 
 Legacy/local provisioning is deliberately separate from public registration:
-migrated profiles retain `legacy_access`; locally provisioned users also receive it
-when `BELONG_ALLOW_LEGACY_ACCOUNTS` is enabled. This compatibility setting defaults
+migrated profiles retain `legacy_access`; demo seeding grants it explicitly to newly
+created seed-owned accounts. Other provisioning must explicitly set the flag; user
+creation signals never grant it. This compatibility setting defaults
 on **only for dev/test**, off elsewhere. Username login additionally requires an
 empty email and this legacy flag; accounts with an email sign in using that email.
-Public signup always disables the flag and uses an opaque `u_...` username. Set
+Every new user defaults to no legacy access; public signup uses an opaque `u_...` username. Set
 `BELONG_ALLOW_LEGACY_ACCOUNTS=false` to enforce verification for every account,
 including legacy accounts. Add/verify a real address from Account settings to retire
 local compatibility for an email-less demo account. No synthetic emails are created.
+
+Missing `BELONG_ENV` defaults to production (debug/legacy access off); valid values
+are dev, test, and production. SQLite uses IMMEDIATE write transactions, including
+verification and membership changes. Pending invitation sessions store only a signed
+invitation ID after explicit acceptance consent, never a bearer token. Migration
+0006 scrubs old session tokens while retaining valid pending invitation references.

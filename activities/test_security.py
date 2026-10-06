@@ -1,3 +1,4 @@
+from belong.test_helpers import create_legacy_user
 from io import StringIO
 
 from django.contrib import admin
@@ -21,11 +22,11 @@ class AudienceTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         User = get_user_model()
-        cls.host = User.objects.create_user(username="host")
-        cls.friend = User.objects.create_user(username="friend")
-        cls.extended = User.objects.create_user(username="extended")
-        cls.third_degree = User.objects.create_user(username="third_degree")
-        cls.outsider = User.objects.create_user(username="outsider")
+        cls.host = create_legacy_user(username="host")
+        cls.friend = create_legacy_user(username="friend")
+        cls.extended = create_legacy_user(username="extended")
+        cls.third_degree = create_legacy_user(username="third_degree")
+        cls.outsider = create_legacy_user(username="outsider")
         Friendship.make_pair(cls.host, cls.friend)
         Friendship.make_pair(cls.friend, cls.extended)
         Friendship.make_pair(cls.extended, cls.third_degree)
@@ -151,7 +152,7 @@ class AudienceTests(TestCase):
 class ActionAndResponseTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.user = get_user_model().objects.create_user(username="participant")
+        cls.user = create_legacy_user(username="participant")
         cls.activity = Activity.objects.create(host=cls.user, title="Activity", description="Description")
 
     def setUp(self):
