@@ -344,3 +344,19 @@ invitation links there are private bearer credentials and must not be committed.
 `DJANGO_EMAIL_BACKEND` and `DJANGO_DEFAULT_FROM_EMAIL` may be set in ignored local
 configuration. No production mail service is configured by this slice. Tokens
 are generated with 32 bytes of randomness; only SHA-256 digests are stored.
+
+## Group-context creation
+
+Group creation/editing uses descriptive access radios and supports separate group
+identity and default activity images. Choose existing artwork or upload a validated
+JPEG/PNG/WebP (maximum 5 MB). Group identity images are visible only to people who
+can view the associated group; they never become the activity organizer portrait.
+Owners and active organizers can edit group defaults from its page.
+
+Create Activity from a group page locks the association and shows context above
+the form. Global Create Activity starts independent; “For a group?” lists only
+groups the user organizes. Selecting one applies its initial artwork. A selected
+activity header overrides the default; leaving it blank in group context uses the
+group default. New activities store their own image reference, so later group
+default changes do not rewrite them. Activity audience remains independent of
+group access. Focused create pages suppress the floating +.

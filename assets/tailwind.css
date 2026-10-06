@@ -3,6 +3,9 @@
 @tailwind utilities;
 
 @layer components {
+  .ui-radio-choice { @apply flex items-start gap-2 rounded-xl border border-belong-purple/30 p-3 min-h-11 cursor-pointer; }
+  .ui-radio-choice:has(input:checked) { @apply border-belong-purple bg-belong-purple/10; }
+  .ui-radio-choice input { @apply mt-1 shrink-0; }
   .ui-page-gutter { @apply px-6 sm:px-8 lg:px-10; }
   .ui-cluster { @apply flex flex-wrap items-center gap-2; }
   .ui-button, .ui-menu-trigger, .ui-disclosure {

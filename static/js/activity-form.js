@@ -1,4 +1,20 @@
 (function () {
+  const group = document.getElementById('id_group');
+  const defaults = document.getElementById('activity-group-defaults');
+  const context = document.getElementById('activity-group-context');
+  const image = document.getElementById('id_header_image');
+  if (group && defaults && context && image) {
+    const choices = JSON.parse(defaults.textContent);
+    function update(applyImage) {
+      const selected = choices[group.value];
+      context.hidden = !selected;
+      context.textContent = selected ? `Creating an activity for ${selected.name}` : '';
+      if (applyImage) image.value = selected ? selected.image : '';
+    }
+    group.addEventListener('change', () => update(true));
+    update(false);
+  }
+
   document.querySelectorAll('[data-counter-for]').forEach(counter => {
     const input = document.getElementById(counter.dataset.counterFor);
     const limit = Number(counter.dataset.limit);

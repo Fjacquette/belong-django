@@ -23,6 +23,8 @@ class MemberStatus(models.TextChoices):
 
 
 class Group(models.Model):
+    image = models.ForeignKey("media_assets.ImageAsset", on_delete=models.SET_NULL, null=True, blank=True, related_name="group_images", limit_choices_to={"purpose": "group_image"})
+    default_activity_image = models.ForeignKey("media_assets.ImageAsset", on_delete=models.SET_NULL, null=True, blank=True, related_name="default_activity_groups", limit_choices_to={"purpose": "activity_header"})
     name = models.CharField(max_length=120)
     description = models.TextField(blank=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="owned_groups")

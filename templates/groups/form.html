@@ -1,16 +1,24 @@
 {% extends 'base.html' %}
-{% block title %}Create group · Belong{% endblock %}
+{% block title %}{% if group %}Edit group{% else %}Create group{% endif %} · Belong{% endblock %}
 {% block content %}
 <section class="max-w-xl mx-auto">
-  <h1 class="text-3xl font-display mb-4">Create a group</h1>
-  <form method="post" class="space-y-4">
+  <h1 class="text-3xl font-display mb-4">{% if group %}Edit {{ group.name }}{% else %}Create a group{% endif %}</h1>
+  <form method="post" enctype="multipart/form-data" class="space-y-4">
     {% csrf_token %}
     {{ form.non_field_errors }}
     {% for field in form %}
+      {% if field.name == 'access' %}
+        <fieldset class="space-y-3"><legend class="font-medium mb-2">{{ field.label }}</legend>
+          {% for option in form.access_options %}<label for="{{ option.radio.id_for_label }}" class="ui-radio-choice">
+            {{ option.radio.tag }}<span><strong class="block">{{ option.radio.choice_label }}</strong><span class="block text-sm">{{ option.description }}</span></span>
+          </label>{% endfor %}{{ field.errors }}
+        </fieldset>
+      {% else %}
       <div>{{ field.label_tag }}{{ field }}{% if field.help_text %}<p class="mt-1 text-sm" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</p>{% endif %}{{ field.errors }}</div>
+      {% endif %}
     {% endfor %}
     <div class="flex items-center gap-4">
-      <button type="submit" class="ui-button ui-button--primary ui-button--comfortable">Create group</button>
+      <button type="submit" class="ui-button ui-button--primary ui-button--comfortable">{% if group %}Save group{% else %}Create group{% endif %}</button>
       <a href="{% url 'activities:index' %}" class="ui-link">Back to Discover</a>
     </div>
   </form>

@@ -4,6 +4,8 @@
 {% block content %}
   <div class="max-w-2xl">
     <h1 class="text-2xl font-semibold mb-6">Create a new activity</h1>
+    <p id="activity-group-context" class="mb-4" {% if not context_group %}hidden{% endif %}>{% if context_group %}Creating an activity for {{ context_group.name }}{% endif %}</p>
+    {{ group_defaults|json_script:'activity-group-defaults' }}
     <form method="post" class="space-y-5 bg-white rounded-xl shadow p-6">
       {% csrf_token %}
       {{ form.non_field_errors }}
@@ -27,5 +29,5 @@
       </div>
     </form>
   </div>
-<script src="{% static 'js/activity-form.js' %}" defer></script>
+<script src="{% static 'js/activity-form.js' %}?v=group-defaults-1" defer></script>
 {% endblock %}

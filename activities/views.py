@@ -13,7 +13,7 @@ from django.core.paginator import Paginator
 from django.db.models import Count, Q
 from django.utils.http import url_has_allowed_host_and_scheme
 from .discovery import canonical_filters, filter_activities, facet_context
-from django.http import HttpRequest, HttpResponse, QueryDict
+from django.http import Http404, HttpRequest, HttpResponse, QueryDict
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
@@ -304,18 +304,28 @@ def detail(request: HttpRequest, pk: int) -> HttpResponse:
 
 @login_required
 def create(request: HttpRequest) -> HttpResponse:
-    if request.method == "POST":
-        form = ActivityForm(request.POST, user=request.user)
+    from groups.models import Group
+    group = None
+    group_id = request.GET.get('group')
+    if group_id:
+        if not group_id.isdigit():
+            raise Http404
+        choices = ActivityForm(user=request.user).fields['group'].queryset
+        group = get_object_or_404(choices, pk=group_id)
+    if request.method == 'POST':
+        form = ActivityForm(request.POST, user=request.user, context_group=group)
         if form.is_valid():
-            activity: Activity = form.save(commit=False)
+            activity = form.save(commit=False)
             activity.host = request.user
             activity.save()
-            messages.success(request, "Activity created!")
-            return redirect("activities:detail", pk=activity.pk)
+            messages.success(request, 'Activity created!')
+            return redirect('activities:detail', pk=activity.pk)
     else:
-        form = ActivityForm(user=request.user, initial={"group": request.GET.get("group")})
-
-    return render(request, "activities/form.html", {"form": form})
+        form = ActivityForm(user=request.user, context_group=group)
+    groups = list(form.fields['group'].queryset.select_related('default_activity_image'))
+    return render(request, 'activities/form.html', {'form': form, 'context_group': group,
+                  'group_defaults': {str(g.pk): {'name': g.name, 'image': str(g.default_activity_image_id or '')} for g in groups},
+                  'suppress_create': True})
 
 
 @login_required
