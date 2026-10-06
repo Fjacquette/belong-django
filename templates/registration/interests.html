@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Your interests · Belong{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-xl min-w-0 space-y-4">
+  <h1 class="text-2xl font-display">What are you into?</h1>
+  <p>Choose a handful of things you enjoy doing together. Around 3–10 is plenty; any number up to 20 is welcome, including none.</p>
+  <form method="post" class="space-y-4" data-interest-picker>{% csrf_token %}
+    {% if onboarding %}<button type="submit" name="action" value="skip" formnovalidate class="ui-button ui-button--secondary">Skip for now</button>{% endif %}
+    {% for error in form.interests.errors %}<p role="alert" class="text-red-700">{{ error }}</p>{% endfor %}
+    <div class="space-y-2">
+      <h2 class="font-semibold">Selected interests</h2>
+      <p data-interest-count aria-live="polite"></p>
+      <div data-interest-selected class="flex flex-wrap gap-2"></div>
+      <noscript><p>Your saved interests: {% for interest in user.profile.interests.all %}{{ interest.name }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}. Open a section below to change your choices.</p></noscript>
+    </div>
+    <div data-interest-search-container hidden>
+      <label for="interest-search" class="block font-semibold mb-2">Search interests</label>
+      <input id="interest-search" type="search" class="ui-field min-h-11" autocomplete="off" aria-controls="interest-sections">
+      <p data-interest-no-results hidden class="mt-2">No matching interests. You can suggest something below.</p>
+    </div>
+    <div id="interest-sections" class="space-y-2">
+      {% for section, choices in sections.items %}
+      <details data-interest-section {% if forloop.first %}open{% endif %}>
+        <summary class="ui-interest-section">{{ section }}</summary>
+        <div class="grid gap-2 py-2 sm:grid-cols-2">
+          {% for choice in choices %}<label class="ui-interest-choice" data-interest-choice>{{ choice.tag }}<span>{{ choice.choice_label }}</span></label>{% endfor %}
+        </div>
+      </details>
+      {% endfor %}
+    </div>
+    <div class="space-y-2">
+      <label for="{{ form.suggestion.id_for_label }}" class="block font-semibold">Something else? <span class="font-normal">(optional)</span></label>
+      {{ form.suggestion }}
+      <p class="text-sm">{{ form.suggestion.help_text }}</p>
+      {% for error in form.suggestion.errors %}<p role="alert" class="text-red-700">{{ error }}</p>{% endfor %}
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <button type="submit" class="ui-button ui-button--primary">Save interests</button>
+      {% if not onboarding %}<a href="{% url 'account_settings' %}" class="ui-link self-center">Back to Account settings</a>{% endif %}
+    </div>
+  </form>
+</div>
+<script src="{% static 'js/interests.js' %}" defer></script>
+{% endblock %}

@@ -11,6 +11,11 @@
       <button type="submit" class="ui-button ui-button--primary">Save profile</button>
     </form>
   </section>
+  <section class="space-y-4" aria-labelledby="interests-heading">
+    <h2 id="interests-heading" class="text-lg font-semibold">Interests</h2>
+    <ul class="flex flex-wrap gap-2">{% for interest in user.profile.interests.all %}<li class="ui-interest-summary">{{ interest.name }}</li>{% empty %}<li>No interests selected.</li>{% endfor %}</ul>
+    <a href="{% url 'account_interests' %}" class="ui-link">Edit interests</a>
+  </section>
   <section class="space-y-4" aria-labelledby="email-heading">
     <h2 id="email-heading" class="text-lg font-semibold">Email</h2>
     <p class="break-words">Current login: {{ user.email|default:'Legacy local account — add and verify an email below.' }}</p>

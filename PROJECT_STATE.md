@@ -29,6 +29,17 @@ GitHub issues and PRs are therefore not merely tracking artifacts; they are the 
 
 Default posture: **do it now**. If product behavior needs backend/model work, build it. Complexity may require smaller vertical slices; it is not a reason to defer the behavior unless there is a concrete blocker.
 
+## Curated interests
+
+- Profiles select optional canonical interests from a migration-seeded catalog of
+  37 activity-oriented interests across seven sections (maximum 20 selections).
+- New signup prompts for interests after email verification; Save/Skip allows entry.
+  Accepted invitation context survives the prompt. Existing accounts edit via settings.
+- Activity and Group have optional M2M fields pointing to the same Interest records;
+  ActivityCategory remains a separate broad classification. No ranking/filter changes.
+- Free-text suggestions are private separate records, reviewable in Django admin;
+  they never automatically become public or matching tags.
+
 ## Product direction
 
 Belong exists to reduce loneliness by helping people create and deepen relationships through things they do together.

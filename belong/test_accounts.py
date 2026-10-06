@@ -32,6 +32,7 @@ class AccountTests(TestCase):
         self.signup()
         user = get_user_model().objects.get(email='person@example.com')
         self.client.post(reverse('verify_email', args=[self.token()]))
+        self.client.post(reverse('account_interests'), {'action': 'skip'})
         return user
 
     def test_signup_identity_and_gate_all_product_routes(self):
@@ -65,7 +66,7 @@ class AccountTests(TestCase):
         self.assertEqual(page['Referrer-Policy'], 'same-origin')
         self.assertContains(page, 'Verify email')
         self.assertFalse(user.profile.can_use_belong)
-        self.assertRedirects(self.client.post(reverse('verify_email', args=[token])), reverse('account_settings'))
+        self.assertRedirects(self.client.post(reverse('verify_email', args=[token])), reverse('account_interests'))
         user.refresh_from_db()
         self.assertEqual(user.pk, pk)
         self.assertTrue(user.profile.can_use_belong)

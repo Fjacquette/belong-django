@@ -1,5 +1,3 @@
-from belong.test_helpers import create_legacy_user
-from django.contrib.auth import get_user_model
 from django.db import connection
 from django.db.migrations.executor import MigrationExecutor
 from django.test import TransactionTestCase
@@ -17,8 +15,9 @@ class AccessMigrationTests(TransactionTestCase):
             Membership = apps.get_model('groups', 'GroupMembership')
             Activity = apps.get_model('activities', 'Activity')
             Response = apps.get_model('activities', 'ActivityResponse')
-            user = create_legacy_user(username='migration-owner')
-            pending_user = create_legacy_user(username='migration-pending')
+            User = apps.get_model('auth', 'User')
+            user = User.objects.create(username='migration-owner')
+            pending_user = User.objects.create(username='migration-pending')
             expected = {}
             for visibility in ['public', 'unlisted', 'private']:
                 for policy in ['open', 'approval', 'invite']:

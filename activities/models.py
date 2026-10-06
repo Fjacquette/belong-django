@@ -78,6 +78,7 @@ DEFAULT_RESPONSE_CHOICES = [
 
 
 class Activity(models.Model):
+    interests = models.ManyToManyField("social.Interest", blank=True, related_name="activities")
     series = models.ForeignKey('ActivitySeries', on_delete=models.SET_NULL, null=True, blank=True, related_name='occurrences')
     group = models.ForeignKey(
         "groups.Group", on_delete=models.SET_NULL, null=True, blank=True,

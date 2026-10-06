@@ -3,6 +3,13 @@
 @tailwind utilities;
 
 @layer components {
+  .ui-interest-choice { @apply flex min-h-11 items-center gap-2 rounded-xl border border-belong-purple/30 px-3 py-2 cursor-pointer; }
+  .ui-interest-choice:has(input:checked) { @apply bg-belong-purple/10 border-belong-purple; }
+  .ui-interest-choice input { @apply h-4 w-4 shrink-0 accent-belong-purple; }
+  .ui-interest-section { @apply min-h-11 rounded-xl border border-belong-purple/30 px-3 py-2 cursor-pointer text-belong-purple; }
+  .ui-interest-summary { @apply rounded-full bg-belong-purple/10 px-3 py-1 text-sm; }
+  [data-interest-choice][hidden] { display: none; }
+
   .ui-choice-list { @apply grid grid-cols-1 gap-2; }
   .ui-choice-list label { @apply flex items-center gap-2 min-h-10 cursor-pointer; }
   .ui-radio-choice { @apply flex items-start gap-2 rounded-xl border border-belong-purple/30 p-3 min-h-11 cursor-pointer; }

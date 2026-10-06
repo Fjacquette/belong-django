@@ -696,3 +696,14 @@ Create to keep their task focused. Display names replace opaque usernames in pub
 identity, with an explicit “(Organization)” suffix wherever that identity appears.
 The header menu retains its existing layout with an Account settings link; #41 owns
 its later identity redesign.
+
+## Curated interest picker
+
+Interest selection uses native independent checkboxes (`ui-interest-choice`) within
+section disclosures (`ui-interest-section`). Open one starter section; search
+reveals matching choices across sections. Keep all inputs in the form so collapsing
+or searching never drops selections. Selected interests remain visible as quiet
+Remove buttons; their names and the selection count communicate stored/pending state.
+Without JavaScript, section disclosures and checkboxes remain usable.
+Account settings shows saved names as informational `ui-interest-summary` chips and
+an Edit interests navigation link. Suggestions are a separate optional text field.

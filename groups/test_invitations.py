@@ -106,8 +106,9 @@ class InvitationTests(TestCase):
         from django.core import mail
         proof = re.search(r'/accounts/verify/([^/]+)/', mail.outbox[-1].body).group(1)
         self.assertTrue(EmailVerification.objects.filter(token_digest=digest(proof)).exists())
-        self.assertRedirects(self.client.post(reverse('verify_email', args=[proof])), self.group.get_absolute_url())
+        self.assertRedirects(self.client.post(reverse('verify_email', args=[proof])), reverse('account_interests'))
         user = get_user_model().objects.get(email='new@example.com')
+        self.assertRedirects(self.client.post(reverse('account_interests'), {'action': 'skip'}), self.group.get_absolute_url())
         self.assertEqual(user.email, 'new@example.com')
         self.assertTrue(self.group.memberships.filter(user=user, status='active').exists())
 
@@ -123,10 +124,11 @@ class InvitationTests(TestCase):
         proof = re.search(r'/accounts/verify/([^/]+)/', mail.outbox[-1].body).group(1)
         other_browser = Client()
         self.assertRedirects(other_browser.post(reverse('verify_email', args=[proof])), reverse('login'))
-        self.assertRedirects(self.client.get(reverse('verification_status')), self.group.get_absolute_url())
+        self.assertRedirects(self.client.get(reverse('verification_status')), reverse('account_interests'))
         user = get_user_model().objects.get(email='cross-browser@example.com')
         self.assertTrue(self.group.memberships.filter(user=user, status='active').exists())
         self.assertNotIn('pending_group_invitation', self.client.session)
+        self.assertRedirects(self.client.post(reverse('account_interests'), {'interests': []}), self.group.get_absolute_url())
 
     def test_unverified_invitee_keeps_nonsecret_reference_until_verification(self):
         import re
