@@ -410,11 +410,14 @@ Rules:
   inherit the activity/card palette
 - default unselected action: white/translucent surface with border/text derived from
   `--card-primary` (or another explicitly defined accessible card accent)
-- selected action: filled card accent with a high-contrast text color
+- Band 5 uses the same accessible horizontal gradient as Band 1
+- selected card action: white surface with card-local accent text, an inset 2px
+  accent border and underline; selection must remain visible without color alone
+- focus-visible: a white 2px outline with 2px offset against the colored footer
 - **a checkmark is status, not decoration**: render `✓` only when the user's current
   response is a genuinely confirmed/committed state such as RSVP yes / Count me in
-- a softer selected state such as Interested may use the selected fill treatment but
-  should not automatically receive a checkmark
+- a softer selected state such as Interested uses the selected border/underline
+  treatment without a checkmark
 - question/vote/external/CTA buttons never receive a checkmark merely because they are
   available actions
 - if a card palette cannot provide accessible contrast, use a documented accessible
@@ -598,8 +601,9 @@ cards. Only matching tracked, owner-preserved authored demo prices are populated
   complete 12px labels. Card-local `--card-accent` derives from the primary palette:
   retain colors with at least 4.5:1 contrast against white, otherwise darken RGB
   channels together by 10% steps until they meet that ratio. Invalid colors use
-  neutral #333333. White unselected surfaces use accent text/borders; selected
-  fills use the accent with white text. `ui-response--confirmed` supplies the
+  neutral #333333. White card controls use accent text/borders in both states; selected
+  controls add an inset 2px accent border and a 2px underline without changing
+  their geometry. White focus outlines contrast with the shared Band 1/5 gradient. `ui-response--confirmed` supplies the
   checkmark only for an actual selected `committed` response, on cards and Details.
   Interested, question, more, vote, declined and external actions have no check.
   General application actions stay purple.
