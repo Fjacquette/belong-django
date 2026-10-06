@@ -51,7 +51,7 @@
     <p data-full-text="{{ activity.description }}" aria-label="{{ activity.description }}" class="activity-card__description">{{ activity.description }}</p>
     {% if current_status and current_status != card_response_options.0.value %}<p class="card-current-response text-xs" aria-label="You: {{ current_status_label }}">You: {{ current_status_label }}</p>{% endif %}
   </div>
-  <div class="activity-card__band-5 bg-white/90 flex items-center justify-center activity-card__cta" style="padding: 4px 12px;">
+  <div class="activity-card__band-5 flex items-center justify-center activity-card__cta" style="padding: 4px 12px;">
     {% include 'activities/_join_region.html' with activity=activity variant='card' %}
   </div>
 </div>
