@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}Complete account setup · Belong{% endblock %}
+{% block content %}
+<section class="mx-auto max-w-xl min-w-0 space-y-4">
+  <h1 class="text-2xl font-display">Complete your account</h1>
+  {% if error %}<p role="alert">{{ error }}</p><a href="{% url 'signup' %}" class="ui-link">Request another account link</a>{% else %}
+  <p class="break-words">Verify {{ email }} and choose how you’ll appear in Belong.</p>
+  <form method="post" class="space-y-4">{% csrf_token %}{% include 'includes/account_fields.html' %}<button type="submit" class="ui-button ui-button--primary">Verify email and create account</button></form>
+  {% endif %}
+</section>
+{% endblock %}

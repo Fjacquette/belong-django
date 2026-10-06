@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}Check your email · Belong{% endblock %}
+{% block content %}
+<section class="mx-auto max-w-xl min-w-0 space-y-4">
+  <h1 class="text-2xl font-display">Check your email</h1>
+  <p>If we can send an account link, it will arrive shortly. Repeated requests are limited. If you already have an account, you can sign in or recover it.</p>
+  <p>If nothing arrives, check your spam folder and try again later.</p>
+  <div class="flex flex-wrap gap-4"><a href="{% url 'login' %}" class="ui-link">Sign in</a><a href="{% url 'password_reset' %}" class="ui-link">Recover account</a><a href="{% url 'signup' %}" class="ui-link">Request another account link</a></div>
+</section>
+{% endblock %}

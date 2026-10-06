@@ -22,30 +22,35 @@ class InvitationTests(TestCase):
         self.wrong = create_legacy_user('wrong', email='other@example.com')
         self.group = Group.objects.create(name='Private hikes', description='Secret trails', owner=self.owner, access='private')
         GroupMembership.objects.create(group=self.group, user=self.owner, role='organizer')
+        self.owner.profile.email_verified_at = timezone.now()
+        self.owner.profile.save()
+        self.wrong.profile.email_verified_at = timezone.now()
+        self.wrong.profile.save()
         self.client.force_login(self.owner)
 
     def send(self, email='hiker@example.com'):
         response = self.client.post(reverse('groups:invite', args=[self.group.pk]), {'emails': email})
         self.assertEqual(response.status_code, 302)
-        return mail.outbox[-1].body.split('Accept your invitation: ')[1].split('\n')[0].split('/')[-2]
+        return mail.outbox[-1].body.split('Review and accept: ')[1].split('\n')[0].split('/')[-2]
 
     def url(self, token):
         return reverse('groups:invitation', args=[token])
 
-    def test_secure_email_delivery_and_duplicate_rotation(self):
+    def test_secure_email_delivery_and_duplicate_cooldown(self):
         token = self.send('HIKER@example.com, hiker@example.com')
         invite = GroupInvitation.objects.get()
         self.assertGreaterEqual(len(token), 40)
-        self.assertNotEqual(invite.token_digest, token)
         self.assertEqual(invite.token_digest, digest(token))
         self.assertEqual(invite.email, 'hiker@example.com')
         self.assertEqual(mail.outbox[0].to, ['hiker@example.com'])
+        self.client.post(reverse('groups:invite', args=[self.group.pk]), {'emails': self.user.email})
         self.assertEqual(len(mail.outbox), 1)
-        new = self.send()
-        self.assertNotEqual(new, token)
-        self.assertEqual(GroupInvitation.objects.count(), 1)
-        self.assertNotContains(self.client.get(self.url(token)), self.group.name)
-        self.assertNotContains(self.client.get(self.group.get_absolute_url()), new)
+        self.assertEqual(GroupInvitation.objects.get().token_digest, digest(token))
+        self.assertNotContains(self.client.get(self.group.get_absolute_url()), token)
+
+    def age_mail(self):
+        from social.models import OutboundEmailAttempt
+        OutboundEmailAttempt.objects.update(created_at=timezone.now()-timedelta(days=8))
 
     def test_all_modes_invitation_is_approval_and_idempotent(self):
         for access in ['open', 'closed', 'unlisted', 'private']:
@@ -62,6 +67,7 @@ class InvitationTests(TestCase):
                 self.client.post(self.url(token))
                 self.assertFalse(self.group.memberships.filter(user=self.user).exists())
                 self.client.force_login(self.owner)
+                self.age_mail()
 
     def test_private_identity_valid_bearer_only_and_wrong_account_cannot_accept(self):
         token = self.send()
@@ -98,34 +104,34 @@ class InvitationTests(TestCase):
         self.assertContains(self.client.post(reverse('signup'), data), 'Use the invited email')
         self.assertFalse(get_user_model().objects.filter(username='new-hiker').exists())
         data['email'] = 'NEW@example.com'
-        self.assertRedirects(self.client.post(reverse('signup'), data), reverse('verification_status'))
+        self.assertRedirects(self.client.post(reverse('signup'), data), reverse('account_email_requested'))
         self.assertIn('pending_group_invitation', self.client.session)
         from belong.email_verification import digest
-        from social.models import EmailVerification
+        from social.models import AccountEmailProof
         import re
         from django.core import mail
-        proof = re.search(r'/accounts/verify/([^/]+)/', mail.outbox[-1].body).group(1)
-        self.assertTrue(EmailVerification.objects.filter(token_digest=digest(proof)).exists())
-        self.assertRedirects(self.client.post(reverse('verify_email', args=[proof])), reverse('account_interests'))
+        proof = re.search(r'/accounts/setup/([^/]+)/', mail.outbox[-1].body).group(1)
+        self.assertTrue(AccountEmailProof.objects.filter(token_digest=digest(proof)).exists())
+        self.assertRedirects(self.client.post(reverse('complete_signup', args=[proof]), data), reverse('account_interests'))
         user = get_user_model().objects.get(email='new@example.com')
         self.assertRedirects(self.client.post(reverse('account_interests'), {'action': 'skip'}), self.group.get_absolute_url())
         self.assertEqual(user.email, 'new@example.com')
         self.assertTrue(self.group.memberships.filter(user=user, status='active').exists())
 
-    def test_invitation_finishes_when_email_verified_in_another_browser(self):
+    def test_invitation_finishes_after_cross_browser_setup_and_original_browser_login(self):
         import re
-        from django.core import mail
-        from django.test import Client
         token = self.send('cross-browser@example.com')
         self.client.logout()
         self.client.post(self.url(token), {'auth': 'signup'})
-        self.client.post(reverse('signup'), {'email': 'cross-browser@example.com', 'account_type': 'individual',
-                         'display_name': 'Cross Browser', 'password1': 'Testing-only-817!', 'password2': 'Testing-only-817!'})
-        proof = re.search(r'/accounts/verify/([^/]+)/', mail.outbox[-1].body).group(1)
+        self.client.post(reverse('signup'), {'email': 'cross-browser@example.com'})
+        proof = re.search(r'/accounts/setup/([^/]+)/', mail.outbox[-1].body).group(1)
         other_browser = Client()
-        self.assertRedirects(other_browser.post(reverse('verify_email', args=[proof])), reverse('login'))
-        self.assertRedirects(self.client.get(reverse('verification_status')), reverse('account_interests'))
+        data = {'account_type': 'individual', 'display_name': 'Cross Browser',
+                'password1': 'Testing-only-817!', 'password2': 'Testing-only-817!'}
+        self.assertRedirects(other_browser.post(reverse('complete_signup', args=[proof]), data), reverse('account_interests'))
         user = get_user_model().objects.get(email='cross-browser@example.com')
+        self.assertFalse(self.group.memberships.filter(user=user).exists())
+        self.assertRedirects(self.client.post(reverse('login'), {'username': user.email, 'password': data['password1']}), reverse('account_interests'))
         self.assertTrue(self.group.memberships.filter(user=user, status='active').exists())
         self.assertNotIn('pending_group_invitation', self.client.session)
         self.assertRedirects(self.client.post(reverse('account_interests'), {'interests': []}), self.group.get_absolute_url())
@@ -149,8 +155,10 @@ class InvitationTests(TestCase):
         self.assertNotIn(token, str(decoded))
         self.assertFalse(self.group.memberships.filter(user=self.user, status='active').exists())
         self.client.post(reverse('verification_status'), {'email': self.user.email})
-        proof = re.search(r'/accounts/verify/([^/]+)/', mail.outbox[-1].body).group(1)
-        self.assertRedirects(self.client.post(reverse('verify_email', args=[proof])), self.group.get_absolute_url())
+        proof = re.search(r'/accounts/setup/([^/]+)/', mail.outbox[-1].body).group(1)
+        data = {'account_type': 'individual', 'display_name': 'Owner', 'password1': 'Testing-only-817!', 'password2': 'Testing-only-817!'}
+        self.assertRedirects(self.client.post(reverse('complete_signup', args=[proof]), data), reverse('account_interests'))
+        self.assertRedirects(self.client.post(reverse('account_interests'), {'action': 'skip'}), self.group.get_absolute_url())
         self.assertTrue(self.group.memberships.filter(user=self.user, status='active').exists())
 
     def test_existing_email_signup_requires_login(self):
@@ -158,7 +166,7 @@ class InvitationTests(TestCase):
         self.client.post(self.url(token), {'auth': 'signup'})
         page = self.client.post(reverse('signup'), {'username': 'duplicate', 'email': self.user.email,
                                 'password1': 'Testing-only-817!', 'password2': 'Testing-only-817!'})
-        self.assertContains(page, 'Sign in instead')
+        self.assertRedirects(page, reverse('account_email_requested'))
         self.assertFalse(get_user_model().objects.filter(username='duplicate').exists())
 
     def test_expiry_revocation_block_and_pending_membership(self):
@@ -166,9 +174,11 @@ class InvitationTests(TestCase):
         invite = GroupInvitation.objects.get()
         invite.expires_at = timezone.now() - timedelta(seconds=1); invite.save()
         with self.assertRaises(ValidationError): accept_invitation(token, self.user)
+        self.age_mail()
         token = self.send()
         self.client.post(reverse('groups:revoke_invitation', args=[self.group.pk, invite.pk]))
         with self.assertRaises(ValidationError): accept_invitation(token, self.user)
+        self.age_mail()
         token = self.send()
         member = GroupMembership.objects.create(group=self.group, user=self.user, status='blocked')
         with self.assertRaises(ValidationError): accept_invitation(token, self.user)
@@ -191,14 +201,19 @@ class InvitationTests(TestCase):
         self.client.force_login(self.owner)
         self.assertEqual(self.client.get(reverse('groups:invite', args=[self.group.pk])).status_code, 405)
 
-    def test_invalid_batch_and_delivery_failure_preserve_previous_token(self):
+    def test_invalid_batch_and_delivery_failure_have_durable_bounded_retry(self):
         self.client.post(reverse('groups:invite', args=[self.group.pk]), {'emails': 'valid@example.com invalid'})
         self.assertEqual(GroupInvitation.objects.count(), 0)
-        token = self.send()
-        with patch('groups.invitations.send_mail', side_effect=OSError('test delivery failure')):
+        with patch('belong.email_controls.send_mail', side_effect=OSError('test delivery failure')):
             self.client.post(reverse('groups:invite', args=[self.group.pk]), {'emails': self.user.email})
-        self.assertEqual(GroupInvitation.objects.get().token_digest, digest(token))
-        self.assertContains(self.client.get(self.group.get_absolute_url()), 'email could not be sent')
+        from social.models import OutboundEmailAttempt
+        self.assertEqual(OutboundEmailAttempt.objects.get().outcome, 'failed')
+        self.assertEqual(GroupInvitation.objects.count(), 1)
+        self.client.post(reverse('groups:invite', args=[self.group.pk]), {'emails': self.user.email})
+        self.assertEqual(len(mail.outbox), 0)
+        self.age_mail()
+        self.send()
+        self.assertEqual(len(mail.outbox), 1)
 
     def test_legacy_blank_email_binds_only_on_explicit_acceptance(self):
         legacy = create_legacy_user('legacy-signup')

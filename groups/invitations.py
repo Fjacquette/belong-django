@@ -5,9 +5,9 @@ from datetime import timedelta
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.core.mail import send_mail
 from django.db import IntegrityError, transaction
 from django.urls import reverse
+from django.conf import settings
 from django.utils import timezone
 
 from .models import Group, GroupInvitation, GroupMembership, MemberStatus
@@ -30,31 +30,82 @@ def email_claimed(email, user):
 
 
 def issue_invitation(group, inviter, email, request):
+    from belong.email_controls import lock_controls, owned_url, dispatch, address_hash, request_ip_hash
+    from social.models import OutboundEmailAttempt, UserProfile
+    email = email.strip().lower()
+    from django.core.validators import validate_email
+    validate_email(email)
     with transaction.atomic():
+        lock_controls()
         group = Group.objects.select_for_update().get(pk=group.pk)
+        profile = UserProfile.objects.select_for_update().get(user=inviter)
+        reason = ''
+        now = timezone.now()
+        limits = settings.EMAIL_LIMITS
+        recipient = address_hash(email)
+        attempts = OutboundEmailAttempt.objects.filter(kind='invitation').exclude(outcome='blocked')
+        recent = attempts.filter(actor=inviter, created_at__gt=now-timedelta(days=1))
+        previous = attempts.filter(group_reference=group.pk, recipient_hash=recipient,
+            created_at__gt=now-timedelta(days=limits['invitation_cooldown_days']))
         if not group.can_organize(inviter):
-            raise ValidationError('Only current organizers may invite people.')
-        email = email.strip().lower()
-        members = group.memberships.filter(user__email__iexact=email)
-        if members.filter(status=MemberStatus.BLOCKED).exists():
-            raise ValidationError('This address belongs to a blocked member. Unblock membership first.')
-        if members.filter(status=MemberStatus.ACTIVE).exists():
-            return False
-        token = secrets.token_urlsafe(32)
-        invitation, _ = GroupInvitation.objects.update_or_create(group=group, email=email, defaults={
-            'inviter': inviter, 'token_digest': digest(token), 'status': 'pending',
-            'expires_at': timezone.now() + timedelta(days=7), 'accepted_by': None,
-            'accepted_at': None,
-        })
-        url = request.build_absolute_uri(reverse('groups:invitation', args=[token]))
-        delivered = send_mail(f'Invitation to {group.name}',
-                  f'{inviter.profile.identity_label} invited you to {group.name}.\n\n'
-                  f'Accept your invitation: {url}\n\nThis invitation expires in 7 days. '
-                  'Sign in or create an account using the invited email address.',
-                  None, [email], fail_silently=False)
-        if delivered != 1:
-            raise RuntimeError('Invitation email was not delivered.')
-        return True
+            reason = 'not_organizer'
+        elif not profile.user.is_active:
+            reason = 'account_inactive'
+        elif not profile.email_verified_at:
+            reason = 'unverified_account'
+        elif profile.outbound_mail_suspended:
+            reason = 'outbound_suspended'
+        elif previous.filter(outcome__in=['reserved', 'sent']).exists():
+            reason = 'recipient_cooldown'
+        elif previous.filter(outcome='failed', created_at__gt=now-timedelta(seconds=limits['invitation_failure_retry_seconds'])).exists():
+            reason = 'delivery_backoff'
+        elif (not recent.filter(recipient_hash=recipient).exists()
+                and recent.values('recipient_hash').distinct().count() >= limits['invitation_unique_day']):
+            reason = 'unique_day'
+        elif recent.count() >= limits['invitation_attempts_day']:
+            reason = 'attempts_day'
+        attempt = OutboundEmailAttempt.objects.create(kind='invitation', actor=inviter,
+            recipient_hash=recipient, ip_hash=request_ip_hash(request), group_reference=group.pk,
+            outcome='blocked' if reason else 'reserved', reason=reason)
+        if not reason:
+            members = group.memberships.filter(user__email__iexact=email)
+            if members.filter(status=MemberStatus.BLOCKED).exists():
+                reason = 'blocked_member'
+            elif members.filter(status=MemberStatus.ACTIVE).exists():
+                attempt.outcome = 'not_needed'
+                attempt.save(update_fields=['outcome'])
+                return False
+        if reason:
+            attempt.outcome, attempt.reason = 'blocked', reason
+            attempt.save(update_fields=['outcome', 'reason'])
+        else:
+            token = secrets.token_urlsafe(32)
+            invitation, _ = GroupInvitation.objects.update_or_create(group=group, email=email, defaults={
+                'inviter': inviter, 'token_digest': digest(token), 'status': 'pending',
+                'expires_at': now+timedelta(days=7), 'accepted_by': None, 'accepted_at': None,
+            })
+    # Raise only after commit, preserving denied attempts in the diagnostic trail.
+    if reason:
+        messages = {
+            'unverified_account': 'Verify your email before inviting people.',
+            'account_inactive': 'This account cannot send invitations.',
+            'outbound_suspended': 'Outbound invitations are suspended for this account.',
+            'recipient_cooldown': 'An invitation was already emailed to this address within seven days.',
+            'delivery_backoff': 'Please wait before retrying this delivery.',
+            'not_organizer': 'Only current organizers may invite people.',
+            'blocked_member': 'This address belongs to a blocked member. Unblock membership first.',
+        }
+        raise ValidationError(messages.get(reason, 'Your daily invitation limit has been reached. Try again later.'))
+    try:
+        url = owned_url('groups:invitation', token)
+    except Exception:
+        OutboundEmailAttempt.objects.filter(pk=attempt.pk).update(outcome='failed', reason='origin_configuration')
+        raise ValidationError('Invitation email could not be sent. Please retry later.')
+    # Never interpolate organizer/group text: it can contain arbitrary links or content.
+    if not dispatch(attempt, 'Your Belong group invitation',
+            f'You have been invited to a group on Belong.\n\nReview and accept: {url}\n\nThis invitation expires in seven days. Use this email address to sign in or create an account.', email):
+        raise ValidationError('Invitation email could not be sent. Please retry later.')
+    return True
 
 
 def pending_invitation(request):

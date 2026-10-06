@@ -64,3 +64,32 @@ class AccountMigrationTests(TransactionTestCase):
             self.assertNotIn('group_invitation', store.decode(Session.objects.get(pk='b'*32).session_data))
         finally:
             MigrationExecutor(connection).migrate(latest)
+
+    def test_email_controls_backfill_retained_deliveries_and_preserve_profiles(self):
+        from datetime import timedelta
+        import hashlib
+        from django.utils import timezone
+        executor = MigrationExecutor(connection)
+        latest = executor.loader.graph.leaf_nodes()
+        previous = [('social', '0008_seed_interests'), ('groups', '0005_group_interests')]
+        executor.migrate(previous)
+        try:
+            apps = executor.loader.project_state(previous).apps
+            user = apps.get_model('auth', 'User').objects.create(username='old-mail-owner', email='old-owner@example.com')
+            apps.get_model('social', 'UserProfile').objects.create(user_id=user.pk, display_name='Keep identity', status_text='Keep state')
+            group = apps.get_model('groups', 'Group').objects.create(name='Keep group', owner_id=user.pk)
+            sent = timezone.now()
+            apps.get_model('groups', 'GroupInvitation').objects.create(group_id=group.pk, inviter_id=user.pk, email='OLD-INVITEE@EXAMPLE.COM', token_digest='retained-digest', expires_at=sent+timedelta(days=7), status='revoked')
+            apps.get_model('social', 'EmailVerification').objects.create(user_id=user.pk, email=user.email, token_digest='old-proof-digest', created_at=sent, expires_at=sent+timedelta(hours=24))
+            executor = MigrationExecutor(connection); executor.migrate(latest)
+            apps = executor.loader.project_state(latest).apps
+            profile = apps.get_model('social', 'UserProfile').objects.get(user_id=user.pk)
+            self.assertEqual((profile.display_name, profile.status_text, profile.outbound_mail_suspended), ('Keep identity', 'Keep state', False))
+            Attempt = apps.get_model('social', 'OutboundEmailAttempt')
+            invite = Attempt.objects.get(kind='invitation')
+            self.assertEqual((invite.actor_id, invite.group_reference, invite.outcome, invite.created_at), (user.pk, group.pk, 'sent', sent))
+            self.assertEqual(invite.recipient_hash, hashlib.sha256(b'old-invitee@example.com').hexdigest())
+            self.assertEqual(Attempt.objects.get(kind='verification').created_at, sent)
+            self.assertTrue(apps.get_model('social', 'EmailControlLock').objects.filter(pk=1).exists())
+        finally:
+            MigrationExecutor(connection).migrate(latest)

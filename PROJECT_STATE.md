@@ -101,10 +101,13 @@ For normal implementation work, Codex must present the exact committed feature H
 
 ## Account foundation
 
-#44 adds email-first signup and login while retaining stable auth.User PKs/internal
-usernames. New accounts persist required Individual/Organization and display name,
-and cannot access product routes before 24-hour one-time email verification.
-Invitations remain pending through verification and finish afterward. Account
+Email-first signup/login retains stable auth.User PKs/internal usernames. #46 moves
+new account creation behind 24-hour email proof: request link first, then the proven
+owner chooses password, required Individual/Organization, and display name. Public
+signup/recovery requests share neutral responses; unverified pre-claims can be
+reclaimed only by email proof, replacing provisional credentials/identity. Recovery
+proofs last one hour, invalidate old sessions and require explicit sign-in.
+Invitation consent survives setup (or original-browser login after cross-browser setup). Account
 settings edits identity, coarse home area, normalized square avatar, pending email
 (with password confirmation), and password. Organization labels grant no privileges.
 Nonempty emails are case-insensitively unique at the database level. Existing local
@@ -114,6 +117,19 @@ IMMEDIATE transactions. Invitation sessions retain a signed ID, never a bearer
 token; legacy session tokens are scrubbed. Avatars have a 25 MP decode ceiling.
 No fake email backfill.
 #41 can now build the header identity menu from these profile values.
+
+## Email abuse controls
+
+- Only email-verified organizers send invitations; legacy/Organization status grants
+  no sending bypass. Admin profile suspension blocks third-party mail without deletion.
+- Fixed mail content and canonical BELONG_PUBLIC_ORIGIN prevent arbitrary message/link
+  relay. Production requires HTTPS origin and provider/domain/bounce readiness (README).
+- Durable hashed attempt journal + serialized reservations enforce configured signup,
+  creation, self-address/IP and invitation quotas/cooldowns across retries/restarts.
+  Invitations cap both 50 unique recipients and 50 attempts per rolling day, 20/action;
+  seven-day group/address cooldown survives revoke/recreate. Failed sends retain quota.
+- SMTP runs after commit; bounded explicit retries, no automatic loop. Existing retained
+  delivery records are backfilled. Provider webhook integration is still deployment work.
 
 ## Current implementation sequence
 

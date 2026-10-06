@@ -35,6 +35,7 @@
         {% endif %}
         <button type="submit" class="ui-button ui-button--primary ui-button--comfortable w-full">Sign in</button>
       </form>
+      <a href="{% url 'password_reset' %}" class="ui-link">Forgot your password?</a>
       <p class="text-sm text-belong-slate/80">Need an account? <a href="{% url 'signup' %}" class="ui-link font-semibold">Create account</a></p>
     </section>
   </div>

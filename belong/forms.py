@@ -1,14 +1,13 @@
-import uuid
 
 from django import forms
 from django.contrib.auth import get_user_model
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth.forms import AuthenticationForm, SetPasswordForm
+from django.contrib.auth.password_validation import validate_password
 from django.db import transaction
 
 from media_assets.images import normalized_avatar
 from media_assets.models import ImageAsset, ImageAssetPurpose
 from social.models import UserProfile, Interest, InterestSuggestion
-from .email_verification import email_available
 
 BASE_INPUT_CLASSES = 'ui-field min-h-11'
 
@@ -29,52 +28,48 @@ class StyledAuthenticationForm(AuthenticationForm):
         self.fields['username'].widget.attrs['maxlength'] = 254
 
 
-class StyledUserCreationForm(UserCreationForm):
-    email = forms.EmailField(max_length=254)
-    account_type = forms.ChoiceField(choices=UserProfile._meta.get_field('account_type').choices, widget=forms.RadioSelect, label='Account type')
-    display_name = forms.CharField(max_length=120, label='Display name', help_text='The name people will see, or your organization’s name.')
+class SignupEmailForm(forms.Form):
+    email = forms.EmailField(max_length=254, widget=forms.EmailInput(attrs={'autocomplete': 'email'}))
 
-    class Meta(UserCreationForm.Meta):
-        fields = ('email',)
-
-    field_order = ('email', 'password1', 'password2', 'account_type', 'display_name')
+    def __init__(self, *args, invited_email=None, **kwargs):
+        self.invited_email = invited_email
+        super().__init__(*args, **kwargs)
+        if invited_email:
+            self.fields['email'].initial = invited_email
+            self.fields['email'].widget.attrs['readonly'] = True
+        style_fields(self)
 
     def clean_email(self):
         email = self.cleaned_data['email'].strip().lower()
-        if not email_available(email):
-            raise forms.ValidationError('An account already uses this email. Sign in instead.')
+        if self.invited_email and email != self.invited_email:
+            raise forms.ValidationError('Use the invited email address.')
         return email
 
+
+class AccountSetupForm(forms.Form):
+    display_name = forms.CharField(max_length=120, label='Display name')
+    account_type = forms.ChoiceField(choices=UserProfile._meta.get_field('account_type').choices,
+                                    widget=forms.RadioSelect, label='Account type')
+    password1 = forms.CharField(label='Password', widget=forms.PasswordInput(attrs={'autocomplete': 'new-password'}))
+    password2 = forms.CharField(label='Confirm password', widget=forms.PasswordInput(attrs={'autocomplete': 'new-password'}))
+
+    def __init__(self, *args, email, **kwargs):
+        self.email = email
+        super().__init__(*args, **kwargs)
+        style_fields(self)
+
+    def clean_password2(self):
+        password = self.cleaned_data['password2']
+        if password != self.cleaned_data.get('password1'):
+            raise forms.ValidationError('The two passwords did not match.')
+        validate_password(password, get_user_model()(email=self.email, first_name=self.cleaned_data.get('display_name', '')))
+        return password
+
+
+class RecoveryPasswordForm(SetPasswordForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         style_fields(self)
-        self.fields['password1'].help_text = 'Use at least 8 characters; avoid common passwords.'
-
-    def save(self, commit=True):
-        with transaction.atomic():
-            self.instance.username = 'u_' + uuid.uuid4().hex
-            user = super().save(commit=commit)
-            if commit:
-                profile = user.profile
-                profile.account_type = self.cleaned_data['account_type']
-                profile.display_name = self.cleaned_data['display_name']
-                profile.legacy_access = False
-                profile.interests_prompt_pending = True
-                profile.save(update_fields=['account_type', 'display_name', 'legacy_access', 'interests_prompt_pending'])
-            return user
-
-
-class InvitedUserCreationForm(StyledUserCreationForm):
-    def __init__(self, *args, invited_email, **kwargs):
-        self.invited_email = invited_email
-        super().__init__(*args, **kwargs)
-        self.fields['email'].initial = invited_email
-        self.fields['email'].widget.attrs['readonly'] = True
-
-    def clean_email(self):
-        if self.cleaned_data['email'].strip().lower() != self.invited_email:
-            raise forms.ValidationError('Use the invited email address.')
-        return super().clean_email()
 
 
 class ProfileForm(forms.ModelForm):
@@ -123,8 +118,6 @@ class EmailChangeForm(forms.Form):
         email = self.cleaned_data['email'].strip().lower()
         if email == self.user.email.lower():
             raise forms.ValidationError('This is already your current email address.')
-        if not email_available(email, self.user):
-            raise forms.ValidationError('An account already uses this email. Sign in instead.')
         return email
 
     def clean_current_password(self):

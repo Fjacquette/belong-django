@@ -707,3 +707,10 @@ Remove buttons; their names and the selection count communicate stored/pending s
 Without JavaScript, section disclosures and checkboxes remain usable.
 Account settings shows saved names as informational `ui-interest-summary` chips and
 an Edit interests navigation link. Suggestions are a separate optional text field.
+
+Account access uses the same compact form/link families: email-only signup and
+recovery requests lead to one neutral Check your email page; bearer setup pages
+collect identity and credentials only after mail ownership. GET never mutates account
+state. Required errors stay adjacent to inputs; retry/sign-in/recovery are navigation
+links. Group invitations show a verification/suspension explanation in place of an
+unavailable sending control.

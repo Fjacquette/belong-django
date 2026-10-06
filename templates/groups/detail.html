@@ -15,12 +15,12 @@
   {% if organizer %}
     <section class="space-y-3" aria-labelledby="invite-heading">
       <h2 id="invite-heading" class="text-xl font-display">Invite people</h2>
-      <form method="post" action="{% url 'groups:invite' group.pk %}" class="space-y-3">{% csrf_token %}
+      {% if can_send_invitations %}<form method="post" action="{% url 'groups:invite' group.pk %}" class="space-y-3">{% csrf_token %}
         <div><label for="{{ invitation_form.emails.id_for_label }}">{{ invitation_form.emails.label }}</label>
         {{ invitation_form.emails }}<p class="text-sm">{{ invitation_form.emails.help_text }}</p>
         {% for error in invitation_form.emails.errors %}<p class="text-sm text-belong-pink">{{ error }}</p>{% endfor %}</div>
         <button class="ui-button ui-button--primary ui-button--comfortable">Send invitations</button>
-      </form>
+      </form>{% else %}<p>{% if user.profile.outbound_mail_suspended %}Outbound invitations are suspended for this account.{% else %}Verify your email in <a href="{% url 'account_settings' %}" class="ui-link">Account settings</a> before inviting people.{% endif %}</p>{% endif %}
       {% if invitations %}<ul class="space-y-3">
         {% for invitation in invitations %}<li class="flex flex-wrap items-center justify-between gap-2">
           <span>{{ invitation.email }} · {{ invitation.display_status }}</span>

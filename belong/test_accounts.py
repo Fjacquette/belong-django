@@ -13,7 +13,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .email_verification import digest, confirm_email
-from social.models import EmailVerification
+from social.models import EmailVerification, AccountEmailProof, OutboundEmailAttempt
 from media_assets.models import ImageAssetPurpose
 
 
@@ -30,20 +30,22 @@ class AccountTests(TestCase):
 
     def verified(self):
         self.signup()
-        user = get_user_model().objects.get(email='person@example.com')
-        self.client.post(reverse('verify_email', args=[self.token()]))
+        token = re.search(r'/accounts/setup/([^/]+)/', mail.outbox[-1].body).group(1)
+        self.client.post(reverse('complete_signup', args=[token]), self.setup_data())
         self.client.post(reverse('account_interests'), {'action': 'skip'})
-        return user
+        return get_user_model().objects.get(email='person@example.com')
+
+    def setup_data(self, **kwargs):
+        return {'display_name': 'Visible Person', 'account_type': 'individual',
+                'password1': self.password, 'password2': self.password, **kwargs}
 
     def test_signup_identity_and_gate_all_product_routes(self):
         page = self.client.get(reverse('signup'))
         self.assertNotContains(page, 'name="username"')
-        self.assertRedirects(self.signup('Person@EXAMPLE.com', account_type='organization'), reverse('verification_status'))
-        user = get_user_model().objects.get(email='person@example.com')
-        self.assertTrue(user.username.startswith('u_'))
-        self.assertEqual(user.profile.account_type, 'organization')
-        self.assertEqual(user.profile.display_name, 'Visible Person')
-        self.assertFalse(user.profile.can_use_belong)
+        self.assertRedirects(self.signup('Person@EXAMPLE.com'), reverse('account_email_requested'))
+        self.assertFalse(get_user_model().objects.filter(email='person@example.com').exists())
+        user = get_user_model().objects.create_user('provisional', email='provisional@example.com', password=self.password)
+        self.client.force_login(user)
         for route in ['activities:index', 'activities:create', 'groups:create', 'account_settings', 'password_change']:
             for method in [self.client.get, self.client.post]:
                 with self.subTest(route=route, method=method):
@@ -54,47 +56,42 @@ class AccountTests(TestCase):
         self.assertNotContains(status, 'aria-label="Create"')
         self.assertNotContains(status, '>Discover</a>')
 
-    def test_token_digest_post_only_one_time_and_stable_identity(self):
+    def test_token_digest_post_only_one_time_and_required_owner_identity(self):
         self.signup()
-        user = get_user_model().objects.get(email='person@example.com')
-        pk = user.pk
-        token = self.token()
-        proof = EmailVerification.objects.get()
+        token = re.search(r'/accounts/setup/([^/]+)/', mail.outbox[-1].body).group(1)
+        proof = AccountEmailProof.objects.get()
         self.assertEqual(proof.token_digest, digest(token))
-        self.assertNotIn(token, proof.token_digest)
-        page = self.client.get(reverse('verify_email', args=[token]))
+        page = self.client.get(reverse('complete_signup', args=[token]))
         self.assertEqual(page['Referrer-Policy'], 'same-origin')
-        self.assertContains(page, 'Verify email')
-        self.assertFalse(user.profile.can_use_belong)
-        self.assertRedirects(self.client.post(reverse('verify_email', args=[token])), reverse('account_interests'))
-        user.refresh_from_db()
-        self.assertEqual(user.pk, pk)
+        self.assertFalse(get_user_model().objects.filter(email=proof.email).exists())
+        self.assertRedirects(self.client.post(reverse('complete_signup', args=[token]), self.setup_data(account_type='organization')), reverse('account_interests'))
+        user = get_user_model().objects.get(email=proof.email)
+        self.assertTrue(user.username.startswith('u_'))
         self.assertTrue(user.profile.can_use_belong)
         self.assertFalse(user.profile.legacy_access)
-        self.assertContains(self.client.post(reverse('verify_email', args=[token])), 'already used')
+        self.assertEqual(user.profile.account_type, 'organization')
+        self.assertContains(self.client.post(reverse('complete_signup', args=[token]), self.setup_data()), 'already used')
 
     def test_expired_token_and_resend_throttle(self):
         self.signup()
-        token = self.token()
-        self.assertContains(self.client.post(reverse('verification_status'), {'email': 'person@example.com'}), 'Please wait')
-        EmailVerification.objects.update(created_at=timezone.now()-timedelta(minutes=2), expires_at=timezone.now()-timedelta(seconds=1))
-        self.assertContains(self.client.post(reverse('verify_email', args=[token])), 'expired')
-        self.assertRedirects(self.client.post(reverse('verification_status'), {'email': 'person@example.com'}), reverse('verification_status'))
-        self.assertNotEqual(self.token(), token)
+        token = re.search(r'/accounts/setup/([^/]+)/', mail.outbox[-1].body).group(1)
+        self.signup()
+        self.assertEqual(len(mail.outbox), 1)
+        AccountEmailProof.objects.update(expires_at=timezone.now()-timedelta(seconds=1))
+        self.assertContains(self.client.get(reverse('complete_signup', args=[token])), 'expired')
+        OutboundEmailAttempt.objects.update(created_at=timezone.now()-timedelta(minutes=2))
+        self.signup()
         self.assertEqual(len(mail.outbox), 2)
 
-    def test_resend_supersedes_old_link_and_daily_limit(self):
+    def test_resend_keeps_old_link_until_owner_completion(self):
         self.signup()
-        old = self.token()
-        EmailVerification.objects.update(created_at=timezone.now()-timedelta(minutes=2))
-        self.client.post(reverse('verification_status'), {'email': 'corrected@example.com'})
-        self.assertContains(self.client.post(reverse('verify_email', args=[old])), 'already used')
-        self.client.post(reverse('verify_email', args=[self.token()]))
-        self.assertTrue(get_user_model().objects.filter(email='corrected@example.com').exists())
-        user = get_user_model().objects.get(email='corrected@example.com')
-        for i in range(8):
-            EmailVerification.objects.create(user=user, email=user.email, token_digest=str(i), created_at=timezone.now()-timedelta(minutes=3), expires_at=timezone.now()+timedelta(hours=1))
-        self.assertContains(self.client.post(reverse('account_settings'), {'action': 'email', 'email': 'another@example.com', 'current_password': self.password}), 'Please wait')
+        old = re.search(r'/accounts/setup/([^/]+)/', mail.outbox[-1].body).group(1)
+        OutboundEmailAttempt.objects.update(created_at=timezone.now()-timedelta(minutes=2))
+        self.signup()
+        new = re.search(r'/accounts/setup/([^/]+)/', mail.outbox[-1].body).group(1)
+        self.assertNotEqual(old, new)
+        self.assertRedirects(self.client.post(reverse('complete_signup', args=[old]), self.setup_data()), reverse('account_interests'))
+        self.assertContains(self.client.get(reverse('complete_signup', args=[new])), 'already used')
 
     def test_email_login_only_and_local_legacy_escape_hatch(self):
         user = self.verified()
@@ -112,7 +109,7 @@ class AccountTests(TestCase):
 
     def test_database_and_signup_enforce_case_insensitive_uniqueness(self):
         get_user_model().objects.create_user('existing', email='Taken@Example.com')
-        self.assertContains(self.signup('taken@example.COM'), 'Sign in instead')
+        self.assertRedirects(self.signup('taken@example.COM'), reverse('account_email_requested'))
         with self.assertRaises(IntegrityError), transaction.atomic():
             get_user_model().objects.create_user('duplicate', email='TAKEN@example.com')
         get_user_model().objects.create_user('empty-one')
@@ -144,13 +141,15 @@ class AccountTests(TestCase):
         self.assertEqual(user.email, 'person@example.com')
         self.assertTrue(user.profile.can_use_belong)
 
-    def test_delivery_failure_is_retryable_and_does_not_grant_access(self):
-        with patch('belong.email_verification.send_mail', side_effect=OSError('test delivery failure')):
-            self.assertRedirects(self.signup(), reverse('verification_status'))
-        user = get_user_model().objects.get(email='person@example.com')
-        self.assertFalse(user.profile.can_use_belong)
-        self.assertFalse(EmailVerification.objects.exists())
-        self.client.post(reverse('verification_status'), {'email': user.email})
+    def test_delivery_failure_is_bounded_retryable_and_does_not_create_an_account(self):
+        with patch('belong.email_controls.send_mail', side_effect=OSError('test delivery failure')):
+            self.assertRedirects(self.signup(), reverse('account_email_requested'))
+        self.assertFalse(get_user_model().objects.filter(email='person@example.com').exists())
+        self.assertEqual(OutboundEmailAttempt.objects.get().outcome, 'failed')
+        self.signup()
+        self.assertEqual(len(mail.outbox), 0)
+        OutboundEmailAttempt.objects.update(created_at=timezone.now()-timedelta(minutes=2))
+        self.signup()
         self.assertEqual(len(mail.outbox), 1)
 
     def test_profile_avatar_square_metadata_free_and_organization_identity(self):

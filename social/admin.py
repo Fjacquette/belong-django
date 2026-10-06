@@ -1,13 +1,13 @@
 from django.contrib import admin
 
-from .models import FriendGroup, FriendGroupMembership, FriendRequest, Friendship, UserProfile, Interest, InterestSuggestion
+from .models import FriendGroup, FriendGroupMembership, FriendRequest, Friendship, UserProfile, Interest, InterestSuggestion, OutboundEmailAttempt
 
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "status_text", "is_visible", "last_active_at")
+    list_display = ("user", "status_text", "is_visible", "last_active_at", "outbound_mail_suspended")
     search_fields = ("user__username", "status_text")
-    list_filter = ("is_visible",)
+    list_filter = ("is_visible", "outbound_mail_suspended")
     autocomplete_fields = ("user", "avatar_image")
 
 
@@ -50,4 +50,21 @@ class InterestSuggestionAdmin(admin.ModelAdmin):
     readonly_fields = ('profile', 'text', 'created_at')
 
     def has_add_permission(self, request):
+        return False
+
+
+@admin.register(OutboundEmailAttempt)
+class OutboundEmailAttemptAdmin(admin.ModelAdmin):
+    list_display = ('kind', 'actor', 'recipient_hash', 'created_at', 'outcome', 'reason')
+    list_filter = ('kind', 'outcome', 'reason')
+    search_fields = ('recipient_hash', 'actor__username')
+    readonly_fields = ('kind', 'actor', 'recipient_hash', 'ip_hash', 'group_reference', 'created_at', 'outcome', 'reason')
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
         return False

@@ -10,7 +10,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
 from django.views.decorators.http import require_http_methods
 
-from .forms import StyledAuthenticationForm, StyledUserCreationForm, InvitedUserCreationForm, ProfileForm, EmailChangeForm, VerificationEmailForm, InterestsForm, style_fields
+from .forms import StyledAuthenticationForm, SignupEmailForm, AccountSetupForm, RecoveryPasswordForm, ProfileForm, EmailChangeForm, VerificationEmailForm, InterestsForm, style_fields
 from .email_verification import send_verification, confirm_email
 
 logger = logging.getLogger(__name__)
@@ -50,18 +50,12 @@ def signup(request):
     if request.user.is_authenticated:
         return redirect('activities:index' if request.user.profile.can_use_belong else 'verification_status')
     invitation = pending_invitation(request)
-    kwargs = {'invited_email': invitation.email} if usable(invitation) else {}
-    form_class = InvitedUserCreationForm if kwargs else StyledUserCreationForm
-    form = form_class(request.POST or None, **kwargs)
+    form = SignupEmailForm(request.POST if request.method == 'POST' else None,
+                           invited_email=invitation.email if usable(invitation) else None)
     if request.method == 'POST' and form.is_valid():
-        try:
-            user = form.save()
-        except IntegrityError:
-            form.add_error('email', 'An account already uses this email. Sign in instead.')
-        else:
-            login(request, user, backend='belong.authentication.EmailBackend')
-            deliver(request, user, user.email)
-            return redirect('verification_status')
+        from .account_email import request_account_email
+        request_account_email(request, form.cleaned_data['email'], 'signup')
+        return redirect('account_email_requested')
     return render(request, 'registration/signup.html', {'form': form, 'suppress_create': True})
 
 
@@ -70,20 +64,15 @@ def signup(request):
 def verification_status(request):
     if request.user.profile.can_use_belong:
         return redirect(after_verification(request))
-    profile = request.user.profile
-    from groups.invitations import pending_invitation, usable
-    invitation = pending_invitation(request)
-    invited = usable(invitation) and invitation.email == request.user.email.strip().lower()
-    form = VerificationEmailForm(request.POST or None, initial={'email': profile.pending_email or request.user.email})
-    if invited:
-        # Registration's invited email is immutable; proof and invite context stay aligned.
-        form.fields['email'].widget.attrs['readonly'] = True
+    # Unverified accounts may only request mail to their own canonical signup address.
+    email = request.user.email.strip().lower()
+    form = VerificationEmailForm(request.POST if request.method == 'POST' else None, initial={'email': email})
+    form.fields['email'].widget.attrs['readonly'] = True
     if request.method == 'POST' and form.is_valid():
-        email = form.cleaned_data['email'].strip().lower()
-        if invited and email != request.user.email:
-            form.add_error('email', 'Use the invited email address.')
-        elif deliver(request, request.user, email, form):
-            return redirect('verification_status')
+        from .account_email import request_account_email
+        if form.cleaned_data['email'].strip().lower() == email:
+            request_account_email(request, email, 'signup')
+        return redirect('account_email_requested')
     response = render(request, 'registration/verification_status.html', {'form': form, 'suppress_create': True})
     response['Cache-Control'] = 'no-store'
     return response
@@ -182,4 +171,74 @@ def account_interests(request):
         'form': form, 'sections': sections, 'onboarding': onboarding, 'suppress_create': True,
     })
     response['Cache-Control'] = 'no-store'
+    return response
+
+
+@require_http_methods(['GET'])
+def account_email_requested(request):
+    response = render(request, 'registration/account_email_requested.html', {'suppress_create': True})
+    response['Cache-Control'] = 'no-store'
+    return response
+
+
+@require_http_methods(['GET', 'POST'])
+def signup_completion(request, token):
+    from .account_email import valid_proof, complete_signup
+    proof = valid_proof(token, 'signup')
+    form = AccountSetupForm(request.POST if request.method == 'POST' else None, email=proof.email if proof else '')
+    error = None if proof else 'This link has expired or was already used. Request another account link.'
+    if proof and request.method == 'POST' and form.is_valid():
+        try:
+            user = complete_signup(request, token, form.cleaned_data)
+        except (ValidationError, IntegrityError) as exc:
+            error = exc.messages[0] if isinstance(exc, ValidationError) else 'Please request another account link.'
+        else:
+            # Password replacement invalidates any provisional-account sessions.
+            from groups.invitations import pending_invitation, usable
+            invitation = pending_invitation(request)
+            login(request, user, backend='belong.authentication.EmailBackend')
+            # Reclaiming a provisional account changes its password, which flushes
+            # the old session. Retain only previously consented, matching invite context.
+            if usable(invitation) and invitation.email == user.email.strip().lower():
+                request.session['pending_group_invitation'] = invitation.pk
+            return redirect(after_verification(request))
+    response = render(request, 'registration/account_setup.html', {'form': form, 'error': error,
+        'email': proof.email if proof else None, 'suppress_create': True})
+    response['Cache-Control'] = 'no-store'
+    response['Referrer-Policy'] = 'same-origin'
+    return response
+
+
+@require_http_methods(['GET', 'POST'])
+def password_reset_request(request):
+    form = SignupEmailForm(request.POST if request.method == 'POST' else None)
+    if request.method == 'POST' and form.is_valid():
+        from .account_email import request_account_email
+        request_account_email(request, form.cleaned_data['email'], 'recovery')
+        return redirect('account_email_requested')
+    return render(request, 'registration/password_reset_form.html', {'form': form, 'suppress_create': True})
+
+
+@require_http_methods(['GET', 'POST'])
+def recovery_completion(request, token):
+    from .account_email import valid_proof, complete_recovery
+    proof = valid_proof(token, 'recovery')
+    form = RecoveryPasswordForm(proof.user, request.POST if request.method == 'POST' else None) if proof and proof.user else None
+    error = None if form else 'This link has expired or was already used. Request another account link.'
+    if form and request.method == 'POST' and form.is_valid():
+        try:
+            complete_recovery(token, form.cleaned_data['new_password1'])
+        except ValidationError as exc:
+            error = exc.messages[0]
+        else:
+            from django.contrib.auth import logout
+            pending = request.session.get('pending_group_invitation')
+            logout(request)
+            if pending is not None:
+                request.session['pending_group_invitation'] = pending
+            messages.success(request, 'Password updated. Sign in with your new password.')
+            return redirect('login')
+    response = render(request, 'registration/recovery_confirm.html', {'form': form, 'error': error, 'suppress_create': True})
+    response['Cache-Control'] = 'no-store'
+    response['Referrer-Policy'] = 'same-origin'
     return response

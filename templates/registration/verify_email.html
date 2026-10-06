@@ -3,7 +3,7 @@
 {% block content %}
 <section class="mx-auto max-w-xl min-w-0 space-y-6">
   <h1 class="text-2xl font-display">Confirm your email</h1>
-  {% if error %}<p role="alert">{{ error }}</p><a class="ui-link" href="{% url 'verification_status' %}">Request a new link</a>
+  {% if error %}<p role="alert">{{ error }}</p><a class="ui-link" href="{% url 'signup' %}">Request an account setup link</a>
   {% else %}<p>Confirm that you control the email address that received this link.</p><form method="post">{% csrf_token %}<button class="ui-button ui-button--primary" type="submit">Verify email</button></form>{% endif %}
 </section>
 {% endblock %}
