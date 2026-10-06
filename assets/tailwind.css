@@ -3,6 +3,9 @@
 @tailwind utilities;
 
 @layer components {
+  .ui-brand { @apply inline-flex shrink-0 items-center min-h-11; }
+  .ui-brand__wordmark { @apply h-8 sm:h-12 w-auto object-contain; }
+  .ui-brand:focus-visible { outline: 2px solid white; outline-offset: 3px; }
   .ui-interest-choice { @apply flex min-h-11 items-center gap-2 rounded-xl border border-belong-purple/30 px-3 py-2 cursor-pointer; }
   .ui-interest-choice:has(input:checked) { @apply bg-belong-purple/10 border-belong-purple; }
   .ui-interest-choice input { @apply h-4 w-4 shrink-0 accent-belong-purple; }

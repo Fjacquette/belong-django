@@ -714,3 +714,11 @@ collect identity and credentials only after mail ownership. GET never mutates ac
 state. Required errors stay adjacent to inputs; retry/sign-in/recovery are navigation
 links. Group invitations show a verification/suspension explanation in place of an
 unavailable sending control.
+
+## Header brand
+
+`ui-brand` is a 44px-minimum navigation target. Its `ui-brand__wordmark` uses the
+canonical transparent `Purple rocket logo white on dark.png` unchanged, at 32px
+high on mobile and 48px from the small breakpoint, with intrinsic proportions.
+The shared favicon is the original 192px `Purple rocket 192.png`. Both assets
+retain their original filenames under `static/img/brand/`.
