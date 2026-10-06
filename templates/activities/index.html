@@ -1,39 +1,24 @@
 {% extends 'base.html' %}
 {% load static ui_extras %}
 {% block title %}Discover Activities · Belong{% endblock %}
+{% block main_class %}ui-page-gutter w-full pt-4 pb-4 discovery-main{% endblock %}
 {% block content %}
-  <style>
-    [data-layout-container] {
-      display: flex;
-      flex-direction: column;
-      gap: 2rem;
-    }
-    [data-layout-container][data-layout="with-sidebar"] {
-      flex-direction: row;
-      gap: 2rem;
-      align-items: flex-start;
-    }
-    [data-friends-column][hidden] {
-      display: none;
-    }
-    [data-stack-root] {
-      display: grid;
-      gap: var(--stack-gap, 1.5rem);
-      justify-content: start;
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--card-width)), var(--card-width)));
-    }
-    [data-stack-column] {
-      position: relative;
-    }
-  </style>
-  <div class="flex flex-col gap-8" data-layout-container data-layout="no-sidebar">
-    {% if friends %}
-    <aside class="w-[220px] flex-shrink-0" data-friends-column hidden>
-      <p class="text-sm text-belong-slate/70 mb-2">Who’s around</p>
-      {% include 'includes/friend_list.html' with friends=friends %}
-    </aside>
-    {% endif %}
-    <section class="flex flex-1 flex-col gap-6 min-w-0" data-activity-frame data-card-min-width="{{ card_layout.min_width }}">
+  <div class="discover-workspace" data-layout-container>
+    <fieldset class="discover-pane-switch" data-pane-switch hidden>
+      <legend class="sr-only">Discover pane</legend>
+      <div class="ui-segmented">
+        <label class="cursor-pointer"><input type="radio" name="discover-pane" value="activities" class="sr-only" checked><span class="ui-segment">Activities</span></label>
+        <label class="cursor-pointer"><input type="radio" name="discover-pane" value="friends" class="sr-only"><span class="ui-segment">Friends</span></label>
+      </div>
+    </fieldset>
+    <div class="discover-panes" data-discover-panes>
+      <aside id="discover-friends" class="discover-pane discover-pane--friends" data-friends-column aria-labelledby="friends-heading" tabindex="0">
+        <h2 id="friends-heading" class="text-lg font-medium">Friends</h2>
+        <p class="text-sm text-belong-slate/70 mb-2">Who’s around</p>
+        {% include 'includes/friend_list.html' with friends=friends %}
+      </aside>
+      <div class="discover-divider" data-pane-divider role="separator" aria-label="Resize Friends pane" aria-orientation="vertical" aria-controls="discover-friends" tabindex="0" hidden></div>
+      <section id="discover-activities" class="discover-pane discover-pane--activities flex flex-col gap-6 min-w-0" data-activity-frame data-card-min-width="{{ card_layout.min_width }}" aria-label="Activities" tabindex="0">
       <form method="get" role="search" id="discovery-filters" data-query="{{ query|default:'' }}" class="discovery-toolbar">
         <input type="hidden" name="hidden" value="{{ filter_params.hidden|default:'exclude' }}">
         <input type="hidden" name="lat" value="{{ filter_params.lat|default:'' }}">
@@ -89,8 +74,8 @@
         {% for context in active_context %}<a class="ui-button ui-button--quiet" href="{{ context.clear_url }}" aria-label="Clear {{ context.label }}">{{ context.label }} ×</a>{% endfor %}
       </div>{% endif %}
       <script src="{% static 'js/discovery.js' %}?v=context-3" defer></script>
-      <script src="{% static 'js/discovery-layout.js' %}" defer></script>
-      <script src="{% static 'js/card-view.js' %}?v=context-3" defer></script>
+      <script src="{% static 'js/discovery-layout.js' %}?v=panes-40" defer></script>
+      <script src="{% static 'js/card-view.js' %}?v=panes-40" defer></script>
       <script src="{% static 'js/card-actions.js' %}?v=confirmed-1" defer></script>
       <script src="{% static 'js/card-context.js' %}" defer></script>
       <script src="{% static 'js/card-fit.js' %}?v=body-13" defer></script>
@@ -128,12 +113,7 @@
         </div>
       {% endif %}
       </div>
-      {% if friends %}
-        <details data-friends-secondary class="text-sm">
-          <summary class="ui-disclosure">Who’s around</summary>
-          {% include 'includes/friend_list.html' with friends=friends %}
-        </details>
-      {% endif %}
-    </section>
+      </section>
+    </div>
   </div>
 {% endblock %}

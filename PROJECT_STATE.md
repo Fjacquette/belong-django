@@ -106,8 +106,11 @@ seed-owned demo prices are populated. Cards retain organizer avatars and readabl
 metadata. One/two complete direct responses fit the card; Details exposes all.
 Presence reflects authenticated HTTP activity: Active within 5 minutes, Idle within
 30, Offline thereafter or without a timestamp, with writes throttled to one minute.
-Who’s around uses width-based page layout independent of matching card counts,
-including zero results. Quick toggles clear their canonical dimension when turned off.
+Discover uses one Friends list in responsive panes (#40): independent scroll and a
+pointer/keyboard resizable, locally remembered divider at 1024px and wider; an
+Activities/Friends segmented switch below that width preserves filters, card view,
+results and separate scroll positions. Pane presence is independent of matching
+card counts, including zero results. Quick toggles clear their canonical dimension when turned off.
 Existing demo metadata is enriched without reseeding accounts or responses.
 
 The Groups foundation (#21) is merged. Persistent Group and GroupMembership entities are separate from legacy personal FriendGroup lists. The floating + discloses Activity (primary) and Group (secondary) creation. The settled group access modes are Open, Closed, Unlisted, and Private. Activities may link to groups but remain independently visible/participable according to their own audience rules. Owners and active organizers can issue email-bound invitations (#22); a valid invitation grants active membership directly in every access mode, including Private.

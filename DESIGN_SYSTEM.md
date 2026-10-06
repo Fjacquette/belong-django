@@ -517,8 +517,24 @@ Mobile is designed, not compressed.
 - primary task remains first
 - controls may wrap by semantic cluster
 - do not split tightly related controls across distant rows
-- secondary panels/disclosures may move below primary content
+- secondary content may use a mutually exclusive pane switch on narrow screens
 - card top-band information remains visible on mobile
+
+### Discover panes
+
+Discover has one Friends list and one Activities pane, regardless of result count.
+At 1024px and wider, both panes fill the space beneath the shared header and scroll
+independently. A 24px-wide vertical separator provides a visible dividing line and
+a comfortable drag target. Friends defaults to 240px, clamps between 200px and
+420px (leaving room for two activity cards), and remembers the chosen width locally.
+The focusable separator exposes its range and current width; Left/Right adjust by
+16px, Home selects the minimum, and End selects the available maximum.
+
+Below 1024px, the existing `ui-segmented` radio family switches between Activities
+(default) and Friends above the panes. Only the selected pane is visible; filters,
+card view, results, and each pane's scroll position survive switching. Header and
+floating Create stay available. Each pane reserves bottom clearance for Create.
+Without JavaScript, both sections remain available in normal document flow.
 
 ## 11. Accessibility semantics
 
