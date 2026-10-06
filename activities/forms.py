@@ -22,7 +22,7 @@ _DATETIME_INPUT_KWARGS = {
 
 
 class ActivityForm(forms.ModelForm):
-    title = forms.CharField(max_length=48, help_text="Keep the activity name short (48 characters max). Put longer copy in the description.")
+    title = forms.CharField(max_length=48, help_text="Use Title Case, keeping names/acronyms like D&D or OW2 intact. Keep the activity name short (48 characters max). Put longer copy in the description.")
     location_name = forms.CharField(max_length=40, required=False, label="Venue / short location label",
                                    help_text="Use a short place name (40 characters max). Put the full address and directions below.")
     starts_at = forms.DateTimeField(**_DATETIME_INPUT_KWARGS)

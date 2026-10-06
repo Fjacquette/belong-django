@@ -2,9 +2,11 @@
 (function () {
   const observed = new WeakSet();
   const steps = ['normal', 'compact', 'minimum'];
-  function fit(header) {
+  function fit(card) {
+    const header = card.querySelector(".activity-card__band-1");
+    if (!header) return;
     const title = header.querySelector('.activity-card__headline');
-    const logistics = header.querySelector('.activity-card__logistics');
+    const logistics = card.querySelector('.activity-card__logistics');
     if (!title || !logistics || !header.clientWidth) return;
     const probe = title.cloneNode(true);
     probe.removeAttribute('data-fit');
@@ -27,24 +29,19 @@
       measure.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
       return measure.measureText(text).width;
     }
-    logistics.dataset.fit = 'normal';
     logistics.dataset.layout = width(`${when.textContent} · ${where.textContent}`) <= logistics.clientWidth ? 'inline' : 'split';
-    if (logistics.dataset.layout === 'split') {
-      for (const step of ['normal', 'minimum']) {
-        logistics.dataset.fit = step;
-        if (Math.max(width(when.textContent), width(where.textContent)) <= logistics.clientWidth) break;
-      }
-    }
   }
   const observer = new ResizeObserver(entries => entries.forEach(entry => fit(entry.target)));
   function refresh() {
-    document.querySelectorAll('.activity-card__band-1').forEach(header => {
-      fit(header);
-      if (!observed.has(header)) { observed.add(header); observer.observe(header); }
+    document.querySelectorAll('.activity-card').forEach(card => {
+      fit(card);
+      if (!observed.has(card)) { observed.add(card); observer.observe(card); }
     });
   }
   document.addEventListener('htmx:beforeSwap', event => {
-    event.detail.target.querySelectorAll('.activity-card__band-1').forEach(header => observer.unobserve(header));
+    const target = event.detail.target;
+    if (target.matches('.activity-card')) observer.unobserve(target);
+    target.querySelectorAll('.activity-card').forEach(card => observer.unobserve(card));
   });
   document.addEventListener('htmx:afterSwap', refresh);
   document.fonts.ready.then(refresh);

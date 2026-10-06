@@ -256,12 +256,11 @@ Use **approximately 440px standard height at the current preferred desktop width
 as the next baseline. Tune only through browser review; do not widen a card merely
 because result count is low. The target should remain comfortable on modern phones.
 
-### Band 1 — activity identity + primary logistics
+### Band 1 — activity identity
 
 Band 1 contains:
 - the **activity/event name**
-- directly beneath it, structured **when** and **where** logistics
-- a visually minimal contextual `⋯` trigger in the top-right corner
+- a visually minimal contextual `⋮` trigger in the top-right corner
 
 #### Title layout
 
@@ -277,14 +276,12 @@ Band 1 contains:
 - if the title still does not fit the two-line budget, clamp at two lines and show an
   ellipsis rather than clipping glyphs or colliding with logistics
 - use sufficient line-height/leading for descenders at every supported title size
-- treat Band 1 internally as two layout zones: a title zone and a logistics zone,
-  rather than one vertically centered flex blob
-- maintain a real gap between the title line box and logistics line box; do not achieve
-  density by overlapping text
+- center the title in a fixed 48px title zone inside the 64px band
+- Title Case is an authoring convention, never CSS text-transform; preserve acronyms
 - reserve a small symmetric safe inset at both left and right so the top-right menu
   trigger does not overlap or visually push the centered title off-axis
 
-#### When/where layout
+#### When/where layout (Band 2)
 
 Treat when and where as **two structured atomic values**, not one arbitrary wrapping
 string.
@@ -293,9 +290,8 @@ string.
 - if `when · where` fits cleanly on one line, show it on one line
 - if it does not fit, place **when on one line and where on the next** rather than
   allowing one value (especially location) to wrap messily across both lines
-- use roughly **13px / 16px line-height / regular weight** for normal logistics text,
-  with a small bounded font-size reduction only if needed to preserve clean
-  one-item-per-line presentation
+- use **13px / 16px line-height / regular weight** for metadata and logistics;
+  truncate long values rather than shrinking the text
 - if an individual value still exceeds its line budget, truncate with ellipsis and
   expose the full value on hover/focus
 - do not use the generic `headline` field as a card subtitle
@@ -308,7 +304,7 @@ The card's single contextual menu trigger lives in the **top-right of Band 1**.
 
 - use a **vertical kebab `⋮`**, not a horizontal ellipsis; horizontal dots visually
   collide with centered/truncated title text and read too much like punctuation
-- visual treatment: white, initially somewhat subdued (roughly 70–80% opacity), with
+- visual treatment: white, initially somewhat subdued (70% opacity, 20px glyph), with
   no visible pill, border, or filled button chrome in the resting state
 - hover/focus raises the glyph to full opacity
 - offset only the visible glyph 4px right within its unchanged transparent hit target
@@ -332,8 +328,10 @@ The first four commands keep the user in Discover and change discovery context r
 than sending them into the activity Details room. `Hide this organizer's activities`
 is a private discovery preference, not a full user block.
 
-A two-color gradient/fade using the card's primary/secondary colors is encouraged
-where it preserves legibility.
+Use a restrained horizontal light-left → dark-right header gradient derived from
+the existing palette. Darken the primary to meet 4.5:1 white-text contrast; blend
+25% accessible secondary into the right endpoint, darken 15%, and cap its RGB
+channels at 85% of the left endpoint. All interpolated colors retain contrast.
 
 #### Creation-time fit guardrails
 
@@ -343,34 +341,28 @@ authors toward card-safe values.
 - impose a practical card-title limit in the form layer rather than exposing the
   model's much larger storage limit as the normal authoring allowance
 - provide a visible character counter and warning before the hard limit
-- apply similar guidance to the short location/venue label used in Band 1
+- apply similar guidance to the short location/venue label used in Band 2
 - structured date/time fields should generate compact display text automatically
 - longer descriptions, addresses, instructions, and marketing copy belong on Details,
   not in Band 1
 
 Character limits are guardrails, not a substitute for rendering safeguards: cards
 must still clamp/ellipsis safely because glyph widths and mobile widths vary.
-### Band 2 — organizer + participation context
+### Band 2 — practical/social context
 
-Band 2 contains:
-1. organizer
-2. audience / who it is open to
-3. cost
+The 72px Band 2 contains up to four deliberate 13px / 16px lines, in this order:
+1. organizer (normal weight)
+2. when / place, combined only when both fit
+3. second logistics line only when needed
+4. audience / cost
 
-Use a two-column layout:
-- left: a **fixed-size circular** organizer/profile image
-- right: the two metadata text rows
+Use two columns: a fixed 44px circular avatar, vertically centered against the
+entire metadata block, and one aligned text column with an 8px gap. Band 2 uses
+2px vertical and 8px horizontal padding. Never stretch the avatar.
+Each field uses a single-line ellipsis with full-value hover/focus. No empty
+placeholder rows; unresolved facts use meaningful Date TBD / Location TBD text.
+Without JavaScript, when and place occupy separate bounded lines.
 
-The avatar's **grid cell spans both metadata rows**, but the avatar itself does not
-stretch. Keep equal width and height and `border-radius: 50%`; center the circle
-vertically against the combined two-row text block.
-
-Both metadata rows share exactly the same left edge in the text column. The second
-row must not tuck under the avatar or shift horizontally.
-
-Example:
-`Janine Smith`
-`Friends of friends · Free`
 Core decision facts must be understandable without hover/focus. Shorten presentation,
 rebalance lines, or remove decoration before truncating essential meaning.
 
@@ -565,19 +557,18 @@ cards. Only matching tracked, owner-preserved authored demo prices are populated
 
 ## 13. Implemented card patterns
 
-- Geometry: 440px height, preferred/max width 258px, 96/64/128/104/48px bands.
-  The 160px stack offset reveals all identity/logistics and participation context.
+- Geometry: 440px height, preferred/max width 258px, 64/72/128/128/48px bands.
+  The 136px stack offset reveals all identity/logistics and participation context.
 - Card title: `activity-card__title-link`, hover/focus navigation without a resting
   underline. `card-fit.js` uses bounded 20/24, 18/22, 17/22px size/leading pairs at medium
   weight,
   then a two-line ellipsis. Title width reserves symmetric 40px outer insets for
-  the top-right 36px transparent vertical-kebab trigger. Band 1 has fixed
-  48px title and 32px logistics zones with a 4px gap; shorter
-  titles center within their own zone rather than moving logistics upward. The
-  white kebab rests at 75% opacity and becomes fully opaque on hover/focus.
-- Logistics: structured when and where share one line only when they fit at 13px.
-  Otherwise each receives the full line width; 13/12px sizes with 16px leading
-  precede individual ellipsis. Full title/when/where values remain available on
+  the top-right 36px transparent vertical-kebab trigger. Band 1 has a fixed
+  48px title zone with 8px vertical padding; short titles center in that zone. The
+  20px white kebab rests at 70% opacity and becomes fully opaque on hover/focus.
+- Band 2 logistics: structured when and where share one line only when they fit at 13px.
+  Otherwise each receives the full line width at 13px / 16px leading,
+  with individual ellipsis. Full title/when/where values remain available on
   hover/focus. Font loading, resize and HTMX replacement trigger refitting;
   without JS, the two-line title and separate logistics rows remain bounded.
 - Primary responses: `ui-button ui-button--compact ui-response ui-response--card`,
@@ -592,11 +583,11 @@ cards. Only matching tracked, owner-preserved authored demo prices are populated
   The first choice works without JavaScript. `card-actions.js` exposes a second
   choice only when both full labels plus any possible committed-state check fit.
   Remaining choices stay available on Details. HTMX refreshes the entire card's state.
-- `activity-card__context` has two columns: a fixed 36px circular avatar centered
-  against both metadata rows, and aligned text. The image never stretches. The
+- `activity-card__context` has two columns: a fixed 44px circular avatar centered
+  against the entire three/four-line metadata block, and aligned text. The image never stretches. The
   single contextual trigger is in the top-right of Band 1. Known numeric
   prices / Free use concise metadata; longer names/cost prose expose full text
-  on hover/focus and retain up to two lines per metadata field. The single native
+  on hover/focus; every metadata value stays on one deliberate line. The single native
   `card-context-menu` contains related Discover links and private hiding. Escape
   and clicking outside dismiss it; it remains usable without JavaScript.
 - Band 3 contains only the activity image or fallback artwork. No controls,
@@ -606,8 +597,8 @@ cards. Only matching tracked, owner-preserved authored demo prices are populated
 - Current response: the first direct response exposes pressed state. A
   `card-current-response` line in the body identifies later/historical choices,
   including a second choice that might not fit. Removal is available on Details.
-- The top-aligned description has up to five lines; a current response may use
-  a line. External CTAs and the generic headline stay on Details.
+- The 128px top-aligned description band uses the same 13px body size as Band 2,
+  with relaxed 18px leading and up to six lines; a current response reserves a line. External CTAs and the generic headline stay on Details.
 
 ### Form fit guardrails
 
