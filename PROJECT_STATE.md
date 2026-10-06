@@ -130,7 +130,7 @@ changes and can be cleared independently; organizer suppression is reversible an
 separate from blocking/participation. The image band contains artwork only. Title
 navigation opens Details for response counts, removal and external CTAs. Generic headlines stay on Details.
 Known seed-owned choices and stale sample responses are reconciled without altering
-real/custom/transferred data. **#22 — email invitations and joining is now the immediate next implementation slice.**
+real/custom/transferred data. **#22 — email invitations and joining is the current implementation slice (PR #31). #32 — group creation UX + group-context activity defaults follows before #23.**
 
 ### Groups / recurring activity sequence
 
@@ -139,7 +139,8 @@ real/custom/transferred data. **#22 — email invitations and joining is now the
 Implementation slices are already defined and are intended to be built, not parked:
 
 - **#21** core Group model and membership — merged
-- **#22** email invitations and joining
+- **#22** email invitations and joining — current PR #31
+- **#32** group creation UX + group-context activity defaults — next bounded slice after #22
 - **#23** recurring series and specific occurrences
 - **#24** organizer RSVP roster and occurrence lifecycle/cancellation
 - **#25** activity and group announcements
