@@ -163,12 +163,13 @@ def revoke_invitation(request, pk, invitation_pk):
 
 def invitation(request, token):
     from django.core.exceptions import ValidationError
-    from .invitations import find_invitation, usable, accept_invitation
+    from .invitations import find_invitation, usable, accept_invitation, email_claimed
     invitation = find_invitation(token)
     available = usable(invitation)
     matched = request.user.is_authenticated and invitation and request.user.email.strip().lower() == invitation.email
-    # Only valid pending bearer links reveal context; signed-in accounts must match.
-    show_context = available and (not request.user.is_authenticated or matched)
+    bind_email = available and request.user.is_authenticated and not request.user.email.strip() and not email_claimed(invitation.email, request.user)
+    # A valid bearer link also permits an email-less account to explicitly accept.
+    show_context = available and (not request.user.is_authenticated or matched or bind_email)
     if request.method == 'POST':
         if request.POST.get('auth') == 'switch' and available:
             from django.contrib.auth import logout
@@ -188,7 +189,7 @@ def invitation(request, token):
             request.session.pop('group_invitation', None)
             return redirect(group or 'activities:index')
     response = render(request, 'groups/invitation.html', {'invitation': invitation if show_context else None,
-                                                       'available': available, 'matched': matched})
+                                                       'available': available, 'matched': matched, 'bind_email': bind_email})
     response['Cache-Control'] = 'no-store'
     response['Referrer-Policy'] = 'same-origin'
     return response

@@ -3,6 +3,7 @@ import hashlib
 import secrets
 from datetime import timedelta
 
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.db import transaction
@@ -22,6 +23,10 @@ def find_invitation(token):
 
 def usable(invitation):
     return invitation and invitation.status == 'pending' and invitation.expires_at > timezone.now()
+
+
+def email_claimed(email, user):
+    return get_user_model().objects.filter(email__iexact=email).exclude(pk=user.pk).exists()
 
 
 def issue_invitation(group, inviter, email, request):
@@ -59,16 +64,24 @@ def accept_invitation(token, user):
             raise ValidationError('This invitation is unavailable.')
         group = Group.objects.select_for_update().get(pk=invitation.group_id)
         invitation = GroupInvitation.objects.select_for_update().get(pk=invitation.pk)
-        if not user.email or user.email.strip().lower() != invitation.email:
+        # Re-read under a lock so a stale request cannot overwrite a newly bound email.
+        user = get_user_model().objects.select_for_update().get(pk=user.pk)
+        current_email = user.email.strip().lower()
+        if current_email and current_email != invitation.email:
             raise ValidationError('Sign in with the account that uses the invited email address.')
         member = group.memberships.filter(user=user).first()
         if member and member.status == MemberStatus.BLOCKED:
             raise ValidationError('This membership is blocked. Contact the organizer.')
-        if invitation.status == 'accepted' and invitation.accepted_by_id == user.pk:
+        if invitation.status == 'accepted' and invitation.accepted_by_id == user.pk and current_email == invitation.email:
             # A consumed invitation must not recreate membership after leaving.
             return group if member and member.status == MemberStatus.ACTIVE else None
         if not usable(invitation):
             raise ValidationError('This invitation has expired or is no longer available.')
+        if not current_email:
+            if email_claimed(invitation.email, user):
+                raise ValidationError('Another account already uses the invited email address. Sign in with that account.')
+            user.email = invitation.email
+            user.save(update_fields=['email'])
         member, _ = GroupMembership.objects.get_or_create(group=group, user=user)
         if member.status == MemberStatus.PENDING:
             member.status = MemberStatus.ACTIVE

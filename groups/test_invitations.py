@@ -148,3 +148,69 @@ class InvitationTests(TestCase):
             self.client.post(reverse('groups:invite', args=[self.group.pk]), {'emails': self.user.email})
         self.assertEqual(GroupInvitation.objects.get().token_digest, digest(token))
         self.assertContains(self.client.get(self.group.get_absolute_url()), 'email could not be sent')
+
+    def test_legacy_blank_email_binds_only_on_explicit_acceptance(self):
+        legacy = get_user_model().objects.create_user('legacy-signup')
+        token = self.send('legacy@example.com')
+        self.client.force_login(legacy)
+        page = self.client.get(self.url(token))
+        self.assertContains(page, 'Accepting will add legacy@example.com to your account')
+        legacy.refresh_from_db()
+        self.assertEqual(legacy.email, '')
+        self.assertFalse(self.group.memberships.filter(user=legacy).exists())
+        self.assertEqual(self.client.get(self.group.get_absolute_url()).status_code, 404)
+        for _ in range(2):
+            self.assertRedirects(self.client.post(self.url(token)), self.group.get_absolute_url())
+        legacy.refresh_from_db()
+        self.assertEqual(legacy.email, 'legacy@example.com')
+        self.assertEqual(self.group.memberships.filter(user=legacy, status='active').count(), 1)
+        self.assertEqual(GroupInvitation.objects.get().accepted_by, legacy)
+
+    def test_blank_email_login_binds_from_prior_explicit_acceptance(self):
+        legacy = get_user_model().objects.create_user('legacy-login', password='Testing-only-817!')
+        token = self.send('legacy@example.com')
+        self.client.logout()
+        # Following a link/login alone is not acceptance.
+        self.client.get(self.url(token))
+        self.client.post(reverse('login'), {'username': legacy.username, 'password': 'Testing-only-817!'})
+        legacy.refresh_from_db(); self.assertEqual(legacy.email, '')
+        self.client.post(reverse('logout'))
+        self.client.post(self.url(token), {'auth': 'login'})
+        response = self.client.post(reverse('login'), {'username': legacy.username, 'password': 'Testing-only-817!'})
+        self.assertRedirects(response, self.group.get_absolute_url())
+        legacy.refresh_from_db(); self.assertEqual(legacy.email, 'legacy@example.com')
+
+    def test_blank_email_conflict_does_not_bind_or_join(self):
+        legacy = get_user_model().objects.create_user('legacy-conflict')
+        self.user.email = 'HIKER@EXAMPLE.COM'; self.user.save()
+        token = self.send()
+        self.client.force_login(legacy)
+        page = self.client.post(self.url(token))
+        self.assertContains(page, 'Another account already uses the invited email address')
+        self.assertNotContains(page, 'Secret trails')
+        legacy.refresh_from_db(); self.assertEqual(legacy.email, '')
+        self.assertFalse(self.group.memberships.filter(user=legacy).exists())
+        self.assertEqual(GroupInvitation.objects.get().status, 'pending')
+
+    def test_invalid_or_blocked_invitation_cannot_bind_blank_email(self):
+        legacy = get_user_model().objects.create_user('legacy-invalid')
+        token = self.send('legacy@example.com')
+        invite = GroupInvitation.objects.get()
+        for status in ['revoked', 'accepted']:
+            invite.status = status; invite.save()
+            with self.assertRaises(ValidationError): accept_invitation(token, legacy)
+        invite.status = 'pending'; invite.expires_at = timezone.now() - timedelta(seconds=1); invite.save()
+        with self.assertRaises(ValidationError): accept_invitation(token, legacy)
+        invite.expires_at = timezone.now() + timedelta(days=1); invite.save()
+        GroupMembership.objects.create(group=self.group, user=legacy, status='blocked')
+        with self.assertRaises(ValidationError): accept_invitation(token, legacy)
+        legacy.refresh_from_db(); self.assertEqual(legacy.email, '')
+        self.assertEqual(self.group.memberships.get(user=legacy).status, 'blocked')
+
+    def test_nonblank_email_is_never_overwritten_and_stale_user_is_reread(self):
+        legacy = get_user_model().objects.create_user('stale-email')
+        token = self.send('legacy@example.com')
+        get_user_model().objects.filter(pk=legacy.pk).update(email='different@example.com')
+        with self.assertRaises(ValidationError): accept_invitation(token, legacy)
+        legacy.refresh_from_db(); self.assertEqual(legacy.email, 'different@example.com')
+        self.assertFalse(self.group.memberships.filter(user=legacy).exists())

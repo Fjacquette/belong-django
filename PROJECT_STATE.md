@@ -130,7 +130,7 @@ changes and can be cleared independently; organizer suppression is reversible an
 separate from blocking/participation. The image band contains artwork only. Title
 navigation opens Details for response counts, removal and external CTAs. Generic headlines stay on Details.
 Known seed-owned choices and stale sample responses are reconciled without altering
-real/custom/transferred data. **#22** adds organizer-issued email invitations with hashed seven-day tokens, revocation and duplicate-safe retries. A valid invitation grants active membership, including Private; acceptance consent survives signup/login and requires a matching email. Wrong-account switching retains the invitation. Local delivery uses console email. **#23 — recurring series/occurrences is next.**
+real/custom/transferred data. **#22** adds organizer-issued email invitations with hashed seven-day tokens, revocation and duplicate-safe retries. A valid invitation grants active membership, including Private; acceptance consent survives signup/login and requires a matching email. Normal signup requires email; explicit acceptance can bind an unclaimed invited email to a legacy email-less account, without overwriting existing email. Wrong-account switching retains the invitation. Local delivery uses console email. **#23 — recurring series/occurrences is next.**
 
 ### Groups / recurring activity sequence
 

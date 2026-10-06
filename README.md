@@ -329,7 +329,11 @@ valid invitation for retry.
 
 A valid invitation grants active membership, including for Closed and Private
 groups. The invitee chooses acceptance and signs in or creates an account with
-the invited email address. The invitation survives authentication and validation
+the invited email address. Normal signup now requires and stores an email address,
+and rejects addresses already claimed by another account. An existing account
+with no email may add the invited address only on explicit acceptance of a valid
+invitation, and only if that address is unclaimed. A different existing email is
+never replaced. The invitation survives authentication and validation
 errors. Wrong-account acceptance is rejected; “Sign in with another account”
 preserves the invitation. Accepted links cannot rejoin a group after leaving.
 Normal private-group and activity visibility rules remain independent.
