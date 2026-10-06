@@ -208,8 +208,8 @@ class DiscoveryTests(TestCase):
         self.near.organizer_name = 'A long organizer name'
         self.near.save()
         response = self.discover({'q':'Long activity'})
-        self.assertContains(response, f'title="{self.near.title}"')
-        self.assertContains(response, f'title="{self.near.description}"')
+        self.assertContains(response, f'data-full-text="{self.near.title}"')
+        self.assertContains(response, f'data-full-text="{self.near.description}"')
         self.assertContains(response, self.near.organizer_name)
         self.assertContains(response, f'href="{reverse("activities:detail", args=[self.near.pk])}"')
         self.assertNotContains(response, 'card-utilities')

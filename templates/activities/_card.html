@@ -3,7 +3,7 @@
      style="--card-primary: {{ primary }}; --card-secondary: {{ secondary }}; --card-accent: {{ activity.card_accent }}; --card-header-left: {{ activity.card_header_left }}; --card-header-right: {{ activity.card_header_right }};">
   <div class="activity-card__band-1 text-center text-white font-body">
     <div class="activity-card__title-zone">
-    <h2 class="activity-card__headline font-body font-medium"><a href="{% url 'activities:detail' activity.pk %}" title="{{ activity.title }}" class="activity-card__title-link">{{ activity.title }}</a></h2>
+    <h2 class="activity-card__headline font-body font-medium"><a href="{% url 'activities:detail' activity.pk %}" data-full-text="{{ activity.title }}" class="activity-card__title-link">{{ activity.title }}</a></h2>
     </div>
     <details class="card-context-menu">
       <summary class="card-context-menu__trigger" aria-label="Discover options for {{ activity.title }}"><span aria-hidden="true">⋮</span></summary>
@@ -28,13 +28,13 @@
       {% if activity.organizer_image_url %}<img src="{{ activity.organizer_image_url }}" alt="" class="h-full w-full object-cover">{% else %}<span class="h-full w-full flex items-center justify-center text-belong-purple font-semibold">{{ activity.organizer_name|default:activity.host.username|slice:':1'|upper }}</span>{% endif %}
     </div>
     <div class="activity-card__metadata">
-      <p tabindex="0" title="{{ activity.organizer_name|default:activity.host.get_full_name|default:activity.host.username }}"><span class="sr-only">Organized by </span>{{ activity.organizer_name|default:activity.host.get_full_name|default:activity.host.username }}</p>
+      <p data-full-text="{{ activity.organizer_name|default:activity.host.get_full_name|default:activity.host.username }}"><span class="sr-only">Organized by </span>{{ activity.organizer_name|default:activity.host.get_full_name|default:activity.host.username }}</p>
     <div class="activity-card__logistics" aria-label="When and where">
-      <span class="activity-card__when" tabindex="0" title="{{ activity.display_when }}">{{ activity.display_when }}</span>
+      <span class="activity-card__when" data-full-text="{{ activity.display_when }}">{{ activity.display_when }}</span>
       <span class="activity-card__logistics-divider" aria-hidden="true"> · </span>
-      <span class="activity-card__where" tabindex="0" title="{{ activity.display_where }}">{{ activity.display_where }}</span>
+      <span class="activity-card__where" data-full-text="{{ activity.display_where }}">{{ activity.display_where }}</span>
     </div>
-      <p tabindex="0" title="{{ activity.display_audience }} · {{ activity.display_cost }}">{{ activity.display_audience }} · {{ activity.compact_cost }}</p>
+      <p data-full-text="{{ activity.display_audience }} · {{ activity.display_cost }}">{{ activity.display_audience }} · {{ activity.compact_cost }}</p>
     </div>
 
   </div>
@@ -43,12 +43,12 @@
       <img src="{{ activity.header_image_url }}" alt="Activity image" class="h-full w-full object-cover">
     {% else %}
       <div class="h-full w-full flex items-center justify-center bg-gradient-to-br from-[{{ primary }}] via-white/40 to-[{{ secondary }}] text-belong-slate/80 text-sm font-semibold px-6 text-center">
-        <p tabindex="0" title="{{ activity.summary|default:activity.title }}" aria-label="{{ activity.summary|default:activity.title }}" class="activity-card__summary">{{ activity.summary|default:activity.title|truncatechars:100 }}</p>
+        <p data-full-text="{{ activity.summary|default:activity.title }}" aria-label="{{ activity.summary|default:activity.title }}" class="activity-card__summary">{{ activity.summary|default:activity.title }}</p>
       </div>
     {% endif %}
   </div>
   <div class="activity-card__band-4 flex flex-col justify-start gap-1 bg-white/70 text-black font-body activity-card__body" style="padding: 4px 12px;">
-    <p tabindex="0" title="{{ activity.description }}" aria-label="{{ activity.description }}" class="activity-card__description">{{ activity.description|truncatechars:320 }}</p>
+    <p data-full-text="{{ activity.description }}" aria-label="{{ activity.description }}" class="activity-card__description">{{ activity.description }}</p>
     {% if current_status and current_status != card_response_options.0.value %}<p class="card-current-response text-xs" aria-label="You: {{ current_status_label }}">You: {{ current_status_label }}</p>{% endif %}
   </div>
   <div class="activity-card__band-5 bg-white/90 flex items-center justify-center activity-card__cta" style="padding: 4px 12px;">

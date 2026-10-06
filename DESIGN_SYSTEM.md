@@ -595,6 +595,18 @@ cards. Only matching tracked, owner-preserved authored demo prices are populated
 - The 128px top-aligned description band uses the same 13px body size as Band 2,
   with relaxed 18px leading and up to six lines; a current response reserves a line. External CTAs and the generic headline stay on Details.
 
+### Truncated card text
+
+Card text stores complete values in `data-full-text`, never native `title`.
+`full-text.js` enables its tooltip only when the rendered text exceeds its box
+(scroll width/height, with a 1px tolerance). Title links are measured against the
+clamped headline box and keep native link focus; noninteractive text enters the
+tab order only while clipped. Summary and description render full values and let
+CSS clamp them, so layout measurements reflect actual truncation.
+Font loading, resize, card layout/refitting and HTMX replacement recheck clipping.
+Escape, scrolling, resizing and replacement dismiss the tooltip. Ordinary visible
+text produces no tooltip and adds no metadata tab stops.
+
 ### Form fit guardrails
 
 `ActivityForm` limits titles to 48 characters and short venue labels to 40; model

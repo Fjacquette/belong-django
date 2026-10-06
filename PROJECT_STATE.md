@@ -121,7 +121,8 @@ retains its 258px preferred/max width; 64/72px top bands and 136px overlap expos
 all core metadata. Band 1 uses a restrained accessible horizontal palette gradient,
 a centered medium-weight two-line title and a quiet contextual vertical kebab.
 Band 2 supports three/four aligned single-line metadata rows with deliberate
-logistics splitting and full-value hover/focus. Metadata and description use 13px
+logistics splitting. Full-text tooltips and noninteractive metadata tab stops
+are enabled only for text actually clipped after layout, with no native tooltip duplication. Metadata and description use 13px
 body text, with 16px/18px leading respectively; the description band is 128px.
 Band 2 centers a fixed circular avatar against the full metadata block. Card responses
 use accessible accents derived from their activity palette; checkmarks indicate
