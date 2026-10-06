@@ -175,8 +175,13 @@ The 48px take-action band contains only one or two complete response labels;
 a second choice appears only when it fits without clipping. Remaining choices
 are on Details. Title navigation opens the detail page for counts, external CTAs
 and response removal. The image band contains only image/fallback artwork.
-Band 2 aligns the organizer avatar across metadata rows and has one contextual
-menu for related Discover filtering and private activity/organizer hiding.
+Band 2 centers a fixed circular organizer avatar against aligned metadata rows.
+Band 1 holds one white-dot contextual menu for related Discover filtering and
+private activity/organizer hiding. Titles fit through a bounded 21/19/17px scale
+and two-line ellipsis; when/where share one line when they fit, otherwise get one
+full-width line each. Card response colors derive an accessible local accent.
+Activity forms limit titles to 48 characters and venue labels to 40, with counters
+and warnings at 80%; legacy storage and existing records remain unchanged.
 These filters preserve search/facets, reset pagination and can be cleared individually.
 Show hidden enables Unhide; organizer suppression changes neither friendship nor
 participation. Search/facets/view/recovery share one compact 40px toolbar with 8px gaps.

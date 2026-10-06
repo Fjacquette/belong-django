@@ -132,7 +132,8 @@ class ParticipationUITests(TestCase):
         second = html.split('activity-card__band-2', 1)[1].split('activity-card__band-3', 1)[0]
         self.assertIn(self.activity.title, first)
         self.assertNotIn(self.activity.headline, first)
-        self.assertIn("Saturday morning · River trail", first)
+        self.assertIn('title="Saturday morning"', first)
+        self.assertIn('title="River trail"', first)
         self.assertNotIn('class="ui-link', first)
         for value in ["Janine", "Everyone", "Free"]:
             self.assertIn(value, second)
@@ -154,7 +155,8 @@ class ParticipationUITests(TestCase):
         self.activity.cost_type = "unknown"
         self.activity.save()
         page = self.client.get(reverse("activities:index"))
-        self.assertContains(page, "Date TBD · Location TBD")
+        self.assertContains(page, 'title="Date TBD"')
+        self.assertContains(page, 'title="Location TBD"')
         self.assertContains(page, "Cost TBD")
 
     def test_default_activity_offers_only_interested_on_card_and_details(self):

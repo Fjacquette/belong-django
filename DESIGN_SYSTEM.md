@@ -546,13 +546,27 @@ cards. Only matching tracked, owner-preserved authored demo prices are populated
 
 - Geometry: 440px height, preferred/max width 258px, 96/64/128/104/48px bands.
   The 160px stack offset reveals all identity/logistics and participation context.
-- Card title: `activity-card__title-link`, normal title type with hover/focus underline.
-- Primary responses: `ui-button ui-button--compact ui-response`, complete 12px labels.
+- Card title: `activity-card__title-link`, hover/focus navigation without a resting
+  underline. `card-fit.js` uses bounded 21/26, 19/24, 17/22px size/leading pairs,
+  then a two-line ellipsis. Title width reserves symmetric 40px outer insets for
+  the top-right 36px transparent white-dot trigger. The title/logistics gap is 4px.
+- Logistics: structured when and where share one line only when they fit at 14px.
+  Otherwise each receives the full line width; 14/13/12px sizes with 16px leading
+  precede individual ellipsis. Full title/when/where values remain available on
+  hover/focus. Font loading, resize and HTMX replacement trigger refitting;
+  without JS, the two-line title and separate logistics rows remain bounded.
+- Primary responses: `ui-button ui-button--compact ui-response ui-response--card`,
+  complete 12px labels. Card-local `--card-accent` derives from the primary palette:
+  retain colors with at least 4.5:1 contrast against white, otherwise darken RGB
+  channels together by 10% steps until they meet that ratio. Invalid colors use
+  neutral #333333. White unselected surfaces use accent text/borders; selected
+  fills use the accent with white text. General application actions stay purple.
   The first choice works without JavaScript. `card-actions.js` exposes a second
   choice only when both full labels plus selected-state check fit. Remaining
   choices stay available on Details. HTMX refreshes the entire card's state.
-- `activity-card__context` uses a 32px-wide avatar spanning the metadata block,
-  aligned metadata text, and a 36px Band 2 contextual trigger. Known numeric
+- `activity-card__context` has two columns: a fixed 36px circular avatar centered
+  against both metadata rows, and aligned text. The image never stretches. The
+  single contextual trigger is in the top-right of Band 1. Known numeric
   prices / Free use concise metadata; longer names/cost prose expose full text
   on hover/focus and retain up to two lines per metadata field. The single native
   `card-context-menu` contains related Discover links and private hiding. Escape
@@ -560,12 +574,21 @@ cards. Only matching tracked, owner-preserved authored demo prices are populated
 - Band 3 contains only the activity image or fallback artwork. No controls,
   counts, badges or platform overlays appear in the image band.
 - Details navigation uses the title link. Response counts, removal and richer
-  participation live on Details; activity/organizer hiding also lives in Band 2.
+  participation live on Details; activity/organizer hiding also lives in the Band 1 menu.
 - Current response: the first direct response exposes pressed state. A
   `card-current-response` line in the body identifies later/historical choices,
   including a second choice that might not fit. Removal is available on Details.
 - The top-aligned description has up to five lines; a current response may use
   a line. External CTAs and the generic headline stay on Details.
+
+### Form fit guardrails
+
+`ActivityForm` limits titles to 48 characters and short venue labels to 40; model
+storage stays at 160/200 to preserve legacy data. These limits apply to new and
+instance-bound forms. Inline character counters warn at 80% (39/48 and 32/40),
+with HTML maxlength and server validation. Longer copy belongs in descriptions,
+structured addresses and instructions. Browser comparison of normal prose and
+wide/narrow glyph strings informed the limits; runtime fitting remains necessary.
 
 ## 14. Contextual Discover operations
 

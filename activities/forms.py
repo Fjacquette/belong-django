@@ -22,6 +22,9 @@ _DATETIME_INPUT_KWARGS = {
 
 
 class ActivityForm(forms.ModelForm):
+    title = forms.CharField(max_length=48, help_text="Keep the activity name short (48 characters max). Put longer copy in the description.")
+    location_name = forms.CharField(max_length=40, required=False, label="Venue / short location label",
+                                   help_text="Use a short place name (40 characters max). Put the full address and directions below.")
     starts_at = forms.DateTimeField(**_DATETIME_INPUT_KWARGS)
     ends_at = forms.DateTimeField(**_DATETIME_INPUT_KWARGS)
     post_until = forms.DateTimeField(**_DATETIME_INPUT_KWARGS)
@@ -101,6 +104,9 @@ class ActivityForm(forms.ModelForm):
         self.fields["group"].help_text = "Optional. Link an activity to a group you organize; participation still follows the activity audience."
         self.fields["location_gps"].help_text = "Latitude, longitude; used for discovery distance tiers."
         self.fields["audience"].choices = PILOT_AUDIENCE_CHOICES
+        for name in ("title", "location_name"):
+            field_id = self[name].auto_id
+            self.fields[name].widget.attrs["aria-describedby"] = f"{field_id}_helptext {field_id}_counter"
         base_classes = "ui-field mt-1"
         for name, field in self.fields.items():
             widget = field.widget
