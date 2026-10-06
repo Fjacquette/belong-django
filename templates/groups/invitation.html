@@ -6,10 +6,10 @@
   {% if invitation %}
     <h2 class="text-xl font-display">{{ invitation.group.name }}</h2>
     <p class="whitespace-pre-line">{{ invitation.group.description }}</p>
-    <p>{{ invitation.inviter.get_full_name|default:invitation.inviter.username }} invited you to join.</p>
+    <p>{{ invitation.inviter.profile.identity_label }} invited you to join.</p>
     {% if user.is_authenticated %}
       {% if bind_email %}<p>Accepting will add {{ invitation.email }} to your account and join this group.</p>{% endif %}
-      <form method="post">{% csrf_token %}<button class="ui-button ui-button--primary ui-button--comfortable">Accept invitation</button></form>
+      <form method="post">{% csrf_token %}<button class="ui-button ui-button--primary ui-button--comfortable">{% if user.profile.can_use_belong %}Accept invitation{% else %}Verify email and accept{% endif %}</button></form>
     {% else %}
       <p>Sign in or create an account using the invited email address to accept.</p>
       <p>If your account has no email, accepting will add the invited address if no other account uses it.</p>

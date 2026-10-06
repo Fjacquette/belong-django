@@ -10,6 +10,6 @@ User = get_user_model()
 @receiver(post_save, sender=User)
 def ensure_profile(sender, instance, created, **kwargs):  # pragma: no cover - simple signal
     if created:
-        UserProfile.objects.create(user=instance)
+        UserProfile.objects.create(user=instance, display_name=instance.get_full_name() or instance.username)
     else:
         UserProfile.objects.get_or_create(user=instance)

@@ -25,7 +25,9 @@ try:
     CONFIG = read_local_config(BASE_DIR / '.env.local') | os.environ
 except ValueError as error:
     raise ImproperlyConfigured(str(error)) from error
-ENVIRONMENT = CONFIG.get('BELONG_ENV', 'dev')
+ENVIRONMENT = CONFIG.get('BELONG_ENV', 'production')
+if ENVIRONMENT not in {'dev', 'test', 'production'}:
+    raise ImproperlyConfigured('BELONG_ENV must be dev, test, or production.')
 
 
 # Quick-start development settings - unsuitable for production
@@ -81,6 +83,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'belong.middleware.VerifiedEmailMiddleware',
     'social.middleware.ActivityPresenceMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -114,6 +117,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': (BASE_DIR / Path(CONFIG.get('DJANGO_DB_PATH', 'db.sqlite3')).expanduser()).resolve(),
+        'OPTIONS': {'transaction_mode': 'IMMEDIATE'},
     }
 }
 
@@ -191,3 +195,10 @@ CARD_LAYOUT = {
 # Local previews use console delivery; deployment may configure a real backend.
 EMAIL_BACKEND = CONFIG.get('DJANGO_EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 DEFAULT_FROM_EMAIL = CONFIG.get('DJANGO_DEFAULT_FROM_EMAIL', 'Belong <noreply@localhost>')
+
+AUTHENTICATION_BACKENDS = ['belong.authentication.EmailBackend']
+# Compatibility is confined to explicitly provisioned legacy accounts in local dev/test.
+try:
+    ALLOW_LEGACY_ACCOUNTS = config_bool(CONFIG.get('BELONG_ALLOW_LEGACY_ACCOUNTS', str(ENVIRONMENT in {'dev', 'test'})), key='BELONG_ALLOW_LEGACY_ACCOUNTS')
+except ValueError as error:
+    raise ImproperlyConfigured(str(error)) from error

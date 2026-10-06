@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Verify email · Belong{% endblock %}
+{% block content %}
+<section class="mx-auto max-w-xl min-w-0 space-y-6">
+  <h1 class="text-2xl font-display">Verify your email</h1>
+  <p class="break-words">Check your inbox for a verification link. Verify control of your email before using Belong.</p>
+  <form method="post" class="space-y-4">{% csrf_token %}
+    {% include 'includes/account_fields.html' %}
+    <button class="ui-button ui-button--primary" type="submit">Send verification email</button>
+  </form>
+  <p class="text-sm">Links expire after 24 hours. You can request one per minute, up to ten per day.</p>
+</section>
+{% endblock %}

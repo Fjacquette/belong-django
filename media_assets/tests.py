@@ -1,3 +1,4 @@
+from belong.test_helpers import create_legacy_user
 from io import BytesIO
 from unittest.mock import patch
 
@@ -23,7 +24,7 @@ def image_bytes(image_format="PNG"):
 class ImageSecurityTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.user = get_user_model().objects.create_user(username="image_viewer")
+        cls.user = create_legacy_user(username="image_viewer")
 
     def setUp(self):
         self.client.force_login(self.user)

@@ -141,6 +141,7 @@ def ensure_users(users: Iterable[dict]):
             identity=("username",), update=False,
         )
         if created:
+            UserProfile.objects.filter(user=user).update(legacy_access=True)
             if data.get("password"):
                 user.set_password(data["password"])
             else:

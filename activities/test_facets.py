@@ -1,3 +1,4 @@
+from belong.test_helpers import create_legacy_user
 from datetime import datetime, timedelta, timezone as dt_timezone
 from decimal import Decimal
 from unittest.mock import patch
@@ -17,8 +18,8 @@ NOW = datetime(2026, 10, 5, 2, tzinfo=dt_timezone.utc)
 
 class FacetTests(TestCase):
     def setUp(self):
-        self.host = get_user_model().objects.create_user(username='facet-host')
-        self.viewer = get_user_model().objects.create_user(username='facet-viewer')
+        self.host = create_legacy_user(username='facet-host')
+        self.viewer = create_legacy_user(username='facet-viewer')
         Friendship.make_pair(self.host, self.viewer)
         self.client.force_login(self.viewer)
 

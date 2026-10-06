@@ -1,3 +1,4 @@
+from belong.test_helpers import create_legacy_user
 from decimal import Decimal
 from io import BytesIO
 
@@ -17,8 +18,8 @@ class ActivitySeriesTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         U = get_user_model()
-        cls.owner = U.objects.create_user('series-owner')
-        cls.other = U.objects.create_user('series-other')
+        cls.owner = create_legacy_user('series-owner')
+        cls.other = create_legacy_user('series-other')
         buffer = BytesIO(); Image.new('RGB', (10, 10), 'teal').save(buffer, format='PNG')
         data = buffer.getvalue()
         cls.images = [ImageAsset.objects.create(name=f'Artwork {n}', purpose='activity_header', data=data, content_type='image/png', size=len(data)) for n in range(3)]

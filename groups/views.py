@@ -177,9 +177,18 @@ def revoke_invitation(request, pk, invitation_pk):
 
 
 def invitation(request, token):
+    from .invitations import find_invitation
+    return _invitation_response(request, find_invitation(token))
+
+
+def pending_invitation_view(request):
+    from .invitations import pending_invitation
+    return _invitation_response(request, pending_invitation(request))
+
+
+def _invitation_response(request, invitation):
     from django.core.exceptions import ValidationError
-    from .invitations import find_invitation, usable, accept_invitation, email_claimed
-    invitation = find_invitation(token)
+    from .invitations import usable, accept_reference, email_claimed
     available = usable(invitation)
     matched = request.user.is_authenticated and invitation and request.user.email.strip().lower() == invitation.email
     bind_email = available and request.user.is_authenticated and not request.user.email.strip() and not email_claimed(invitation.email, request.user)
@@ -189,19 +198,22 @@ def invitation(request, token):
         if request.POST.get('auth') == 'switch' and available:
             from django.contrib.auth import logout
             logout(request)
-            request.session['group_invitation'] = token
+            request.session['pending_group_invitation'] = invitation.pk
             return redirect('login')
         if not request.user.is_authenticated:
             if not available:
                 raise Http404
-            request.session['group_invitation'] = token
+            request.session['pending_group_invitation'] = invitation.pk
             return redirect('signup' if request.POST.get('auth') == 'signup' else 'login')
+        if available and matched and not request.user.profile.can_use_belong:
+            request.session['pending_group_invitation'] = invitation.pk
+            return redirect('verification_status')
         try:
-            group = accept_invitation(token, request.user)
+            group = accept_reference(invitation.pk if invitation else None, request.user)
         except ValidationError as error:
             messages.error(request, error.messages[0])
         else:
-            request.session.pop('group_invitation', None)
+            request.session.pop('pending_group_invitation', None)
             return redirect(group or 'activities:index')
     response = render(request, 'groups/invitation.html', {'invitation': invitation if show_context else None,
                                                        'available': available, 'matched': matched, 'bind_email': bind_email})

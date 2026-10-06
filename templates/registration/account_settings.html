@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Account settings · Belong{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-xl min-w-0 space-y-8">
+  <h1 class="text-2xl font-display">Account settings</h1>
+  <section class="space-y-4" aria-labelledby="profile-heading">
+    <h2 id="profile-heading" class="text-lg font-semibold">Profile</h2>
+    {% if user.profile.avatar_url %}<img src="{{ user.profile.avatar_url }}" alt="Your current profile image" class="h-16 w-16 rounded-full object-cover">{% endif %}
+    <form method="post" enctype="multipart/form-data" class="space-y-4">{% csrf_token %}<input type="hidden" name="action" value="profile">
+      {% include 'includes/account_fields.html' with form=profile_form %}
+      <button type="submit" class="ui-button ui-button--primary">Save profile</button>
+    </form>
+  </section>
+  <section class="space-y-4" aria-labelledby="email-heading">
+    <h2 id="email-heading" class="text-lg font-semibold">Email</h2>
+    <p class="break-words">Current login: {{ user.email|default:'Legacy local account — add and verify an email below.' }}</p>
+    {% if user.profile.pending_email %}<p class="break-words">Awaiting verification: {{ user.profile.pending_email }}. Your current login stays active until you confirm the new address.</p>
+      <form method="post">{% csrf_token %}<button type="submit" name="action" value="resend" class="ui-button ui-button--secondary">Resend verification</button></form>
+    {% endif %}
+    <form method="post" class="space-y-4">{% csrf_token %}<input type="hidden" name="action" value="email">
+      {% include 'includes/account_fields.html' with form=email_form %}
+      <button type="submit" class="ui-button ui-button--secondary">Verify new email</button>
+    </form>
+  </section>
+  <a href="{% url 'password_change' %}" class="ui-link">Change password</a>
+</div>
+{% endblock %}

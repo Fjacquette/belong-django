@@ -6,7 +6,7 @@ from datetime import timedelta
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.urls import reverse
 from django.utils import timezone
 
@@ -48,7 +48,7 @@ def issue_invitation(group, inviter, email, request):
         })
         url = request.build_absolute_uri(reverse('groups:invitation', args=[token]))
         delivered = send_mail(f'Invitation to {group.name}',
-                  f'{inviter.get_full_name() or inviter.username} invited you to {group.name}.\n\n'
+                  f'{inviter.profile.identity_label} invited you to {group.name}.\n\n'
                   f'Accept your invitation: {url}\n\nThis invitation expires in 7 days. '
                   'Sign in or create an account using the invited email address.',
                   None, [email], fail_silently=False)
@@ -57,9 +57,22 @@ def issue_invitation(group, inviter, email, request):
         return True
 
 
+def pending_invitation(request):
+    reference = request.session.get('pending_group_invitation')
+    if not isinstance(reference, int) or isinstance(reference, bool):
+        return None
+    return GroupInvitation.objects.select_related('group', 'inviter__profile').filter(pk=reference).first()
+
+
 def accept_invitation(token, user):
+    invitation = find_invitation(token)
+    return accept_reference(invitation.pk if invitation else None, user)
+
+
+def accept_reference(reference, user):
+    # Internal only: reference must come from a previously validated bearer link/session.
     with transaction.atomic():
-        invitation = find_invitation(token)
+        invitation = GroupInvitation.objects.filter(pk=reference).first()
         if not invitation:
             raise ValidationError('This invitation is unavailable.')
         group = Group.objects.select_for_update().get(pk=invitation.group_id)
@@ -81,7 +94,19 @@ def accept_invitation(token, user):
             if email_claimed(invitation.email, user):
                 raise ValidationError('Another account already uses the invited email address. Sign in with that account.')
             user.email = invitation.email
-            user.save(update_fields=['email'])
+            try:
+                with transaction.atomic():
+                    user.save(update_fields=['email'])
+            except IntegrityError as error:
+                raise ValidationError('Another account already uses the invited email address. Sign in with that account.') from error
+        # The invited bearer token proves control only of this exact address.
+        profile = user.profile
+        if not profile.can_use_belong:
+            raise ValidationError('Verify your email before accepting this invitation.')
+        if not profile.email_verified_at:
+            profile.email_verified_at = timezone.now()
+            profile.legacy_access = False
+            profile.save(update_fields=['email_verified_at', 'legacy_access'])
         member, _ = GroupMembership.objects.get_or_create(group=group, user=user)
         if member.status == MemberStatus.PENDING:
             member.status = MemberStatus.ACTIVE
@@ -94,15 +119,16 @@ def accept_invitation(token, user):
 
 
 def finish_pending(request):
-    token = request.session.get('group_invitation')
-    if not token:
+    invitation = pending_invitation(request)
+    if not invitation:
+        request.session.pop('pending_group_invitation', None)
         return None
     from django.contrib import messages
     try:
-        group = accept_invitation(token, request.user)
+        group = accept_reference(invitation.pk, request.user)
     except ValidationError as error:
         messages.error(request, error.messages[0])
-        return reverse('groups:invitation', args=[token])
-    request.session.pop('group_invitation', None)
+        return reverse('groups:pending_invitation')
+    request.session.pop('pending_group_invitation', None)
     messages.success(request, 'Invitation accepted.' if group else 'This invitation was already used.')
     return group.get_absolute_url() if group else reverse('activities:index')

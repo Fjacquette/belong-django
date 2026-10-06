@@ -1,3 +1,4 @@
+from belong.test_helpers import create_legacy_user
 from datetime import datetime, timedelta, timezone as dt_timezone
 from unittest.mock import patch
 
@@ -15,9 +16,9 @@ NOW = datetime(2026, 10, 5, 2, tzinfo=dt_timezone.utc)  # October 4 in Eastern t
 class DiscoveryTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.host = get_user_model().objects.create_user(username='discovery-host')
-        cls.viewer = get_user_model().objects.create_user(username='discovery-viewer')
-        cls.other = get_user_model().objects.create_user(username='discovery-other')
+        cls.host = create_legacy_user(username='discovery-host')
+        cls.viewer = create_legacy_user(username='discovery-viewer')
+        cls.other = create_legacy_user(username='discovery-other')
         cls.category = ActivityCategory.objects.create(name='Outdoors', slug='outdoors')
         defaults = dict(host=cls.host, description='Do something together', starts_at=NOW-timedelta(hours=1),
                         location_type='hybrid', location_gps='40.0,-75.0', cost_type='free', category=cls.category)
@@ -261,7 +262,7 @@ class DiscoveryTests(TestCase):
         for user, age, state in [(self.host,2,'Active'),(self.other,15,'Idle')]:
             Friendship.make_pair(self.viewer,user)
             UserProfile.objects.filter(user=user).update(last_active_at=NOW-timedelta(minutes=age))
-        offline = get_user_model().objects.create_user(username='offline-friend')
+        offline = create_legacy_user(username='offline-friend')
         Friendship.make_pair(self.viewer,offline)
         self.assertIsNone(offline.profile.last_active_at)
         response = self.discover()

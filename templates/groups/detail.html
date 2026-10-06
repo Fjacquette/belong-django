@@ -6,7 +6,7 @@
   {% if group.image %}<img src="{{ group.image.get_absolute_url }}" alt="{{ group.name }} group image" class="h-24 w-24 rounded-xl object-cover">{% endif %}
   <h1 class="text-3xl font-display">{{ group.name }}</h1>
   <p class="whitespace-pre-line">{{ group.description }}</p>
-  <p class="text-sm">Primary organizer: {{ group.owner.get_full_name|default:group.owner.username }}</p>
+  <p class="text-sm">Primary organizer: {{ group.owner.profile.identity_label }}</p>
   <p class="text-sm">{{ group.get_access_display }} · {{ group.access_description }}</p>
   {% if organizer %}
     <a href="{% url 'groups:edit' group.pk %}" class="ui-link inline-flex items-center min-h-11">Edit group and image defaults</a>
@@ -58,7 +58,7 @@
     <ul class="space-y-3">
       {% for member in members %}
         <li class="flex flex-wrap items-center justify-between gap-2">
-          <span>{{ member.user.get_full_name|default:member.user.username }} · {% if member.user_id == group.owner_id %}Primary organizer{% else %}{{ member.get_role_display }}{% endif %}</span>
+          <span>{{ member.user.profile.identity_label }} · {% if member.user_id == group.owner_id %}Primary organizer{% else %}{{ member.get_role_display }}{% endif %}</span>
           {% if is_owner and member.user_id != group.owner_id %}
             <form method="post" action="{% url 'groups:membership_action' group.pk member.pk %}">{% csrf_token %}
               <button name="action" value="{% if member.role == 'organizer' %}demote{% else %}promote{% endif %}" class="ui-button ui-button--secondary ui-button--comfortable">{% if member.role == 'organizer' %}Make member{% else %}Make organizer{% endif %}</button>
@@ -81,7 +81,7 @@
     <h2 class="text-xl font-display">Join requests</h2>
     {% for member in pending %}
       <form method="post" action="{% url 'groups:membership_action' group.pk member.pk %}" class="flex flex-wrap items-center justify-between gap-2">{% csrf_token %}
-        <span>{{ member.user.get_full_name|default:member.user.username }}</span>
+        <span>{{ member.user.profile.identity_label }}</span>
         {% if group.access != 'private' %}<button name="action" value="approve" class="ui-button ui-button--secondary ui-button--comfortable">Approve</button>{% endif %}
         <button name="action" value="decline" class="ui-button ui-button--secondary ui-button--comfortable">Decline</button>
         <button name="action" value="block" class="ui-button ui-button--secondary ui-button--comfortable">Block membership</button>
@@ -92,7 +92,7 @@
     <h2 class="text-xl font-display">Blocked memberships</h2>
     {% for member in blocked %}
       <form method="post" action="{% url 'groups:membership_action' group.pk member.pk %}" class="flex flex-wrap items-center justify-between gap-2">{% csrf_token %}
-        <span>{{ member.user.get_full_name|default:member.user.username }}</span>
+        <span>{{ member.user.profile.identity_label }}</span>
         <button name="action" value="unblock" class="ui-button ui-button--secondary ui-button--comfortable">Unblock</button>
       </form>
     {% endfor %}

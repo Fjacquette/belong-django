@@ -25,10 +25,10 @@
   </div>
   <div class="activity-card__band-2 activity-card__context text-black font-body activity-card__meta">
     <div class="activity-card__avatar">
-      {% if activity.organizer_image_url %}<img src="{{ activity.organizer_image_url }}" alt="" class="h-full w-full object-cover">{% else %}<span class="h-full w-full flex items-center justify-center text-belong-purple font-semibold">{{ activity.organizer_name|default:activity.host.username|slice:':1'|upper }}</span>{% endif %}
+      {% if activity.organizer_image_url %}<img src="{{ activity.organizer_image_url }}" alt="" class="h-full w-full object-cover">{% else %}<span class="h-full w-full flex items-center justify-center text-belong-purple font-semibold">{{ activity.organizer_display_name|slice:':1'|upper }}</span>{% endif %}
     </div>
     <div class="activity-card__metadata">
-      <p data-full-text="{{ activity.organizer_name|default:activity.host.get_full_name|default:activity.host.username }}"><span class="sr-only">Organized by </span>{{ activity.organizer_name|default:activity.host.get_full_name|default:activity.host.username }}</p>
+      <p data-full-text="{{ activity.organizer_display_name }}"><span class="sr-only">Organized by </span>{{ activity.organizer_display_name }}</p>
     <div class="activity-card__logistics" aria-label="When and where">
       <span class="activity-card__when" data-full-text="{{ activity.display_when }}">{{ activity.display_when }}</span>
       <span class="activity-card__logistics-divider" aria-hidden="true"> · </span>

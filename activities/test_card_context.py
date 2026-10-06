@@ -1,3 +1,4 @@
+from belong.test_helpers import create_legacy_user
 from datetime import datetime, timezone
 from urllib.parse import parse_qs, urlsplit
 
@@ -12,9 +13,9 @@ class CardContextTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         users = get_user_model()
-        cls.viewer = users.objects.create_user(username='context-viewer')
-        cls.host = users.objects.create_user(username='context-host')
-        cls.other = users.objects.create_user(username='context-other')
+        cls.viewer = create_legacy_user(username='context-viewer')
+        cls.host = create_legacy_user(username='context-host')
+        cls.other = create_legacy_user(username='context-other')
         cls.category = ActivityCategory.objects.create(name='Walks', slug='walks')
         defaults = dict(title='A walk', host=cls.host, category=cls.category,
                         starts_at=datetime(2026, 10, 6, 14, tzinfo=timezone.utc),

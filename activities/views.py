@@ -10,7 +10,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db.models import Count, Q
+from django.db.models import Q
 from django.utils.http import url_has_allowed_host_and_scheme
 from .discovery import canonical_filters, filter_activities, facet_context
 from django.http import Http404, HttpRequest, HttpResponse, QueryDict
@@ -145,7 +145,8 @@ def _build_join_context(request: HttpRequest, activity: Activity) -> Dict[str, o
         else ""
     )
 
-    activity.is_hidden = HiddenActivity.objects.filter(user=request.user, activity=activity).exists()
+    if not hasattr(activity, "is_hidden"):
+        activity.is_hidden = HiddenActivity.objects.filter(user=request.user, activity=activity).exists()
     activity.is_joined = current_response is not None
     activity.attendee_count = attendee_count
 
@@ -189,17 +190,7 @@ def _annotate_join_data(request: HttpRequest, activities: List[Activity]) -> Non
 
 @login_required
 def index(request: HttpRequest) -> HttpResponse:
-    activities_qs = visible_activities(request.user).select_related("host", "category").prefetch_related("responses").annotate(
-        attendee_count=Count(
-            "responses",
-            filter=Q(
-                responses__status__in=[
-                    ActivityResponseStatus.INTERESTED,
-                    ActivityResponseStatus.COMMITTED,
-                ]
-            ),
-        )
-    )
+    activities_qs = visible_activities(request.user).select_related("host__profile__avatar_image", "category").prefetch_related("responses")
 
     params = canonical_filters(request.GET)
     hidden_mode = params.get("hidden", "exclude")
@@ -235,10 +226,10 @@ def index(request: HttpRequest) -> HttpResponse:
     page_obj = paginator.get_page(page_number)
 
     activities = list(page_obj.object_list)
-    _annotate_join_data(request, activities)
     hidden_set = set(hidden_ids.values_list("activity_id", flat=True))
     for activity in activities:
         activity.is_hidden = activity.pk in hidden_set
+    _annotate_join_data(request, activities)
     for activity in activities:
         _card_context(request, activity, params, hidden_organizers)
     pagination_params = params.copy()
@@ -274,19 +265,7 @@ def category_explore(request: HttpRequest) -> HttpResponse:
 @login_required
 def detail(request: HttpRequest, pk: int) -> HttpResponse:
     activity = get_object_or_404(
-        visible_activities(request.user).select_related("host", "category", "group")
-        .prefetch_related("responses")
-        .annotate(
-            attendee_count=Count(
-                "responses",
-                filter=Q(
-                    responses__status__in=[
-                        ActivityResponseStatus.INTERESTED,
-                        ActivityResponseStatus.COMMITTED,
-                    ]
-                ),
-            )
-        ),
+        visible_activities(request.user).select_related("host__profile__avatar_image", "category", "group").prefetch_related("responses"),
         pk=pk,
     )
 
@@ -469,7 +448,7 @@ def _filter_context(request, queryset, params):
             continue
         if key == "organizer":
             queryset = queryset.filter(host_id=source.host_id)
-            label = "Organizer: " + (source.organizer_name or source.host.get_full_name() or source.host.username)
+            label = "Organizer: " + (source.organizer_display_name)
         elif key == "context_time":
             if source.starts_at:
                 zone = ZoneInfo(settings.PILOT_TIME_ZONE)

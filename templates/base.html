@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{% block title %}Belong{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}?v=panes-40-footer-39">
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}?v=accounts-44">
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
     <script src="{% static 'js/full-text.js' %}?v=truncated-37" defer></script>
   </head>
@@ -17,7 +17,7 @@
           <span class="text-2xl font-display">Belong</span>
         </a>
         {% if user.is_authenticated %}
-          <nav aria-label="Main navigation" class="flex items-center gap-3 sm:gap-6">
+          {% if user.profile.can_use_belong %}<nav aria-label="Main navigation" class="flex items-center gap-3 sm:gap-6">
             <a href="{% url 'activities:index' %}" class="ui-link ui-link--inverse hidden lg:inline-flex items-center min-h-10 text-sm font-semibold">Discover</a>
             <details class="account-menu relative">
               <summary class="ui-menu-trigger min-h-10" aria-label="Account and discovery menu">
@@ -27,14 +27,15 @@
                 <div class="lg:hidden border-b border-belong-slate/10 pb-2 mb-2">
                   <a href="{% url 'activities:index' %}" class="flex items-center min-h-11 text-sm font-semibold hover:underline">Discover</a>
                 </div>
-                <p class="text-sm break-words">{{ user.get_full_name|default:user.username }}</p>
+                <p class="text-sm break-words">{{ user.profile.identity_label }}</p>
+                <a href="{% url 'account_settings' %}" class="ui-link block min-h-11 py-2">Account settings</a>
                 <form action="{% url 'logout' %}" method="post">
                   {% csrf_token %}
                   <button type="submit" class="ui-button ui-button--secondary">Logout</button>
                 </form>
               </div>
             </details>
-          </nav>
+          </nav>{% else %}<form action="{% url 'logout' %}" method="post">{% csrf_token %}<button class="ui-button ui-button--secondary" type="submit">Logout</button></form>{% endif %}
         {% endif %}
       </div>
     </header>
@@ -49,7 +50,7 @@
       {% endif %}
       {% block content %}{% endblock %}
     </main>
-    {% if user.is_authenticated and not suppress_create %}
+    {% if user.is_authenticated and user.profile.can_use_belong and not suppress_create %}
       <details class="fixed bottom-4 right-6 sm:right-8 lg:right-10 z-[150]">
         <summary aria-label="Create" title="Create" class="ui-fab">+</summary>
         <div class="absolute right-0 bottom-full mb-2 w-48 ui-menu-panel">

@@ -1,3 +1,4 @@
+from belong.test_helpers import create_legacy_user
 from io import BytesIO
 
 from PIL import Image
@@ -20,8 +21,8 @@ def upload(name='art.png'):
 class GroupCreationDefaultsTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.owner = get_user_model().objects.create_user('defaults-owner')
-        cls.other = get_user_model().objects.create_user('defaults-other')
+        cls.owner = create_legacy_user('defaults-owner')
+        cls.other = create_legacy_user('defaults-other')
         data = upload().read()
         cls.art = ImageAsset.objects.create(name='Group activity artwork', purpose='activity_header', data=data, size=len(data), content_type='image/png')
         cls.override = ImageAsset.objects.create(name='Specific artwork', purpose='activity_header', data=data, size=len(data), content_type='image/png')

@@ -1,3 +1,4 @@
+from belong.test_helpers import create_legacy_user
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -16,7 +17,7 @@ def contrast_with_white(color):
 class CardFitTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.host = get_user_model().objects.create_user(username='fit-host')
+        cls.host = create_legacy_user(username='fit-host')
         cls.activity = Activity.objects.create(host=cls.host, title='Paddling together',
                                              freetext_when='Saturday morning', location_name='River park',
                                              color_primary='#06796b')
