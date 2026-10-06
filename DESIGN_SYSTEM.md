@@ -499,6 +499,13 @@ legend, a full descriptive label and a visible selected border/background. Creat
 workflows suppress the global + and remain full-page forms. Group-scoped activity
 creation shows its context above the main fields; image defaults seed new records.
 
+`ui-choice-list` groups independent response checkboxes with 40px labels; each
+input retains `ui-check` rather than inheriting the container grid class.
+Series uses the same focused full-page form and control families. Creating an
+occurrence names the source Series and associated Group above the main fields.
+It edits a copy of the defaults; cadence metadata describes the pattern without
+claiming automatic scheduling. Series management stays with its organizer context.
+
 ## 10. Responsive behavior
 
 Mobile is designed, not compressed.

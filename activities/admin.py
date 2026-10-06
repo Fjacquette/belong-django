@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Activity, ActivityCategory, ActivityResponse, PILOT_AUDIENCE_CHOICES
+from .models import Activity, ActivitySeries, ActivityCategory, ActivityResponse, PILOT_AUDIENCE_CHOICES
 
 
 @admin.register(ActivityCategory)
@@ -36,3 +36,10 @@ class ActivityResponseAdmin(admin.ModelAdmin):
     list_filter = ("status", "created_at")
     search_fields = ("activity__title", "user__username")
     autocomplete_fields = ("activity", "user")
+
+
+@admin.register(ActivitySeries)
+class ActivitySeriesAdmin(admin.ModelAdmin):
+    list_display = ('title', 'owner', 'group', 'cadence')
+    search_fields = ('title', 'description')
+    autocomplete_fields = ('owner', 'group', 'category', 'header_image')

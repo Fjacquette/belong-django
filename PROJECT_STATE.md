@@ -133,7 +133,7 @@ changes and can be cleared independently; organizer suppression is reversible an
 separate from blocking/participation. The image band contains artwork only. Title
 navigation opens Details for response counts, removal and external CTAs. Generic headlines stay on Details.
 Known seed-owned choices and stale sample responses are reconciled without altering
-real/custom/transferred data. **#22** adds organizer-issued email invitations with hashed seven-day tokens, revocation and duplicate-safe retries. A valid invitation grants active membership, including Private; acceptance consent survives signup/login and requires a matching email. Normal signup requires email; explicit acceptance can bind an unclaimed invited email to a legacy email-less account, without overwriting existing email. Wrong-account switching retains the invitation. Local delivery uses console email. **#32** clarifies access with descriptive radios, hides + in focused create flows, and adds group identity/default activity artwork using validated media assets. Group-scoped activity creation is visibly anchored and locks its group; global creation offers optional organized-group selection. Artwork defaults are copied onto new activities and may be overridden; group identity never substitutes for the human organizer portrait. **#23 — recurring series/occurrences follows.**
+real/custom/transferred data. **#22** adds organizer-issued email invitations with hashed seven-day tokens, revocation and duplicate-safe retries. A valid invitation grants active membership, including Private; acceptance consent survives signup/login and requires a matching email. Normal signup requires email; explicit acceptance can bind an unclaimed invited email to a legacy email-less account, without overwriting existing email. Wrong-account switching retains the invitation. Local delivery uses console email. **#32** clarifies access with descriptive radios, hides + in focused create flows, and adds group identity/default activity artwork using validated media assets. Group-scoped activity creation is visibly anchored and locks its group; global creation offers optional organized-group selection. Artwork defaults are copied onto new activities and may be overridden; group identity never substitutes for the human organizer portrait. **#23** adds reusable ActivitySeries defaults with optional Group and flexible/fixed cadence metadata. Creators explicitly create normal Activity occurrences with copied defaults and independent overrides; artwork precedence is Activity → Series → Group, never live inheritance. Group-series management follows active organizer authority; independent series belong to their owner. No automatic scheduler or RSVP lifecycle is added. #24/#25 follow.
 
 ### Groups / recurring activity sequence
 
@@ -142,9 +142,9 @@ real/custom/transferred data. **#22** adds organizer-issued email invitations wi
 Implementation slices are already defined and are intended to be built, not parked:
 
 - **#21** core Group model and membership — merged
-- **#22** email invitations and joining — current PR #31
-- **#32** group creation UX + group-context activity defaults — next bounded slice after #22
-- **#23** recurring series and specific occurrences
+- **#22** email invitations and joining — merged via PR #31
+- **#32** group creation UX + group-context activity defaults — implemented in PR #33
+- **#23** recurring series and specific occurrences — implemented in PR #35 on current master
 - **#24** organizer RSVP roster and occurrence lifecycle/cancellation
 - **#25** activity and group announcements
 

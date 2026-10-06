@@ -3,7 +3,13 @@
 {% block title %}Create Activity · Belong{% endblock %}
 {% block content %}
   <div class="max-w-2xl">
-    <h1 class="text-2xl font-semibold mb-6">Create a new activity</h1>
+    <h1 class="text-2xl font-semibold mb-6">{% if context_series %}Create an occurrence{% else %}Create a new activity{% endif %}</h1>
+    {% if context_series %}<p class="mb-4">From series: <a href="{{ context_series.get_absolute_url }}" class="ui-link">{{ context_series.title }}</a>. Change the copied values for this occurrence.</p>
+    {% else %}<p class="mb-4">For repeated activities, <a href="{% url 'activities:series_create' %}{% if context_group %}?group={{ context_group.pk }}{% endif %}" class="ui-link">create a series</a>.</p>
+      {% if series_choices %}<details class="mb-4"><summary class="ui-menu-trigger">Create from a saved series <span aria-hidden="true">▾</span></summary>
+        <ul class="space-y-2 mt-2">{% for item in series_choices %}<li><a href="{% url 'activities:create' %}?series={{ item.pk }}" class="ui-link inline-flex items-center min-h-10">{{ item.title }}</a></li>{% endfor %}</ul>
+      </details>{% endif %}
+    {% endif %}
     <p id="activity-group-context" class="mb-4" {% if not context_group %}hidden{% endif %}>{% if context_group %}Creating an activity for {{ context_group.name }}{% endif %}</p>
     {{ group_defaults|json_script:'activity-group-defaults' }}
     <form method="post" class="space-y-5 bg-white rounded-xl shadow p-6">

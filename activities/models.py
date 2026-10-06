@@ -78,6 +78,7 @@ DEFAULT_RESPONSE_CHOICES = [
 
 
 class Activity(models.Model):
+    series = models.ForeignKey('ActivitySeries', on_delete=models.SET_NULL, null=True, blank=True, related_name='occurrences')
     group = models.ForeignKey(
         "groups.Group", on_delete=models.SET_NULL, null=True, blank=True,
         related_name="activities",
@@ -250,3 +251,56 @@ class HiddenOrganizer(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=("user", "organizer"), name="unique_hidden_organizer")]
+
+
+class ActivitySeries(models.Model):
+    """Reusable activity defaults and cadence; occurrences retain independent values."""
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='activity_series')
+    group = models.ForeignKey('groups.Group', on_delete=models.SET_NULL, null=True, blank=True, related_name='series')
+    title = models.CharField(max_length=160)
+    description = models.TextField()
+    category = models.ForeignKey(ActivityCategory, on_delete=models.SET_NULL, null=True, blank=True, related_name='series')
+    audience = models.CharField(max_length=40, choices=PILOT_AUDIENCE_CHOICES, default=ActivityVisibility.EVERYONE)
+    available_responses = models.JSONField(default=list, blank=True)
+    location_type = models.CharField(max_length=20, choices=ActivityLocationType.choices, default=ActivityLocationType.TBD)
+    location_name = models.CharField(max_length=200, blank=True)
+    location_address1 = models.CharField(max_length=200, blank=True)
+    location_address2 = models.CharField(max_length=200, blank=True)
+    location_city = models.CharField(max_length=120, blank=True)
+    location_state = models.CharField(max_length=120, blank=True)
+    location_zip = models.CharField(max_length=20, blank=True)
+    location_url = models.URLField(blank=True)
+    location_gps = models.CharField(max_length=120, blank=True)
+    location_instructions = models.TextField(blank=True)
+    cost_type = models.CharField(max_length=12, choices=ActivityCostType.choices, default=ActivityCostType.UNKNOWN)
+    cost_amount = models.DecimalField(max_digits=9, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(Decimal('0'))])
+    cost_display = models.CharField(max_length=120, blank=True)
+    header_image = models.ForeignKey('media_assets.ImageAsset', on_delete=models.SET_NULL, null=True, blank=True,
+                                    related_name='header_series', limit_choices_to={'purpose': ImageAssetPurpose.ACTIVITY_HEADER})
+    color_primary = models.CharField(max_length=7, blank=True)
+    color_secondary = models.CharField(max_length=7, blank=True)
+    cadence = models.CharField(max_length=12, choices=[('flexible', 'As arranged'), ('daily', 'Daily'), ('weekly', 'Weekly'), ('monthly', 'Monthly')], default='flexible')
+    weekday = models.PositiveSmallIntegerField(null=True, blank=True, choices=list(enumerate(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])))
+    usual_start_time = models.TimeField(null=True, blank=True)
+    cadence_description = models.CharField(max_length=160, blank=True, help_text='Optional schedule details, such as the first Saturday of each month.')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['title', 'pk']
+        constraints = [
+            models.CheckConstraint(condition=models.Q(cadence__in=['flexible', 'daily', 'weekly', 'monthly']), name='series_valid_cadence'),
+            models.CheckConstraint(condition=models.Q(weekday__isnull=True) | models.Q(weekday__lte=6), name='series_valid_weekday'),
+        ]
+
+    def __str__(self):
+        return self.title
+
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('activities:series_detail', args=[self.pk])
+
+    def can_organize(self, user):
+        if not user.is_authenticated:
+            return False
+        return self.group.can_organize(user) if self.group_id else self.owner_id == user.pk

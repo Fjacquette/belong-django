@@ -298,22 +298,35 @@ def detail(request: HttpRequest, pk: int) -> HttpResponse:
         "join_context": join_context,
         "friends": _friend_context(request.user),
         "show_group": activity.group and activity.group.can_view(request.user),
+        "show_series": activity.series and activity.series.can_organize(request.user),
     }
     return render(request, "activities/detail.html", context)
 
 
 @login_required
 def create(request: HttpRequest) -> HttpResponse:
-    from groups.models import Group
-    group = None
+    from .series import occurrence_initial
+    from .models import ActivitySeries
+    series = None
+    initial = {}
+    series_id = request.GET.get('series')
+    if series_id:
+        if not series_id.isdigit():
+            raise Http404
+        series = _series_for(request.user, series_id)
+        initial = occurrence_initial(series)
+    group = series.group if series else None
     group_id = request.GET.get('group')
     if group_id:
         if not group_id.isdigit():
             raise Http404
         choices = ActivityForm(user=request.user).fields['group'].queryset
-        group = get_object_or_404(choices, pk=group_id)
+        selected = get_object_or_404(choices, pk=group_id)
+        if series and series.group_id and selected.pk != series.group_id:
+            raise Http404
+        group = selected
     if request.method == 'POST':
-        form = ActivityForm(request.POST, user=request.user, context_group=group)
+        form = ActivityForm(request.POST, user=request.user, context_group=group, context_series=series, initial=initial)
         if form.is_valid():
             activity = form.save(commit=False)
             activity.host = request.user
@@ -321,10 +334,13 @@ def create(request: HttpRequest) -> HttpResponse:
             messages.success(request, 'Activity created!')
             return redirect('activities:detail', pk=activity.pk)
     else:
-        form = ActivityForm(user=request.user, context_group=group)
+        form = ActivityForm(user=request.user, context_group=group, context_series=series, initial=initial)
     groups = list(form.fields['group'].queryset.select_related('default_activity_image'))
-    return render(request, 'activities/form.html', {'form': form, 'context_group': group,
-                  'group_defaults': {str(g.pk): {'name': g.name, 'image': str(g.default_activity_image_id or '')} for g in groups},
+    series_choices = ActivitySeries.objects.filter(Q(owner=request.user, group__isnull=True) | Q(group__in=groups)).distinct()
+    if group:
+        series_choices = series_choices.filter(group=group)
+    return render(request, 'activities/form.html', {'form': form, 'context_group': group, 'context_series': series, 'series_choices': series_choices,
+                  'group_defaults': {str(g.pk): {'name': g.name, 'image': str((series.header_image_id if series else None) or g.default_activity_image_id or '')} for g in groups},
                   'suppress_create': True})
 
 
@@ -494,3 +510,50 @@ def hide_organizer(request: HttpRequest, pk: int) -> HttpResponse:
     else:
         HiddenOrganizer.objects.get_or_create(user=request.user, organizer_id=activity.host_id)
     return redirect(_participation_next_path(request, activity))
+
+
+def _series_for(user, pk):
+    from .models import ActivitySeries
+    series = get_object_or_404(ActivitySeries.objects.select_related('group', 'group__default_activity_image', 'owner', 'header_image'), pk=pk)
+    if not series.can_organize(user):
+        raise Http404
+    return series
+
+
+@login_required
+def series_create(request):
+    from .forms import ActivitySeriesForm
+    group = None
+    group_id = request.GET.get('group')
+    if group_id:
+        if not group_id.isdigit():
+            raise Http404
+        group = get_object_or_404(ActivityForm(user=request.user).fields['group'].queryset, pk=group_id)
+    form = ActivitySeriesForm(request.POST if request.method == 'POST' else None, user=request.user, context_group=group)
+    if request.method == 'POST' and form.is_valid():
+        series = form.save(commit=False)
+        series.owner = request.user
+        series.save()
+        return redirect(series)
+    return render(request, 'activities/series_form.html', {'form': form, 'context_group': group, 'suppress_create': True})
+
+
+@login_required
+def series_edit(request, pk):
+    from .forms import ActivitySeriesForm
+    series = _series_for(request.user, pk)
+    form = ActivitySeriesForm(request.POST if request.method == 'POST' else None, instance=series, user=request.user, context_group=series.group)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        return redirect(series)
+    return render(request, 'activities/series_form.html', {'form': form, 'series': series, 'context_group': series.group, 'suppress_create': True})
+
+
+@login_required
+def series_detail(request, pk):
+    series = _series_for(request.user, pk)
+    choices = dict(ActivityResponseStatus.choices)
+    return render(request, 'activities/series_detail.html', {'series': series,
+        'response_labels': [choices[c] for c in (series.available_responses or ['interested']) if c in choices],
+        'occurrences': visible_activities(request.user).filter(series=series),
+    })

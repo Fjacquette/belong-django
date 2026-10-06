@@ -360,3 +360,25 @@ activity header overrides the default; leaving it blank in group context uses th
 group default. New activities store their own image reference, so later group
 default changes do not rewrite them. Activity audience remains independent of
 group access. Focused create pages suppress the floating +.
+
+## Recurring series and occurrences
+
+From a group page, choose “Create a series for this group”; independent series can
+be created from the Create Activity page, which also offers saved Series for
+future occurrences. Save title/description, audience,
+response choices, category, usual location/cost/artwork and optional cadence.
+“As arranged” supports loose repeating activities; Daily/Weekly/Monthly plus a
+usual day/time and schedule text describe fixed patterns without requiring RRULE.
+Schedule metadata does not automatically publish activities.
+
+“Create occurrence” opens a normal Activity form with copied Series defaults;
+choose the actual date/time and independently override its details. Artwork
+precedence is Activity override → Series default → Group default. Each occurrence
+stores its own values; editing Group/Series defaults affects future creation only.
+Existing activities remain ordinary activities and appear in Discover according
+to their own audience. Deleting a Series preserves its occurrences.
+
+Series creation/editing and occurrence creation are limited to the independent
+Series owner or active organizers of its associated group. Public occurrences do
+not expose private group/series management context. Recurring RSVP/lifecycle and
+announcements remain the subsequent #24/#25 slices.

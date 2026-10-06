@@ -5,6 +5,9 @@ from . import views
 app_name = "activities"
 
 urlpatterns = [
+    path('series/new/', views.series_create, name='series_create'),
+    path('series/<int:pk>/', views.series_detail, name='series_detail'),
+    path('series/<int:pk>/edit/', views.series_edit, name='series_edit'),
     path("", views.index, name="index"),
     path("discover/categories/", views.category_explore, name="categories"),
     path("activities/new", views.create, name="create"),
