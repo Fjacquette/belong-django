@@ -41,7 +41,7 @@ class UserProfile(models.Model):
     # Only locally provisioned/legacy users; public signup explicitly disables this.
     legacy_access = models.BooleanField(default=False)
     pending_email = models.EmailField(blank=True)
-    outbound_mail_suspended = models.BooleanField(default=False)
+    outbound_mail_suspended = models.BooleanField(default=False, db_default=False)
 
     @property
     def can_use_belong(self):
