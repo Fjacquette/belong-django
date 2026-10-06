@@ -118,10 +118,12 @@ account menus, and group forms/actions. Cards use the historical portrait hierar
 name + readable when/where, then organizer/audience/cost, a substantial image,
 useful description and one/two fully readable activity actions. The 440px card
 retains its 258px preferred/max width; 160px overlap exposes both top bands.
-Band 1 has bounded two-line title/structured logistics fitting and a white-dot
+Band 1 has calm medium-weight titles in fixed title/logistics zones, bounded
+two-line fitting, and a vertical-kebab
 contextual menu for related Discover filters and private activity/organizer hiding.
 Band 2 aligns a fixed circular avatar against both metadata rows. Card responses
-use accessible accents derived from their activity palette. Activity forms guide
+use accessible accents derived from their activity palette; checkmarks indicate
+only an actual committed response, while softer intent uses selected fill alone. Activity forms guide
 48-character titles and 40-character venue labels; legacy model storage is retained. Search, facets and
 view/recovery controls share one compact wrapping toolbar. Context survives query
 changes and can be cleared independently; organizer suppression is reversible and

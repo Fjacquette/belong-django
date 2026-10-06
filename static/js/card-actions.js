@@ -7,9 +7,12 @@
     const optional = buttons[1];
     optional.hidden = false;
     buttons.forEach(button => { button.style.flex = '0 0 auto'; });
-    // Reserve the selected-state checkmark even before the user chooses a response.
+    // Reserve a check only for an offered committed response, so selecting it
+    // does not make previously fitting labels overflow. Softer intent has no check.
     const width = buttons.reduce((sum, button) => sum + button.getBoundingClientRect().width, 8);
-    const check = buttons.some(button => button.getAttribute('aria-pressed') === 'true') ? 0 : 16;
+    const needsCheck = buttons.some(button => button.value === 'committed');
+    const hasCheck = buttons.some(button => button.classList.contains('ui-response--confirmed'));
+    const check = needsCheck && !hasCheck ? 16 : 0;
     optional.hidden = width + check > form.clientWidth;
     buttons.forEach(button => { button.style.flex = ''; });
   }

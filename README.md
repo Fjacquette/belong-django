@@ -176,10 +176,11 @@ a second choice appears only when it fits without clipping. Remaining choices
 are on Details. Title navigation opens the detail page for counts, external CTAs
 and response removal. The image band contains only image/fallback artwork.
 Band 2 centers a fixed circular organizer avatar against aligned metadata rows.
-Band 1 holds one white-dot contextual menu for related Discover filtering and
-private activity/organizer hiding. Titles fit through a bounded 21/19/17px scale
+Band 1 holds one vertical-kebab contextual menu for related Discover filtering and
+private activity/organizer hiding. Titles fit through a bounded 20/18/17px medium-weight scale
 and two-line ellipsis; when/where share one line when they fit, otherwise get one
-full-width line each. Card response colors derive an accessible local accent.
+full-width line each. Card response colors derive an accessible local accent; only a selected committed
+response gets a checkmark. Title and logistics occupy separate fixed-height zones.
 Activity forms limit titles to 48 characters and venue labels to 40, with counters
 and warnings at 80%; legacy storage and existing records remain unchanged.
 These filters preserve search/facets, reset pagination and can be cleared individually.

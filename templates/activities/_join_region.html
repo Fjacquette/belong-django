@@ -6,7 +6,7 @@
         <input type="hidden" name="variant" value="detail">
         <input type="hidden" name="next" value="{{ next_path }}">
         {% for option in response_options %}
-          <button type="submit" name="status" value="{{ option.value }}" aria-pressed="{% if current_status == option.value %}true{% else %}false{% endif %}" class="ui-button ui-button--comfortable ui-response">{{ option.label }}</button>
+          <button type="submit" name="status" value="{{ option.value }}" aria-pressed="{% if current_status == option.value %}true{% else %}false{% endif %}" class="ui-button ui-button--comfortable ui-response{% if current_status == option.value and option.value == 'committed' %} ui-response--confirmed{% endif %}">{{ option.label }}</button>
         {% endfor %}
       </form>
     {% else %}
@@ -20,7 +20,7 @@
         <input type="hidden" name="variant" value="card">
         <input type="hidden" name="next" value="{{ next_path }}">
         {% for option in card_response_options %}
-          <button type="submit" name="status" value="{{ option.value }}" aria-pressed="{% if current_status == option.value %}true{% else %}false{% endif %}" title="{{ option.label }}{% if current_status == option.value %} — select again to clear{% endif %}" class="ui-button ui-button--compact ui-response ui-response--card{% if not forloop.first %} card-response__optional{% endif %}"{% if not forloop.first %} hidden{% endif %}>{{ option.label }}</button>
+          <button type="submit" name="status" value="{{ option.value }}" aria-pressed="{% if current_status == option.value %}true{% else %}false{% endif %}" title="{{ option.label }}{% if current_status == option.value %} — select again to clear{% endif %}" class="ui-button ui-button--compact ui-response ui-response--card{% if current_status == option.value and option.value == 'committed' %} ui-response--confirmed{% endif %}{% if not forloop.first %} card-response__optional{% endif %}"{% if not forloop.first %} hidden{% endif %}>{{ option.label }}</button>
         {% endfor %}
       </form>
     {% endif %}

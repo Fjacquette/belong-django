@@ -30,7 +30,7 @@
     logistics.dataset.fit = 'normal';
     logistics.dataset.layout = width(`${when.textContent} · ${where.textContent}`) <= logistics.clientWidth ? 'inline' : 'split';
     if (logistics.dataset.layout === 'split') {
-      for (const step of steps) {
+      for (const step of ['normal', 'minimum']) {
         logistics.dataset.fit = step;
         if (Math.max(width(when.textContent), width(where.textContent)) <= logistics.clientWidth) break;
       }

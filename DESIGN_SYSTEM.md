@@ -562,11 +562,15 @@ cards. Only matching tracked, owner-preserved authored demo prices are populated
 - Geometry: 440px height, preferred/max width 258px, 96/64/128/104/48px bands.
   The 160px stack offset reveals all identity/logistics and participation context.
 - Card title: `activity-card__title-link`, hover/focus navigation without a resting
-  underline. `card-fit.js` uses bounded 21/26, 19/24, 17/22px size/leading pairs,
+  underline. `card-fit.js` uses bounded 20/24, 18/22, 17/22px size/leading pairs at medium
+  weight,
   then a two-line ellipsis. Title width reserves symmetric 40px outer insets for
-  the top-right 36px transparent white-dot trigger. The title/logistics gap is 4px.
-- Logistics: structured when and where share one line only when they fit at 14px.
-  Otherwise each receives the full line width; 14/13/12px sizes with 16px leading
+  the top-right 36px transparent vertical-kebab trigger. Band 1 has fixed
+  48px title and 32px logistics zones with a 4px gap; shorter
+  titles center within their own zone rather than moving logistics upward. The
+  white kebab rests at 75% opacity and becomes fully opaque on hover/focus.
+- Logistics: structured when and where share one line only when they fit at 13px.
+  Otherwise each receives the full line width; 13/12px sizes with 16px leading
   precede individual ellipsis. Full title/when/where values remain available on
   hover/focus. Font loading, resize and HTMX replacement trigger refitting;
   without JS, the two-line title and separate logistics rows remain bounded.
@@ -575,10 +579,13 @@ cards. Only matching tracked, owner-preserved authored demo prices are populated
   retain colors with at least 4.5:1 contrast against white, otherwise darken RGB
   channels together by 10% steps until they meet that ratio. Invalid colors use
   neutral #333333. White unselected surfaces use accent text/borders; selected
-  fills use the accent with white text. General application actions stay purple.
+  fills use the accent with white text. `ui-response--confirmed` supplies the
+  checkmark only for an actual selected `committed` response, on cards and Details.
+  Interested, question, more, vote, declined and external actions have no check.
+  General application actions stay purple.
   The first choice works without JavaScript. `card-actions.js` exposes a second
-  choice only when both full labels plus selected-state check fit. Remaining
-  choices stay available on Details. HTMX refreshes the entire card's state.
+  choice only when both full labels plus any possible committed-state check fit.
+  Remaining choices stay available on Details. HTMX refreshes the entire card's state.
 - `activity-card__context` has two columns: a fixed 36px circular avatar centered
   against both metadata rows, and aligned text. The image never stretches. The
   single contextual trigger is in the top-right of Band 1. Known numeric

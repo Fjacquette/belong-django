@@ -36,7 +36,7 @@
   .ui-segmented input:focus-visible + .ui-segment { outline: 2px solid #843A96; outline-offset: 2px; }
   .ui-response { @apply border-belong-purple bg-white text-belong-purple; }
   .ui-response[aria-pressed="true"] { @apply bg-belong-purple text-white; }
-  .ui-response[aria-pressed="true"]::before { content: ''; width: 8px; height: 5px; border-left: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); flex-shrink: 0; }
+  .ui-response--confirmed[aria-pressed="true"]::before { content: ''; width: 8px; height: 5px; border-left: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); flex-shrink: 0; }
   .ui-fab { @apply flex items-center justify-center h-12 w-12 rounded-full bg-belong-purple text-white text-3xl cursor-pointer shadow-soft hover:bg-belong-purpleDark; }
   .ui-button:focus-visible, .ui-link:focus-visible, .ui-field:focus-visible,
   .ui-menu-trigger:focus-visible, .ui-disclosure:focus-visible, .ui-fab:focus-visible,
@@ -57,6 +57,8 @@
   .activity-card__metadata p { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
   .card-context-menu { position: absolute; right: 4px; top: 4px; }
   .card-context-menu__trigger { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; color: white; background: transparent; border: 0; border-radius: 8px; font-size: 24px; line-height: 1; cursor: pointer; list-style: none; }
+  .card-context-menu__trigger > span { opacity: 0.75; }
+  .card-context-menu__trigger:hover > span, .card-context-menu__trigger:focus > span { opacity: 1; }
   .card-context-menu__trigger::-webkit-details-marker { display: none; }
   .card-context-menu__trigger:focus-visible { outline: 2px solid white; outline-offset: -3px; }
   .card-context-menu__panel { position: absolute; right: 0; top: 40px; width: 232px; z-index: 200; }
@@ -149,7 +151,8 @@
     overflow: hidden;
     overflow-wrap: anywhere;
   }
-  .activity-card__band-1 { position: relative; display: grid; align-content: center; justify-items: center; gap: 4px; padding: 4px 12px; border-radius: 21px 21px 0 0; }
+  .activity-card__band-1 { position: relative; display: grid; grid-template-rows: 48px 32px; align-content: start; justify-items: center; gap: 4px; padding: 4px 12px; border-radius: 21px 21px 0 0; }
+  .activity-card__title-zone { display: grid; place-items: center; width: 100%; min-width: 0; }
   .activity-card__band-5 { border-radius: 0 0 21px 21px; }
   .activity-card__title-link { @apply text-white no-underline; }
   .activity-card__title-link:hover { @apply underline; }
@@ -165,8 +168,8 @@
   .account-menu summary::-webkit-details-marker { display: none; }
 
   .activity-card__headline {
-    font-size: 21px;
-    line-height: 26px;
+    font-size: 20px;
+    line-height: 24px;
     width: calc(100% - 56px);
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -176,10 +179,9 @@
     overflow-wrap: anywhere;
   }
 
-  .activity-card__headline[data-fit="compact"] { font-size: 19px; line-height: 24px; }
+  .activity-card__headline[data-fit="compact"] { font-size: 18px; line-height: 22px; }
   .activity-card__headline[data-fit="minimum"] { font-size: 17px; line-height: 22px; }
-  .activity-card__logistics { display: flex; flex-direction: column; align-items: stretch; width: 100%; min-width: 0; font-size: 14px; line-height: 16px; }
-  .activity-card__logistics[data-fit="compact"] { font-size: 13px; }
+  .activity-card__logistics { display: flex; flex-direction: column; align-items: stretch; width: 100%; min-width: 0; font-size: 13px; line-height: 16px; font-weight: 400; align-self: start; }
   .activity-card__logistics[data-fit="minimum"] { font-size: 12px; }
   .activity-card__logistics span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
   .activity-card__logistics-divider { display: none; }

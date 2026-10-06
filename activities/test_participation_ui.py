@@ -318,3 +318,27 @@ class ParticipationUITests(TestCase):
         self.assertContains(details, '>Hide</button>')
         self.assertContains(details, 'aria-label="Remove your response"')
         self.assertContains(details, '1 response')
+
+    def test_only_actual_committed_responses_receive_confirmation_checks(self):
+        for status in ['interested', 'committed', 'more', 'question', 'vote', 'declined']:
+            self.activity.available_responses = ['committed', status] if status != 'committed' else ['committed', 'interested']
+            self.activity.save()
+            for variant in ['card', 'detail']:
+                with self.subTest(status=status, variant=variant):
+                    ActivityResponse.objects.filter(user=self.viewer, activity=self.activity).delete()
+                    untouched = self.client.get(self.url('detail') if variant == 'detail' else reverse('activities:index'))
+                    self.assertNotContains(untouched, 'ui-response--confirmed')
+                    selected = self.client.post(self.url('respond'), {'status': status, 'variant': variant}, HTTP_HX_REQUEST='true')
+                    self.assertContains(selected, 'aria-pressed="true"', count=1)
+                    if status == 'committed':
+                        self.assertContains(selected, 'ui-response--confirmed', count=1)
+                    else:
+                        self.assertNotContains(selected, 'ui-response--confirmed')
+                    cleared = self.client.post(self.url('respond'), {'status': status, 'variant': variant}, HTTP_HX_REQUEST='true')
+                    self.assertNotContains(cleared, 'ui-response--confirmed')
+                    self.assertNotContains(cleared, 'aria-pressed="true"')
+
+    def test_external_cta_does_not_receive_response_confirmation(self):
+        response = self.client.get(self.url('detail'))
+        self.assertContains(response, 'href="https://example.com/walk"')
+        self.assertNotContains(response, 'ui-response--confirmed')
