@@ -83,3 +83,64 @@ class AuthScreenTests(TestCase):
                                     'password1': 'Testing-normal-817!', 'password2': 'Testing-normal-817!'})
         self.assertRedirects(response, reverse('account_email_requested'))
         self.assertFalse(get_user_model().objects.filter(username='duplicate-email').exists())
+
+
+class HeaderIdentityTests(TestCase):
+    def setUp(self):
+        self.user = create_legacy_user(username='identity-user', first_name='Full', last_name='Name')
+        self.client.force_login(self.user)
+
+    def header(self, route='activities:index'):
+        response = self.client.get(reverse(route))
+        self.assertEqual(response.status_code, 200)
+        return response.content.decode().split('<header', 1)[1].split('</header>', 1)[0]
+
+    def test_display_name_and_organization_identity_replace_generic_trigger(self):
+        profile = self.user.profile
+        profile.display_name = 'Neighborhood Club'
+        profile.account_type = 'organization'
+        profile.save()
+        header = self.header()
+        trigger = header.split('<summary', 1)[1].split('</summary>', 1)[0]
+        self.assertIn('Neighborhood Club (Organization): account menu', trigger)
+        self.assertIn('>NC</span>', trigger)
+        self.assertNotIn('>Menu<', trigger)
+        self.assertNotIn('>Account<', trigger)
+        self.assertIn(reverse('account_settings'), header)
+        self.assertIn('method="post"', header)
+        self.assertIn('csrfmiddlewaretoken', header)
+
+    def test_avatar_is_used_when_present(self):
+        from media_assets.models import ImageAsset, ImageAssetPurpose
+        asset = ImageAsset.objects.create(name='avatar', purpose=ImageAssetPurpose.PROFILE_AVATAR,
+                                         data=b'fixture', content_type='image/png', size=7)
+        self.user.profile.avatar_image = asset
+        self.user.profile.save()
+        header = self.header()
+        self.assertIn(f'src="{asset.get_absolute_url()}" alt=""', header)
+        self.assertNotIn('ui-identity-avatar--fallback', header)
+
+    def test_full_name_then_username_fallback(self):
+        profile = self.user.profile
+        profile.display_name = ''
+        profile.save()
+        self.assertIn('Full Name: account menu', self.header())
+        self.assertIn('>FN</span>', self.header())
+        self.user.first_name = self.user.last_name = ''
+        self.user.save()
+        self.assertIn('identity-user: account menu', self.header())
+        self.assertIn('>I</span>', self.header())
+
+    def test_missing_profile_has_identity_fallback_without_granting_access(self):
+        self.user.profile.delete()
+        self.assertRedirects(self.client.get(reverse('activities:index')), reverse('verification_status'))
+        header = self.header('verification_status')
+        self.assertIn('Full Name: account menu', header)
+        self.assertIn('>FN</span>', header)
+        self.assertIn('Verify email', header)
+        self.assertNotIn('Account settings', header)
+        self.assertNotIn('>Discover</a>', header)
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.profile.can_use_belong)
+        self.assertFalse(self.user.profile.legacy_access)
+        self.assertIsNone(self.user.profile.email_verified_at)

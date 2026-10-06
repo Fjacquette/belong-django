@@ -11,7 +11,16 @@ class VerifiedEmailMiddleware:
         return self.get_response(request)
 
     def process_view(self, request, view_func, view_args, view_kwargs):
-        if request.user.is_authenticated and not request.user.profile.can_use_belong:
+        if not request.user.is_authenticated:
+            return None
+        from social.models import UserProfile
+        try:
+            profile = request.user.profile
+        except UserProfile.DoesNotExist:
+            # Repair missing identity data without granting verified/legacy access.
+            profile, _ = UserProfile.objects.get_or_create(user=request.user)
+            request.user.profile = profile
+        if not profile.can_use_belong:
             allowed = {reverse('verification_status'), reverse('logout')}
             if request.path not in allowed and request.resolver_match.view_name not in {'verify_email', 'complete_signup', 'complete_recovery', 'password_reset', 'account_email_requested', 'groups:invitation', 'groups:pending_invitation'}:
                 response = redirect('verification_status')

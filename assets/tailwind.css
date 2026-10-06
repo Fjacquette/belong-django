@@ -3,6 +3,10 @@
 @tailwind utilities;
 
 @layer components {
+  .ui-identity-trigger { @apply min-w-0 max-w-full min-h-11; }
+  .ui-identity-avatar { @apply h-8 w-8 shrink-0 rounded-full object-cover; }
+  .ui-identity-avatar--fallback { @apply inline-flex items-center justify-center bg-white text-belong-purple text-xs font-semibold; }
+  .ui-identity-name { @apply min-w-0 max-w-24 sm:max-w-48 truncate; }
   .ui-brand { @apply inline-flex shrink-0 items-center min-h-11; }
   .ui-brand__wordmark { @apply h-8 sm:h-12 w-auto object-contain; }
   .ui-brand:focus-visible { outline: 2px solid white; outline-offset: 3px; }
