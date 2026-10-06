@@ -125,8 +125,9 @@ logistics splitting. Full-text tooltips and noninteractive metadata tab stops
 are enabled only for text actually clipped after layout, with no native tooltip duplication. Metadata and description use 13px
 body text, with 16px/18px leading respectively; the description band is 128px.
 Band 2 centers a fixed circular avatar against the full metadata block. Card responses
-use accessible accents derived from their activity palette; checkmarks indicate
-only an actual committed response, while softer intent uses selected fill alone. Activity forms guide
+use white surfaces with accessible card-local accents against a footer matching
+the title gradient. An inset border and underline indicate selection without color
+alone; checkmarks indicate only an actual committed response. Activity forms guide
 48-character titles and 40-character venue labels; legacy model storage is retained. Search, facets and
 view/recovery controls share one compact wrapping toolbar. Context survives query
 changes and can be cleared independently; organizer suppression is reversible and
