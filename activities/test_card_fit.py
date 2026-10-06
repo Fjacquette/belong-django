@@ -69,8 +69,8 @@ class CardFitTests(TestCase):
         self.assertNotIn('<strong>', second)
         self.assertIn('activity-card__when', second)
         self.assertIn('activity-card__where', second)
-        self.assertIn('title="Saturday morning"', second)
-        self.assertIn('title="River park"', second)
+        self.assertIn('data-full-text="Saturday morning"', second)
+        self.assertIn('data-full-text="River park"', second)
         self.assertContains(response, 'ui-response--card')
         detail = self.client.get(reverse('activities:detail', args=[self.activity.pk]))
         self.assertNotContains(detail, 'ui-response--card')
@@ -113,3 +113,17 @@ class CardFitTests(TestCase):
         html = response.content.decode().split('activity-card__metadata', 1)[1]
         self.assertLess(html.index('Organized by'), html.index('activity-card__when'))
         self.assertLess(html.index('activity-card__where'), html.index('Everyone'))
+
+    def test_card_full_text_uses_explicit_data_without_native_tooltips_or_static_tab_stops(self):
+        self.activity.summary = 'Full summary ' * 30
+        self.activity.description = 'Full description ' * 80
+        self.activity.save()
+        html = self.client.get(reverse('activities:index')).content.decode()
+        card = html.split('id="participation-', 1)[1].split('activity-card__band-5', 1)[0]
+        self.assertNotIn(' title="', card)
+        self.assertNotIn('tabindex="0"', card)
+        self.assertIn('data-full-text="Paddling together"', card)
+        self.assertIn('>' + self.activity.summary + '</p>', card)
+        self.assertIn('>' + self.activity.description + '</p>', card)
+        # The natural navigation target remains a link even without JavaScript.
+        self.assertIn('class="activity-card__title-link"', card)

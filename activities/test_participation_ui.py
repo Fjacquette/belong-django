@@ -133,8 +133,8 @@ class ParticipationUITests(TestCase):
         self.assertIn(self.activity.title, first)
         self.assertNotIn(self.activity.headline, first)
         self.assertNotIn('activity-card__logistics', first)
-        self.assertIn('title="Saturday morning"', second)
-        self.assertIn('title="River trail"', second)
+        self.assertIn('data-full-text="Saturday morning"', second)
+        self.assertIn('data-full-text="River trail"', second)
         self.assertNotIn('class="ui-link', first)
         for value in ["Janine", "Everyone", "Free"]:
             self.assertIn(value, second)
@@ -156,8 +156,8 @@ class ParticipationUITests(TestCase):
         self.activity.cost_type = "unknown"
         self.activity.save()
         page = self.client.get(reverse("activities:index"))
-        self.assertContains(page, 'title="Date TBD"')
-        self.assertContains(page, 'title="Location TBD"')
+        self.assertContains(page, 'data-full-text="Date TBD"')
+        self.assertContains(page, 'data-full-text="Location TBD"')
         self.assertContains(page, "Cost TBD")
 
     def test_default_activity_offers_only_interested_on_card_and_details(self):
@@ -266,7 +266,7 @@ class ParticipationUITests(TestCase):
         self.activity.available_responses = ["question", "declined"]
         self.activity.save()
         response = self.client.get(reverse("activities:index"))
-        self.assertContains(response, f'href="{self.url("detail")}" title="{self.activity.title}"')
+        self.assertContains(response, f'href="{self.url("detail")}" data-full-text="{self.activity.title}"')
         self.assertContains(response, f'hx-post="{self.url("respond")}"')
         self.assertNotContains(response, 'value="interested"')
         self.assertNotContains(response, 'value="committed"')
@@ -314,7 +314,7 @@ class ParticipationUITests(TestCase):
                     # Restrict the assertion to the compact card, excluding page menus.
                     card = html.split('class="activity-card relative', 1)[1].split('data-stack-item', 1)[0].split('</section>', 1)[0]
                     self.assertNotIn(control, card)
-                self.assertContains(response, f'href="{self.url("detail")}" title="{self.activity.title}"')
+                self.assertContains(response, f'href="{self.url("detail")}" data-full-text="{self.activity.title}"')
         details = self.client.get(self.url('detail'))
         self.assertContains(details, '>Hide</button>')
         self.assertContains(details, 'aria-label="Remove your response"')
