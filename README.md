@@ -317,3 +317,30 @@ Presence records authenticated HTTP requests, throttled to at most one update pe
 minute: **Active** within 5 minutes, **Idle** within 30, **Offline** after 30 minutes
 or with no recorded activity. Creating a profile or changing a status does not mark
 someone Active. These are activity-based hints, not real-time/socket connection state.
+
+## Group invitations
+
+Group owners and active organizers can send up to 20 email invitations from the
+group page. Separate addresses with commas or new lines. Repeating an address
+resends a fresh seven-day invitation and invalidates its previous link. Active
+members are skipped; blocked memberships must be unblocked first. Organizers can
+revoke pending invitations. Delivery failures are visible and retain the previous
+valid invitation for retry.
+
+A valid invitation grants active membership, including for Closed and Private
+groups. The invitee chooses acceptance and signs in or creates an account with
+the invited email address. Normal signup now requires and stores an email address,
+and rejects addresses already claimed by another account. An existing account
+with no email may add the invited address only on explicit acceptance of a valid
+invitation, and only if that address is unclaimed. A different existing email is
+never replaced. The invitation survives authentication and validation
+errors. Wrong-account acceptance is rejected; “Sign in with another account”
+preserves the invitation. Accepted links cannot rejoin a group after leaving.
+Normal private-group and activity visibility rules remain independent.
+
+Local/dev email delivery defaults to Django's console backend (server output).
+Managed browser-test records that output in ignored `.belong-runtime/browser-test.log`;
+invitation links there are private bearer credentials and must not be committed.
+`DJANGO_EMAIL_BACKEND` and `DJANGO_DEFAULT_FROM_EMAIL` may be set in ignored local
+configuration. No production mail service is configured by this slice. Tokens
+are generated with 32 bytes of randomness; only SHA-256 digests are stored.

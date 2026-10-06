@@ -10,6 +10,25 @@
   {% if organizer %}
     <a href="{% url 'activities:create' %}?group={{ group.pk }}" class="ui-link inline-flex items-center min-h-11">Create an activity for this group</a>
   {% endif %}
+  {% if organizer %}
+    <section class="space-y-3" aria-labelledby="invite-heading">
+      <h2 id="invite-heading" class="text-xl font-display">Invite people</h2>
+      <form method="post" action="{% url 'groups:invite' group.pk %}" class="space-y-3">{% csrf_token %}
+        <div><label for="{{ invitation_form.emails.id_for_label }}">{{ invitation_form.emails.label }}</label>
+        {{ invitation_form.emails }}<p class="text-sm">{{ invitation_form.emails.help_text }}</p>
+        {% for error in invitation_form.emails.errors %}<p class="text-sm text-belong-pink">{{ error }}</p>{% endfor %}</div>
+        <button class="ui-button ui-button--primary ui-button--comfortable">Send invitations</button>
+      </form>
+      {% if invitations %}<ul class="space-y-3">
+        {% for invitation in invitations %}<li class="flex flex-wrap items-center justify-between gap-2">
+          <span>{{ invitation.email }} · {{ invitation.display_status }}</span>
+          {% if invitation.status == 'pending' %}<form method="post" action="{% url 'groups:revoke_invitation' group.pk invitation.pk %}">{% csrf_token %}
+            <button class="ui-button ui-button--quiet ui-button--comfortable">Revoke invitation</button>
+          </form>{% endif %}
+        </li>{% endfor %}
+      </ul>{% endif %}
+    </section>
+  {% endif %}
   {% if can_join %}
     <form method="post" action="{% url 'groups:join' group.pk %}">{% csrf_token %}
       <button class="ui-button ui-button--primary ui-button--comfortable">{% if group.access == 'closed' %}Request to join{% else %}Join group{% endif %}</button>

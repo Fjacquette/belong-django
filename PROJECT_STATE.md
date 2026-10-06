@@ -110,7 +110,7 @@ Who’s around uses width-based page layout independent of matching card counts,
 including zero results. Quick toggles clear their canonical dimension when turned off.
 Existing demo metadata is enriched without reseeding accounts or responses.
 
-The Groups foundation (#21) is merged. Persistent Group and GroupMembership entities are separate from legacy personal FriendGroup lists. The floating + discloses Activity (primary) and Group (secondary) creation. The settled group access modes are Open, Closed, Unlisted, and Private. Activities may link to groups but remain independently visible/participable according to their own audience rules. Invitation mechanics remain #22.
+The Groups foundation (#21) is merged. Persistent Group and GroupMembership entities are separate from legacy personal FriendGroup lists. The floating + discloses Activity (primary) and Group (secondary) creation. The settled group access modes are Open, Closed, Unlisted, and Private. Activities may link to groups but remain independently visible/participable according to their own audience rules. Owners and active organizers can issue email-bound invitations (#22); a valid invitation grants active membership directly in every access mode, including Private.
 
 **#28 is complete and merged via PR #30.** It implements the shared control families documented in `DESIGN_SYSTEM.md`
 and `assets/tailwind.css`, applied across Discover, activity cards/details, Create,
@@ -130,7 +130,7 @@ changes and can be cleared independently; organizer suppression is reversible an
 separate from blocking/participation. The image band contains artwork only. Title
 navigation opens Details for response counts, removal and external CTAs. Generic headlines stay on Details.
 Known seed-owned choices and stale sample responses are reconciled without altering
-real/custom/transferred data. **#22 — email invitations and joining is the current implementation slice (PR #31). #32 — group creation UX + group-context activity defaults follows before #23.**
+real/custom/transferred data. **#22** adds organizer-issued email invitations with hashed seven-day tokens, revocation and duplicate-safe retries. A valid invitation grants active membership, including Private; acceptance consent survives signup/login and requires a matching email. Normal signup requires email; explicit acceptance can bind an unclaimed invited email to a legacy email-less account, without overwriting existing email. Wrong-account switching retains the invitation. Local delivery uses console email. **#32 — group creation UX + group-context activity defaults follows before #23.**
 
 ### Groups / recurring activity sequence
 

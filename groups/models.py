@@ -87,3 +87,30 @@ class GroupMembership(models.Model):
 
     def __str__(self):
         return f"{self.user} in {self.group}"
+
+
+class GroupInvitation(models.Model):
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='invitations')
+    email = models.EmailField()
+    inviter = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='sent_group_invitations')
+    token_digest = models.CharField(max_length=64, unique=True)
+    status = models.CharField(max_length=12, choices=[('pending', 'Pending'), ('accepted', 'Accepted'), ('revoked', 'Revoked')], default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    expires_at = models.DateTimeField()
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    accepted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='accepted_group_invitations')
+
+    class Meta:
+        ordering = ['-updated_at']
+        constraints = [
+            models.UniqueConstraint(fields=['group', 'email'], name='unique_group_invitation_email'),
+            models.CheckConstraint(condition=models.Q(status__in=['pending', 'accepted', 'revoked']), name='group_invitation_valid_status'),
+        ]
+
+    @property
+    def display_status(self):
+        from django.utils import timezone
+        if self.status == 'pending' and self.expires_at <= timezone.now():
+            return 'Expired'
+        return self.get_status_display()
