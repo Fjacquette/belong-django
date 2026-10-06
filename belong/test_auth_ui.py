@@ -35,7 +35,7 @@ class AuthScreenTests(TestCase):
     def test_login_errors_and_next_destination_still_work(self):
         destination = reverse("activities:create")
         response = self.client.post(reverse("login"), {"username": "unknown", "password": "incorrect", "next": destination})
-        self.assertContains(response, "Please enter a correct username and password")
+        self.assertContains(response, "Please enter a correct email and password")
         self.assertContains(response, f'name="next" value="{destination}"')
         get_user_model().objects.create_user(username="auth-review", password="test-only-password-13")
         response = self.client.post(reverse("login"), {"username": "auth-review", "password": "test-only-password-13", "next": destination})
@@ -67,12 +67,12 @@ class AuthScreenTests(TestCase):
     def test_normal_signup_requires_persists_and_normalizes_email(self):
         page = self.client.get(reverse('signup'))
         self.assertContains(page, 'name="email"')
-        data = {'username': 'ordinary-signup', 'password1': 'Testing-normal-817!', 'password2': 'Testing-normal-817!'}
+        data = {'account_type': 'individual', 'display_name': 'New Person', 'password1': 'Testing-normal-817!', 'password2': 'Testing-normal-817!'}
         self.assertContains(self.client.post(reverse('signup'), data), 'This field is required')
         self.assertFalse(get_user_model().objects.filter(username='ordinary-signup').exists())
         data['email'] = 'New.Person@EXAMPLE.com'
-        self.assertRedirects(self.client.post(reverse('signup'), data), reverse('activities:index'))
-        self.assertEqual(get_user_model().objects.get(username='ordinary-signup').email, 'new.person@example.com')
+        self.assertRedirects(self.client.post(reverse('signup'), data), reverse('verification_status'))
+        self.assertEqual(get_user_model().objects.get(email='new.person@example.com').email, 'new.person@example.com')
 
     def test_normal_signup_rejects_email_already_claimed_case_insensitively(self):
         get_user_model().objects.create_user('existing-email', email='Existing@Example.com')

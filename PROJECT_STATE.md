@@ -88,6 +88,18 @@ The browser-test review environment is:
 
 For normal implementation work, Codex must present the exact committed feature HEAD there before declaring the iteration done. Frank's normal review action should be only to reload the browser.
 
+## Account foundation
+
+#44 adds email-first signup and login while retaining stable auth.User PKs/internal
+usernames. New accounts persist required Individual/Organization and display name,
+and cannot access product routes before 24-hour one-time email verification.
+Invitations remain pending through verification and finish afterward. Account
+settings edits identity, coarse home area, normalized square avatar, pending email
+(with password confirmation), and password. Organization labels grant no privileges.
+Nonempty emails are case-insensitively unique at the database level. Existing local
+accounts have explicit dev/test-only legacy compatibility; no fake email backfill.
+#41 can now build the header identity menu from these profile values.
+
 ## Current implementation sequence
 
 ### Discovery iteration

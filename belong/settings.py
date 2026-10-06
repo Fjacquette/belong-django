@@ -81,6 +81,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'belong.middleware.VerifiedEmailMiddleware',
     'social.middleware.ActivityPresenceMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -191,3 +192,7 @@ CARD_LAYOUT = {
 # Local previews use console delivery; deployment may configure a real backend.
 EMAIL_BACKEND = CONFIG.get('DJANGO_EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 DEFAULT_FROM_EMAIL = CONFIG.get('DJANGO_DEFAULT_FROM_EMAIL', 'Belong <noreply@localhost>')
+
+AUTHENTICATION_BACKENDS = ['belong.authentication.EmailBackend']
+# Compatibility is confined to explicitly provisioned legacy accounts in local dev/test.
+ALLOW_LEGACY_ACCOUNTS = config_bool(CONFIG.get('BELONG_ALLOW_LEGACY_ACCOUNTS', str(ENVIRONMENT in {'dev', 'test'})))

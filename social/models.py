@@ -11,6 +11,23 @@ User = settings.AUTH_USER_MODEL
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+    account_type = models.CharField(max_length=16, choices=[('individual', 'Individual'), ('organization', 'Organization')], default='individual')
+    display_name = models.CharField(max_length=120, default='')
+    location = models.CharField(max_length=120, blank=True)
+    email_verified_at = models.DateTimeField(null=True, blank=True)
+    # Only locally provisioned/legacy users; public signup explicitly disables this.
+    legacy_access = models.BooleanField(default=False)
+    pending_email = models.EmailField(blank=True)
+
+    @property
+    def can_use_belong(self):
+        return bool(self.email_verified_at or (settings.ALLOW_LEGACY_ACCOUNTS and self.legacy_access))
+
+    @property
+    def identity_label(self):
+        name = self.display_name or self.user.get_full_name() or self.user.username
+        return f'{name} (Organization)' if self.account_type == 'organization' else name
+
     status_text = models.CharField(max_length=160, blank=True)
     is_visible = models.BooleanField(default=True)
     last_active_at = models.DateTimeField(null=True, blank=True)
@@ -135,3 +152,12 @@ class FriendGroupMembership(models.Model):
 
     def __str__(self) -> str:  # pragma: no cover
         return f"{self.friend} in {self.group}"
+
+
+class EmailVerification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='email_verifications')
+    email = models.EmailField()
+    token_digest = models.CharField(max_length=64, unique=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True, blank=True)

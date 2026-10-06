@@ -11,25 +11,7 @@
       <h2 id="auth-heading" class="text-2xl font-semibold text-belong-purpleDark">Create account</h2>
       <form method="post" class="space-y-5">
         {% csrf_token %}
-        {% if form.non_field_errors %}
-          <div class="rounded-lg border border-belong-pink/30 bg-belong-pink/10 text-sm text-belong-pink px-4 py-3">
-            {% for error in form.non_field_errors %}
-              <p>{{ error }}</p>
-            {% endfor %}
-          </div>
-        {% endif %}
-        {% for field in form %}
-          <div class="space-y-1.5">
-            <label for="{{ field.id_for_label }}" class="block text-sm font-semibold text-belong-purpleDark/90">{{ field.label }}</label>
-            {{ field }}
-            {% if field.help_text %}
-              <p class="text-xs text-slate-500">{{ field.help_text }}</p>
-            {% endif %}
-            {% for error in field.errors %}
-              <p class="text-sm text-belong-pink">{{ error }}</p>
-            {% endfor %}
-          </div>
-        {% endfor %}
+        {% include 'includes/account_fields.html' %}
         <button type="submit" class="ui-button ui-button--primary ui-button--comfortable w-full">Create account</button>
       </form>
       <p class="text-sm text-belong-slate/80">Already have an account? <a href="{% url 'login' %}" class="ui-link font-semibold">Sign in</a></p>

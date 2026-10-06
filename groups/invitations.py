@@ -6,7 +6,7 @@ from datetime import timedelta
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.urls import reverse
 from django.utils import timezone
 
@@ -48,7 +48,7 @@ def issue_invitation(group, inviter, email, request):
         })
         url = request.build_absolute_uri(reverse('groups:invitation', args=[token]))
         delivered = send_mail(f'Invitation to {group.name}',
-                  f'{inviter.get_full_name() or inviter.username} invited you to {group.name}.\n\n'
+                  f'{inviter.profile.identity_label} invited you to {group.name}.\n\n'
                   f'Accept your invitation: {url}\n\nThis invitation expires in 7 days. '
                   'Sign in or create an account using the invited email address.',
                   None, [email], fail_silently=False)
@@ -81,7 +81,19 @@ def accept_invitation(token, user):
             if email_claimed(invitation.email, user):
                 raise ValidationError('Another account already uses the invited email address. Sign in with that account.')
             user.email = invitation.email
-            user.save(update_fields=['email'])
+            try:
+                with transaction.atomic():
+                    user.save(update_fields=['email'])
+            except IntegrityError as error:
+                raise ValidationError('Another account already uses the invited email address. Sign in with that account.') from error
+        # The invited bearer token proves control only of this exact address.
+        profile = user.profile
+        if not profile.can_use_belong:
+            raise ValidationError('Verify your email before accepting this invitation.')
+        if not profile.email_verified_at:
+            profile.email_verified_at = timezone.now()
+            profile.legacy_access = False
+            profile.save(update_fields=['email_verified_at', 'legacy_access'])
         member, _ = GroupMembership.objects.get_or_create(group=group, user=user)
         if member.status == MemberStatus.PENDING:
             member.status = MemberStatus.ACTIVE

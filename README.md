@@ -117,8 +117,8 @@ its database from the main checkout:
 (cd .worktrees/test && .venv/bin/python manage.py seed_demo)
 ```
 
-Restart `./start_test.sh` and log in as `belong_demo` / `demo123`.
-The optional demo administrator is `belong_demo_admin` / `admin123`.
+Restart `./start_test.sh` and log in as `belong_demo@example.invalid` / `demo123`.
+The optional demo administrator is `belong_demo_admin@example.invalid` / `admin123`.
 These initial credentials are **local dev/test only**; the command refuses other
 environment names. For dev, use `.venv/bin/python manage.py seed_demo` after
 applying migrations with the launcher or `manage.py migrate`.
@@ -382,3 +382,36 @@ Series creation/editing and occurrence creation are limited to the independent
 Series owner or active organizers of its associated group. Public occurrences do
 not expose private group/series management context. Recurring RSVP/lifecycle and
 announcements remain the subsequent #24/#25 slices.
+
+## Account identity and verification
+
+Normal signup asks for email, password, Individual/Organization, and display name.
+The internal `auth.User` PK and opaque username stay stable when email changes.
+A partial database index enforces unique nonempty email addresses ignoring case;
+the migration normalizes existing addresses and refuses duplicate legacy addresses
+without discarding accounts. Resolve an actual collision explicitly and retry.
+Existing display names are backfilled from full names or legacy usernames.
+
+New registrations cannot access product routes until a one-time, digest-only email
+proof is confirmed. Verification links expire after 24 hours and require a POST
+confirmation (mail link scanners cannot consume them). Resends/corrections allow
+one email per minute and ten per account per day, invalidate older links, and keep
+pending group invitations. Invitations complete after ordinary verification.
+The local console email backend prints links in the ignored server log; configure
+`DJANGO_EMAIL_BACKEND` and `DJANGO_DEFAULT_FROM_EMAIL` for actual delivery.
+
+Account settings manages profile, coarse home area, avatar, email and password.
+Profile images are decoded and limited to 5 MB, orientation-normalized, center
+cropped to 256×256, stripped of metadata and stored as PROFILE_AVATAR PNG assets.
+Email changes require the current password and retain the current login until the
+pending address is verified. Organization labels confer no additional permissions.
+
+Legacy/local provisioning is deliberately separate from public registration:
+migrated profiles retain `legacy_access`; locally provisioned users also receive it
+when `BELONG_ALLOW_LEGACY_ACCOUNTS` is enabled. This compatibility setting defaults
+on **only for dev/test**, off elsewhere. Username login additionally requires an
+empty email and this legacy flag; accounts with an email sign in using that email.
+Public signup always disables the flag and uses an opaque `u_...` username. Set
+`BELONG_ALLOW_LEGACY_ACCOUNTS=false` to enforce verification for every account,
+including legacy accounts. Add/verify a real address from Account settings to retire
+local compatibility for an email-less demo account. No synthetic emails are created.

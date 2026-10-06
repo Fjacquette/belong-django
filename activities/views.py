@@ -469,7 +469,7 @@ def _filter_context(request, queryset, params):
             continue
         if key == "organizer":
             queryset = queryset.filter(host_id=source.host_id)
-            label = "Organizer: " + (source.organizer_name or source.host.get_full_name() or source.host.username)
+            label = "Organizer: " + (source.organizer_display_name)
         elif key == "context_time":
             if source.starts_at:
                 zone = ZoneInfo(settings.PILOT_TIME_ZONE)

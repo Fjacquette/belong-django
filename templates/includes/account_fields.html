@@ -1,0 +1,12 @@
+{% if form.non_field_errors %}<div role="alert" class="text-sm text-belong-pink break-words">{{ form.non_field_errors }}</div>{% endif %}
+{% for field in form %}
+  <div class="space-y-2 min-w-0">
+    {% if field.name == 'account_type' %}
+      <fieldset><legend class="block text-sm font-semibold mb-2">{{ field.label }}</legend>
+        <div class="space-y-2">{% for option in field %}<label class="ui-radio-choice">{{ option.tag }}<span>{{ option.choice_label }}</span></label>{% endfor %}</div>
+      </fieldset>
+    {% else %}<label for="{{ field.id_for_label }}" class="block text-sm font-semibold">{{ field.label }}</label>{{ field }}{% endif %}
+    {% if field.help_text %}<div class="text-xs text-belong-slate/80 break-words">{{ field.help_text|safe }}</div>{% endif %}
+    {% for error in field.errors %}<p class="text-sm text-belong-pink" role="alert">{{ error }}</p>{% endfor %}
+  </div>
+{% endfor %}

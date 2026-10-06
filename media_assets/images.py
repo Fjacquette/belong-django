@@ -27,3 +27,18 @@ def image_mime_type(payload):
         Image.DecompressionBombError, Image.DecompressionBombWarning,
     ) as error:
         raise ValidationError("Upload a valid, non-animated JPEG, PNG, or WebP image.") from error
+
+
+def normalized_avatar(upload):
+    """Decode, orient, crop, and re-encode pixels without source metadata."""
+    from PIL import ImageOps
+    if upload.size > 5 * 1024 * 1024:
+        raise ValidationError('Choose an image smaller than 5 MB.')
+    payload = upload.read()
+    image_mime_type(payload)
+    with Image.open(BytesIO(payload)) as source:
+        pixels = ImageOps.fit(ImageOps.exif_transpose(source).convert('RGB'), (256, 256), method=Image.Resampling.LANCZOS)
+        pixels.info.clear()
+        output = BytesIO()
+        pixels.save(output, format='PNG')
+    return output.getvalue()

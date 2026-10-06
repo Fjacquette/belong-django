@@ -199,10 +199,17 @@ class Activity(models.Model):
             return self.starts_at
         return timezone.now() + timezone.timedelta(hours=24)
 
+    @property
+    def organizer_display_name(self):
+        if self.organizer_name:
+            suffix = ' (Organization)' if self.host.profile.account_type == 'organization' else ''
+            return self.organizer_name + suffix
+        return self.host.profile.identity_label
+
     def organizer_image_url(self) -> str | None:
         if self.organizer_image:
             return self.organizer_image.get_absolute_url()
-        return None
+        return self.host.profile.avatar_url()
 
     def header_image_url(self) -> str | None:
         if self.header_image:

@@ -79,11 +79,11 @@ class InvitationTests(TestCase):
         self.client.logout()
         self.assertRedirects(self.client.post(self.url(token), {'auth': 'login'}), reverse('login'))
         self.assertIn('group_invitation', self.client.session)
-        response = self.client.post(reverse('login'), {'username': 'janine', 'password': 'Testing-only-817!'})
+        response = self.client.post(reverse('login'), {'username': 'janine@example.com', 'password': 'Testing-only-817!'})
         self.assertRedirects(response, self.url(token))
         self.assertIn('group_invitation', self.client.session)
         self.client.post(self.url(token), {'auth': 'switch'})
-        response = self.client.post(reverse('login'), {'username': 'invitee', 'password': 'Testing-only-817!'})
+        response = self.client.post(reverse('login'), {'username': 'hiker@example.com', 'password': 'Testing-only-817!'})
         self.assertRedirects(response, self.group.get_absolute_url())
         self.assertNotIn('group_invitation', self.client.session)
 
@@ -93,14 +93,39 @@ class InvitationTests(TestCase):
         self.client.post(self.url(token), {'auth': 'signup'})
         page = self.client.get(reverse('signup'))
         self.assertContains(page, 'value="new@example.com"')
-        data = {'username': 'new-hiker', 'email': 'other@example.com', 'password1': 'Testing-only-817!', 'password2': 'Testing-only-817!'}
+        data = {'account_type': 'individual', 'display_name': 'New Hiker', 'email': 'other@example.com', 'password1': 'Testing-only-817!', 'password2': 'Testing-only-817!'}
         self.assertContains(self.client.post(reverse('signup'), data), 'Use the invited email')
         self.assertFalse(get_user_model().objects.filter(username='new-hiker').exists())
         data['email'] = 'NEW@example.com'
-        self.assertRedirects(self.client.post(reverse('signup'), data), self.group.get_absolute_url())
-        user = get_user_model().objects.get(username='new-hiker')
+        self.assertRedirects(self.client.post(reverse('signup'), data), reverse('verification_status'))
+        self.assertIn('group_invitation', self.client.session)
+        from belong.email_verification import digest
+        from social.models import EmailVerification
+        import re
+        from django.core import mail
+        proof = re.search(r'/accounts/verify/([^/]+)/', mail.outbox[-1].body).group(1)
+        self.assertTrue(EmailVerification.objects.filter(token_digest=digest(proof)).exists())
+        self.assertRedirects(self.client.post(reverse('verify_email', args=[proof])), self.group.get_absolute_url())
+        user = get_user_model().objects.get(email='new@example.com')
         self.assertEqual(user.email, 'new@example.com')
         self.assertTrue(self.group.memberships.filter(user=user, status='active').exists())
+
+    def test_invitation_finishes_when_email_verified_in_another_browser(self):
+        import re
+        from django.core import mail
+        from django.test import Client
+        token = self.send('cross-browser@example.com')
+        self.client.logout()
+        self.client.post(self.url(token), {'auth': 'signup'})
+        self.client.post(reverse('signup'), {'email': 'cross-browser@example.com', 'account_type': 'individual',
+                         'display_name': 'Cross Browser', 'password1': 'Testing-only-817!', 'password2': 'Testing-only-817!'})
+        proof = re.search(r'/accounts/verify/([^/]+)/', mail.outbox[-1].body).group(1)
+        other_browser = Client()
+        self.assertRedirects(other_browser.post(reverse('verify_email', args=[proof])), reverse('login'))
+        self.assertRedirects(self.client.get(reverse('verification_status')), self.group.get_absolute_url())
+        user = get_user_model().objects.get(email='cross-browser@example.com')
+        self.assertTrue(self.group.memberships.filter(user=user, status='active').exists())
+        self.assertNotIn('group_invitation', self.client.session)
 
     def test_existing_email_signup_requires_login(self):
         token = self.send(); self.client.logout()

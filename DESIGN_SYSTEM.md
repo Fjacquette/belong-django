@@ -681,3 +681,18 @@ Before presentation, review:
 - card information hierarchy when applicable
 
 If a new visual pattern is needed, add it here first rather than inventing it locally.
+
+
+## Account identity and settings
+
+Signup uses email, password confirmation, the existing `ui-radio-choice` family for
+Individual/Organization, and a required display name. Account settings reuses these
+controls with separate Profile and Email sections; email changes use a distinct
+password-confirmed form. Optional home area copy requests locality/postal code,
+never a street address. Profile image controls use the standard field/button family.
+Verification pages expose only verification and logout; product navigation and
+Create remain hidden until access is granted. Settings and password forms suppress
+Create to keep their task focused. Display names replace opaque usernames in public
+identity, with an explicit “(Organization)” suffix wherever that identity appears.
+The header menu retains its existing layout with an Account settings link; #41 owns
+its later identity redesign.
