@@ -117,11 +117,12 @@ and `assets/tailwind.css`, applied across Discover, activity cards/details, Crea
 account menus, and group forms/actions. Cards use the historical portrait hierarchy:
 title-only Band 1, then organizer/when/where/audience/cost in Band 2, a substantial image,
 useful description and one/two fully readable activity actions. The 440px card
-retains its 258px preferred/max width; 64/96px top bands and 160px overlap expose
+retains its 258px preferred/max width; 64/72px top bands and 136px overlap expose
 all core metadata. Band 1 uses a restrained accessible horizontal palette gradient,
 a centered medium-weight two-line title and a quiet contextual vertical kebab.
 Band 2 supports three/four aligned single-line metadata rows with deliberate
-logistics splitting and full-value hover/focus.
+logistics splitting and full-value hover/focus. Metadata and description use 13px
+body text, with 16px/18px leading respectively; the description band is 128px.
 Band 2 centers a fixed circular avatar against the full metadata block. Card responses
 use accessible accents derived from their activity palette; checkmarks indicate
 only an actual committed response, while softer intent uses selected fill alone. Activity forms guide

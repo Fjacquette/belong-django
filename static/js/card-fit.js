@@ -29,14 +29,7 @@
       measure.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
       return measure.measureText(text).width;
     }
-    logistics.dataset.fit = 'normal';
     logistics.dataset.layout = width(`${when.textContent} · ${where.textContent}`) <= logistics.clientWidth ? 'inline' : 'split';
-    if (logistics.dataset.layout === 'split') {
-      for (const step of ['normal', 'minimum']) {
-        logistics.dataset.fit = step;
-        if (Math.max(width(when.textContent), width(where.textContent)) <= logistics.clientWidth) break;
-      }
-    }
   }
   const observer = new ResizeObserver(entries => entries.forEach(entry => fit(entry.target)));
   function refresh() {

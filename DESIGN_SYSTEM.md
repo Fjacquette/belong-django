@@ -290,9 +290,8 @@ string.
 - if `when · where` fits cleanly on one line, show it on one line
 - if it does not fit, place **when on one line and where on the next** rather than
   allowing one value (especially location) to wrap messily across both lines
-- use roughly **13px / 16px line-height / regular weight** for normal logistics text,
-  with a small bounded font-size reduction only if needed to preserve clean
-  one-item-per-line presentation
+- use **13px / 16px line-height / regular weight** for metadata and logistics;
+  truncate long values rather than shrinking the text
 - if an individual value still exceeds its line budget, truncate with ellipsis and
   expose the full value on hover/focus
 - do not use the generic `headline` field as a card subtitle
@@ -351,7 +350,7 @@ Character limits are guardrails, not a substitute for rendering safeguards: card
 must still clamp/ellipsis safely because glyph widths and mobile widths vary.
 ### Band 2 — practical/social context
 
-Band 2 contains up to four deliberate 16px lines, in this order:
+The 72px Band 2 contains up to four deliberate 13px / 16px lines, in this order:
 1. organizer (normal weight)
 2. when / place, combined only when both fit
 3. second logistics line only when needed
@@ -553,8 +552,8 @@ cards. Only matching tracked, owner-preserved authored demo prices are populated
 
 ## 13. Implemented card patterns
 
-- Geometry: 440px height, preferred/max width 258px, 64/96/128/104/48px bands.
-  The 160px stack offset reveals all identity/logistics and participation context.
+- Geometry: 440px height, preferred/max width 258px, 64/72/128/128/48px bands.
+  The 136px stack offset reveals all identity/logistics and participation context.
 - Card title: `activity-card__title-link`, hover/focus navigation without a resting
   underline. `card-fit.js` uses bounded 20/24, 18/22, 17/22px size/leading pairs at medium
   weight,
@@ -563,8 +562,8 @@ cards. Only matching tracked, owner-preserved authored demo prices are populated
   48px title zone with 8px vertical padding; short titles center in that zone. The
   20px white kebab rests at 70% opacity and becomes fully opaque on hover/focus.
 - Band 2 logistics: structured when and where share one line only when they fit at 13px.
-  Otherwise each receives the full line width; 13/12px sizes with 16px leading
-  precede individual ellipsis. Full title/when/where values remain available on
+  Otherwise each receives the full line width at 13px / 16px leading,
+  with individual ellipsis. Full title/when/where values remain available on
   hover/focus. Font loading, resize and HTMX replacement trigger refitting;
   without JS, the two-line title and separate logistics rows remain bounded.
 - Primary responses: `ui-button ui-button--compact ui-response ui-response--card`,
@@ -593,8 +592,8 @@ cards. Only matching tracked, owner-preserved authored demo prices are populated
 - Current response: the first direct response exposes pressed state. A
   `card-current-response` line in the body identifies later/historical choices,
   including a second choice that might not fit. Removal is available on Details.
-- The top-aligned description has up to five lines; a current response may use
-  a line. External CTAs and the generic headline stay on Details.
+- The 128px top-aligned description band uses the same 13px body size as Band 2,
+  with relaxed 18px leading and up to six lines; a current response reserves a line. External CTAs and the generic headline stay on Details.
 
 ### Form fit guardrails
 
