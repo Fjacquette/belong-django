@@ -41,6 +41,7 @@ class UserProfile(models.Model):
     # Only locally provisioned/legacy users; public signup explicitly disables this.
     legacy_access = models.BooleanField(default=False)
     pending_email = models.EmailField(blank=True)
+    outbound_mail_suspended = models.BooleanField(default=False)
 
     @property
     def can_use_belong(self):
@@ -180,6 +181,37 @@ class FriendGroupMembership(models.Model):
 class EmailVerification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='email_verifications')
     email = models.EmailField()
+    token_digest = models.CharField(max_length=64, unique=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True, blank=True)
+
+
+class EmailControlLock(models.Model):
+    """A single durable serialization point for quota reservations."""
+    id = models.PositiveSmallIntegerField(primary_key=True, default=1)
+    touched_at = models.DateTimeField(default=timezone.now)
+
+
+class OutboundEmailAttempt(models.Model):
+    kind = models.CharField(max_length=24, db_index=True)
+    actor = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    recipient_hash = models.CharField(max_length=64, db_index=True)
+    ip_hash = models.CharField(max_length=64, db_index=True)
+    group_reference = models.PositiveBigIntegerField(null=True, blank=True, db_index=True)
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+    outcome = models.CharField(max_length=24, default='reserved')
+    reason = models.CharField(max_length=80, blank=True)
+
+    class Meta:
+        ordering = ('-created_at',)
+
+
+class AccountEmailProof(models.Model):
+    """Public signup/recovery proofs do not reserve an auth.User or store credentials."""
+    email = models.EmailField()
+    purpose = models.CharField(max_length=16)
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     token_digest = models.CharField(max_length=64, unique=True)
     created_at = models.DateTimeField(default=timezone.now)
     expires_at = models.DateTimeField()

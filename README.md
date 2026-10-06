@@ -385,19 +385,32 @@ announcements remain the subsequent #24/#25 slices.
 
 ## Account identity and verification
 
-Normal signup asks for email, password, Individual/Organization, and display name.
+Signup requests an email link and returns the same neutral Check your email page
+for unused, existing, limited, and failed-delivery requests. It creates no user or
+authenticated session until the proven email owner chooses their password,
+Individual/Organization, and display name. An old unverified registration can be
+reclaimed only using email proof; ownership replaces its provisional password and
+identity while preserving its PK. Recovery requests for old provisional accounts
+also use this owner-only setup flow. Old provisional verification links cannot activate
+an attacker-chosen password. Password replacement invalidates old login sessions.
+
+Setup proofs expire after 24 hours; recovery proofs after one hour. GETs do not
+consume them. POST completion is one-time and invalidates other outstanding proofs.
+Resending does not invalidate an earlier inbox link before completion. Recovery uses
+the same neutral HTTP surface for existing/unknown accounts and requires explicit
+sign-in after resetting the password. An allowed unknown-address request gets a
+fixed account-help message with an ordinary Belong signup link, so account lookup
+does not change whether the synchronous mail provider is called.
+
 The internal `auth.User` PK and opaque username stay stable when email changes.
 A partial database index enforces unique nonempty email addresses ignoring case;
 the migration normalizes existing addresses and refuses duplicate legacy addresses
-without discarding accounts. Resolve an actual collision explicitly and retry.
-Existing display names are backfilled from full names or legacy usernames.
+without discarding accounts. Existing display names are backfilled from full names
+or legacy usernames. Invitation acceptance consent survives setup. If the email
+link is completed in another browser, sign in in the original browser to finish its
+pending invitation. The optional interests prompt retains the destination.
 
-New registrations cannot access product routes until a one-time, digest-only email
-proof is confirmed. Verification links expire after 24 hours and require a POST
-confirmation (mail link scanners cannot consume them). Resends/corrections allow
-one email per minute and ten per account per day, invalidate older links, and keep
-pending group invitations. Invitations complete after ordinary verification.
-The local console email backend prints links in the ignored server log; configure
+The local console backend prints private links in the ignored server log; configure
 `DJANGO_EMAIL_BACKEND` and `DJANGO_DEFAULT_FROM_EMAIL` for actual delivery.
 
 Account settings manages profile, coarse home area, avatar, email and password.
@@ -422,3 +435,71 @@ are dev, test, and production. SQLite uses IMMEDIATE write transactions, includi
 verification and membership changes. Pending invitation sessions store only a signed
 invitation ID after explicit acceptance consent, never a bearer token. Migration
 0006 scrubs old session tokens while retaining valid pending invitation references.
+
+
+## Outbound email controls and production readiness
+
+Only email-verified organizers can send group invitations, including in dev/test:
+legacy access and Organization status do not bypass sending controls. Django admin
+→ User profiles → Outbound mail suspended disables third-party invitation and
+email-change delivery while retaining account access and self-address recovery.
+
+`EMAIL_LIMITS` in `belong/settings.py` defines the pilot ceilings:
+
+| Scope | Rolling limit |
+| --- | --- |
+| Signup requests per IP | 5/hour; 20/24 hours |
+| Successful account creations per completing IP | 5/hour; 20/24 hours |
+| Signup, verification and recovery combined per address | 3/hour, with 60 seconds between messages |
+| Signup, verification and recovery combined per IP | 10/hour |
+| Authenticated verification messages per account | 10/24 hours |
+| Explicit invitation batch | 20 recipients |
+| Invitations per verified account | 50 unique recipients/24 hours; also 50 delivery attempts/24 hours |
+| Group → recipient invitation cooldown | 7 days across organizers, revocation and recreation |
+| Explicit retry after failed invitation delivery | At least 5 minutes, still consuming daily quota |
+
+The extra total-attempt ceiling prevents sending unlimited mail to the same 50
+addresses through many groups. Accepted reservations, including provider failures,
+consume limits; denied requests are also journaled but do not extend a cooldown.
+Attempts and hashes persist in the database, so restarts do not reset quotas.
+Migration 0009 carries retained old proof/invitation deliveries into the journal;
+old invitation expiry minus seven days represents its latest historical send.
+The old sender did not retain IPs or deleted invitation history, which cannot be
+reconstructed. Do not delete current journal rows within the quota/cooldown window.
+
+A seeded control row serializes quota reservation and token creation, with SQLite
+IMMEDIATE transactions and row locking on databases that support it. SMTP runs only
+after the transaction commits. Delivery outcomes are durable and available read-only
+in Django admin → Outbound email attempts (kind, actor, address/IP hashes, timestamp,
+group reference, outcome/reason). No mail payloads, bearer tokens or provider secrets
+are stored in this journal. A crash after reservation is conservatively counted;
+there is no automatic sending/retry worker. Retry explicitly after the applicable
+cooldown, requesting a new link if necessary. A provider reporting success indicates
+provider handoff, not confirmed inbox delivery. `EMAIL_TIMEOUT` bounds SMTP calls.
+
+All mail has fixed Belong-owned copy; group/display text and arbitrary user links
+are never interpolated. `BELONG_PUBLIC_ORIGIN` specifies the canonical origin, for
+example `https://belong.example`; HTTPS and a bare origin are required in production.
+Request Host/forwarded headers cannot change outbound URLs. Dev/test defaults are
+127.0.0.1:8000/8001; a disposable alternate-port test server must override the origin.
+IP quotas use `REMOTE_ADDR`, not caller-supplied X-Forwarded-For. A production proxy
+must provide the actual peer IP through trusted server/proxy configuration and reject
+spoofed headers. Apply edge request limits as well to bound abusive request/journal
+volume before enabling broad registration.
+
+Before real production mail, provision a controlled sender domain and transactional
+provider, configure connection credentials outside source control, and verify:
+
+- [SPF](https://datatracker.ietf.org/doc/html/rfc7208) authorizes the actual provider.
+- [DKIM](https://datatracker.ietf.org/doc/html/rfc6376) signing is enabled and validated.
+- [DMARC](https://datatracker.ietf.org/doc/html/rfc7489) aligns the visible From domain
+  with authenticated mail; monitor reports before enforcing rejection.
+- The provider suppresses hard-bounced/complaining recipients, caps daily volume, and
+  exposes authenticated bounce/complaint events for investigation. Suspend abusive
+  initiating accounts using the admin switch; never blindly replay failures.
+
+Provider webhook ingestion and automatic bounce/complaint reconciliation remain a
+production integration requirement; this slice does not implement them. The app
+controls do not replace provider suppression, domain authentication, or edge limits.
+The neutral request surface and one-time proof model follow the
+[OWASP recovery guidance](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html).

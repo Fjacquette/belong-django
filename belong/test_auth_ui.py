@@ -44,7 +44,7 @@ class AuthScreenTests(TestCase):
 
     def test_signup_validation_remains_visible_without_creating_an_account(self):
         response = self.client.post(reverse("signup"), {"username": "new-reviewer", "password1": "short", "password2": "different"})
-        self.assertContains(response, "The two password fields didn’t match.")
+        self.assertContains(response, "This field is required.")
         self.assertFalse(get_user_model().objects.filter(username="new-reviewer").exists())
 
     def test_authenticated_product_navigation_is_retained(self):
@@ -72,12 +72,14 @@ class AuthScreenTests(TestCase):
         self.assertContains(self.client.post(reverse('signup'), data), 'This field is required')
         self.assertFalse(get_user_model().objects.filter(username='ordinary-signup').exists())
         data['email'] = 'New.Person@EXAMPLE.com'
-        self.assertRedirects(self.client.post(reverse('signup'), data), reverse('verification_status'))
-        self.assertEqual(get_user_model().objects.get(email='new.person@example.com').email, 'new.person@example.com')
+        self.assertRedirects(self.client.post(reverse('signup'), data), reverse('account_email_requested'))
+        self.assertFalse(get_user_model().objects.filter(email='new.person@example.com').exists())
+        from social.models import AccountEmailProof
+        self.assertEqual(AccountEmailProof.objects.get().email, 'new.person@example.com')
 
     def test_normal_signup_rejects_email_already_claimed_case_insensitively(self):
         create_legacy_user('existing-email', email='Existing@Example.com')
         response = self.client.post(reverse('signup'), {'username': 'duplicate-email', 'email': 'existing@example.COM',
                                     'password1': 'Testing-normal-817!', 'password2': 'Testing-normal-817!'})
-        self.assertContains(response, 'Sign in instead')
+        self.assertRedirects(response, reverse('account_email_requested'))
         self.assertFalse(get_user_model().objects.filter(username='duplicate-email').exists())

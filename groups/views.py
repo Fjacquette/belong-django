@@ -54,6 +54,7 @@ def detail(request, pk, invitation_form=None):
     members = group.memberships.filter(status=MemberStatus.ACTIVE).select_related("user")
     return render(request, "groups/detail.html", {
         "group": group, "membership": membership, "organizer": organizer,
+        "can_send_invitations": organizer and request.user.profile.email_verified_at and not request.user.profile.outbound_mail_suspended,
         "invitation_form": (invitation_form if invitation_form is not None else InvitationForm()) if organizer else None,
         "invitations": group.invitations.all() if organizer else None,
         "series": group.series.all() if organizer else None,
@@ -150,7 +151,7 @@ def invite(request, pk):
             except ValidationError as error:
                 results.append(f'{email}: {error.messages[0]}')
             except (OSError, SMTPException, RuntimeError):
-                # Delivery failure rolls back token rotation; retry remains possible.
+                # Committed reservations retain delivery failures; retries remain bounded.
                 import logging
                 logging.getLogger(__name__).exception('Group invitation delivery failed for group %s', group.pk)
                 results.append(f'{email}: email could not be sent. Please retry.')

@@ -22,6 +22,10 @@ from . import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/login/', views.BrandLoginView.as_view(), name='login'),
+    path('accounts/requested/', views.account_email_requested, name='account_email_requested'),
+    path('accounts/setup/<str:token>/', views.signup_completion, name='complete_signup'),
+    path('accounts/recover/<str:token>/', views.recovery_completion, name='complete_recovery'),
+    path('accounts/password_reset/', views.password_reset_request, name='password_reset'),
     path('accounts/signup/', views.signup, name='signup'),
     path('accounts/verification/', views.verification_status, name='verification_status'),
     path('accounts/verify/<str:token>/', views.verify_email, name='verify_email'),

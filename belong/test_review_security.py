@@ -73,8 +73,9 @@ from social.models import EmailVerification
 call_command('migrate', verbosity=0)
 assert connections['default'].settings_dict['OPTIONS']['transaction_mode'] == 'IMMEDIATE'
 u = get_user_model().objects.create_user('concurrent-proof', email='concurrent@example.com')
+u.profile.email_verified_at = timezone.now()
 u.profile.pending_email = u.email
-u.profile.save(update_fields=['pending_email'])
+u.profile.save(update_fields=['pending_email', 'email_verified_at'])
 EmailVerification.objects.create(user=u, email=u.email, token_digest=digest('isolated-proof'), expires_at=timezone.now()+timedelta(hours=1))
 barrier = Barrier(2)
 def consume(_):

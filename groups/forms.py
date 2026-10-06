@@ -1,4 +1,5 @@
 from django import forms
+from django.conf import settings
 
 from .models import Group
 
@@ -71,14 +72,18 @@ class InvitationForm(forms.Form):
                              help_text='Separate addresses with commas or new lines. Up to 20 at a time.',
                              widget=forms.Textarea(attrs={'rows': 3, 'class': 'ui-field mt-1'}))
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['emails'].help_text = f"Separate addresses with commas or new lines. Up to {settings.EMAIL_LIMITS['invitation_batch']} at a time."
+
     def clean_emails(self):
         import re
         from django.core.validators import validate_email
         emails = list(dict.fromkeys(e.strip().lower() for e in re.split(r'[,;\s]+', self.cleaned_data['emails']) if e.strip()))
         if not emails:
             raise forms.ValidationError('Enter at least one email address.')
-        if len(emails) > 20:
-            raise forms.ValidationError('Invite up to 20 addresses at a time.')
+        if len(emails) > settings.EMAIL_LIMITS['invitation_batch']:
+            raise forms.ValidationError(f"Invite up to {settings.EMAIL_LIMITS['invitation_batch']} addresses at a time.")
         for email in emails:
             validate_email(email)
         return emails

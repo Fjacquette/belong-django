@@ -76,10 +76,11 @@ class InterestTests(TestCase):
         self.client.logout()
         self.client.post(reverse('signup'), {'email': 'newinterests@example.com', 'display_name': 'New Person',
             'account_type': 'individual', 'password1': 'Testing-only-817!', 'password2': 'Testing-only-817!'})
+        self.assertFalse(get_user_model().objects.filter(email='newinterests@example.com').exists())
+        token = re.search(r'/accounts/setup/([^/]+)/', mail.outbox[-1].body).group(1)
+        self.assertRedirects(self.client.post(reverse('complete_signup', args=[token]), {'display_name': 'New Person',
+            'account_type': 'individual', 'password1': 'Testing-only-817!', 'password2': 'Testing-only-817!'}), self.url)
         user = get_user_model().objects.get(email='newinterests@example.com')
-        self.assertRedirects(self.client.get(self.url), reverse('verification_status'))
-        token = re.search(r'/accounts/verify/([^/]+)/', mail.outbox[-1].body).group(1)
-        self.assertRedirects(self.client.post(reverse('verify_email', args=[token])), self.url)
         self.assertContains(self.client.get(self.url), 'Skip for now')
         self.assertRedirects(self.client.post(self.url, {'action': 'skip', 'interests': [Interest.objects.first().pk], 'suggestion': 'Do not submit'}), reverse('activities:index'))
         user.profile.refresh_from_db()

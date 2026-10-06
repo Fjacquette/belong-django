@@ -195,6 +195,7 @@ CARD_LAYOUT = {
 # Local previews use console delivery; deployment may configure a real backend.
 EMAIL_BACKEND = CONFIG.get('DJANGO_EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 DEFAULT_FROM_EMAIL = CONFIG.get('DJANGO_DEFAULT_FROM_EMAIL', 'Belong <noreply@localhost>')
+EMAIL_TIMEOUT = 10  # Bound synchronous provider delivery; no automatic retry loop.
 
 AUTHENTICATION_BACKENDS = ['belong.authentication.EmailBackend']
 # Compatibility is confined to explicitly provisioned legacy accounts in local dev/test.
@@ -202,3 +203,15 @@ try:
     ALLOW_LEGACY_ACCOUNTS = config_bool(CONFIG.get('BELONG_ALLOW_LEGACY_ACCOUNTS', str(ENVIRONMENT in {'dev', 'test'})), key='BELONG_ALLOW_LEGACY_ACCOUNTS')
 except ValueError as error:
     raise ImproperlyConfigured(str(error)) from error
+
+# Pilot ceilings are application settings, shared by Individual and Organization.
+EMAIL_LIMITS = {
+    'signup_ip_hour': 5, 'signup_ip_day': 20,
+    'creation_ip_hour': 5, 'creation_ip_day': 20,
+    'own_address_hour': 3, 'own_ip_hour': 10, 'own_actor_day': 10, 'own_cooldown_seconds': 60,
+    'invitation_batch': 20, 'invitation_unique_day': 50,
+    'invitation_attempts_day': 50, 'invitation_cooldown_days': 7,
+    'invitation_failure_retry_seconds': 300,
+}
+# Production must supply an explicit canonical origin, never a user-provided Host.
+BELONG_PUBLIC_ORIGIN = CONFIG.get('BELONG_PUBLIC_ORIGIN', '')
