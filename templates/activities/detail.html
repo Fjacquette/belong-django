@@ -103,7 +103,7 @@
           {% endif %}
 
           <div class="rounded-2xl border border-white/60 px-5 py-4 bg-white/80">
-            {% include 'activities/_join_region.html' with activity=activity variant='detail' interested_count=join_context.interested_count committed_count=join_context.committed_count attendee_count=join_context.attendee_count joined=join_context.joined response_options=join_context.response_options current_status=join_context.current_status current_status_label=join_context.current_status_label next_path=join_context.next_path %}
+            {% include 'activities/_join_region.html' with activity=activity variant='detail' response_count=join_context.response_count response_counts_label=join_context.response_counts_label interested_count=join_context.interested_count committed_count=join_context.committed_count attendee_count=join_context.attendee_count joined=join_context.joined response_options=join_context.response_options current_status=join_context.current_status current_status_label=join_context.current_status_label next_path=join_context.next_path %}
           </div>
         </div>
       </div>

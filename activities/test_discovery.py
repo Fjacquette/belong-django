@@ -209,9 +209,9 @@ class DiscoveryTests(TestCase):
         self.assertContains(response, f'title="{self.near.title}"')
         self.assertContains(response, f'title="{self.near.description}"')
         self.assertContains(response, self.near.organizer_name)
-        self.assertContains(response, 'Full details and all response choices')
-        self.assertContains(response, 'class="ui-navigation">Details')
-        self.assertContains(response, '>Hide</button>')
+        self.assertContains(response, f'href="{reverse("activities:detail", args=[self.near.pk])}"')
+        self.assertNotContains(response, 'card-utilities')
+        self.assertNotContains(response, '>Hide</button>')
         self.assertContains(response, 'aria-label="Create"')
         self.assertNotContains(response, 'href="/discover/categories/"')
 

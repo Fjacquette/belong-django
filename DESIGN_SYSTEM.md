@@ -448,14 +448,13 @@ cards. Only matching tracked, owner-preserved authored demo prices are populated
   The first choice works without JavaScript. `card-actions.js` exposes a second
   choice only when both full labels plus selected-state check fit. Remaining
   choices stay available on Details. HTMX refreshes the entire card's state.
-- Secondary utilities: `card-utilities`, an image-corner native disclosure with a
-  white/slate `card-utilities__trigger` and chevron, distinct from purple responses.
-  Its panel contains Details, response information and quiet private mutations.
-- Details navigation: `ui-navigation`, a separated, semibold link with an arrow,
-  visible focus and hover affordance. The title also routes directly to Details.
+- Band 3 contains only the activity image or fallback artwork. No controls,
+  counts, badges or platform overlays appear on compact cards.
+- Details navigation uses the title link. Hide/Unhide, response counts, response
+  removal and other housekeeping live on the detail page.
 - Current response: the first direct response exposes pressed state. A
   `card-current-response` line in the body identifies later/historical choices,
-  including a second choice that might not fit. Utilities permit response removal.
+  including a second choice that might not fit. Removal is available on Details.
 - The description has up to five lines; a current response or material external
   link may use a line. The generic headline stays off the card surface.
 

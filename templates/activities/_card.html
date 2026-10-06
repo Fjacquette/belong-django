@@ -20,14 +20,6 @@
     </div>
   </div>
   <div class="activity-card__band-3 relative">
-    <details class="card-utilities">
-      <summary class="ui-menu-trigger ui-button--compact card-utilities__trigger" aria-label="Activity options for {{ activity.title }}" title="Activity options"><span aria-hidden="true">⋯ ▾</span></summary>
-      <div class="card-utilities__panel ui-menu-panel">
-        <a href="{% url 'activities:detail' activity.pk %}" title="Full details and all response choices" class="ui-navigation">Details <span aria-hidden="true">→</span></a>
-        <p class="text-xs" title="{{ response_counts_label }}">{{ response_count|default:0 }} response{{ response_count|pluralize }}</p>
-        {% include 'activities/_participation_actions.html' with variant='card' %}
-      </div>
-    </details>
     {% if activity.header_image_url %}
       <img src="{{ activity.header_image_url }}" alt="Activity image" class="h-full w-full object-cover">
     {% else %}

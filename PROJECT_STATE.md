@@ -118,7 +118,8 @@ account menus, and group forms/actions. Cards use the historical portrait hierar
 name + readable when/where, then organizer/audience/cost, a substantial image,
 useful description and one/two fully readable activity actions. The 440px card
 retains its 258px preferred/max width; 160px overlap exposes both top bands.
-Secondary platform utilities live over the image. Generic headlines stay on Details.
+The image band contains artwork only. Title navigation opens Details, where
+Hide/Unhide, response counts and response removal live. Generic headlines stay on Details.
 Known seed-owned choices and stale sample responses are reconciled without altering
 real/custom/transferred data. GitHub is
 authoritative for merge status; #22 follows this visual-system iteration.

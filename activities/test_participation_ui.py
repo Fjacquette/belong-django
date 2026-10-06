@@ -1,4 +1,5 @@
 from html import escape
+from unittest.mock import PropertyMock, patch
 
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
@@ -64,7 +65,10 @@ class ParticipationUITests(TestCase):
                         self.assertNotContains(response, 'aria-pressed="true"')
                         self.assertContains(response, f'>You: {ActivityResponseStatus(status).label}</p>')
                     self.assertContains(response, f'name="variant" value="{variant}"')
-                    self.assertContains(response, f'hx-post="{self.url("leave")}"')
+                    if variant == "detail":
+                        self.assertContains(response, f'hx-post="{self.url("leave")}"')
+                    else:
+                        self.assertNotContains(response, f'hx-post="{self.url("leave")}"')
                     self.assertEqual(ActivityResponse.objects.get(user=self.viewer, activity=self.activity).status, status)
                     self.assertEqual(ActivityResponse.objects.filter(user=self.viewer).count(), 1)
                     self.assertContains(self.client.get(self.url("detail")), f'You: {ActivityResponseStatus(status).label}')
@@ -109,7 +113,7 @@ class ParticipationUITests(TestCase):
         self.assertContains(response, 'value="committed" aria-pressed="true"')
         self.assertContains(response, 'value="interested" aria-pressed="false"')
         self.assertContains(response, 'aria-pressed="true"', count=1)
-        self.assertContains(response, f'hx-post="{self.url("leave")}"')
+        self.assertNotContains(response, f'hx-post="{self.url("leave")}"')
         self.assertNotContains(response, '>×</button>')
         self.assertContains(response, 'ui-button--compact ui-response')
 
@@ -140,7 +144,7 @@ class ParticipationUITests(TestCase):
         self.assertLessEqual(footer.count('name="status"'), 2)
         self.assertNotIn('truncate', footer)
         self.assertNotIn('>Hide', footer)
-        self.assertIn('card-utilities', html)
+        self.assertNotIn('card-utilities', html)
         self.assertNotIn(self.activity.headline, body)
         self.activity.freetext_when = ""
         self.activity.location_name = ""
@@ -179,7 +183,8 @@ class ParticipationUITests(TestCase):
                 self.assertNotContains(card, 'aria-pressed="true"')
                 self.assertContains(card, 'value="interested" aria-pressed="false"')
                 self.assertContains(card, 'value="committed" aria-pressed="false"')
-                self.assertContains(card, 'aria-label="Remove your response"')
+                self.assertNotContains(card, 'aria-label="Remove your response"')
+                self.assertContains(self.client.get(self.url('detail')), 'aria-label="Remove your response"')
 
         # A creator removing a choice must not hide the viewer's existing response.
         self.activity.available_responses = ["interested", "committed"]
@@ -197,19 +202,19 @@ class ParticipationUITests(TestCase):
         destination = self.filtered_discover_url()
         ActivityResponse.objects.create(user=self.viewer, activity=self.activity, status="more")
         initial = self.client.get(destination)
-        leave_form = initial.content.decode().split(f'action="{self.url("leave")}"', 1)[1].split("</form>", 1)[0]
+        response_form = initial.content.decode().split(f'action="{self.url("respond")}"', 1)[1].split("</form>", 1)[0]
         next_input = f'<input type="hidden" name="next" value="{escape(destination, quote=True)}">'
-        self.assertIn(next_input, leave_form)
+        self.assertIn(next_input, response_form)
         changed = self.client.post(
             self.url("respond"), {"status": "question", "variant": "card", "next": destination},
             HTTP_HX_REQUEST="true",
         )
-        self.assertContains(changed, next_input, count=3, html=True)
+        self.assertContains(changed, next_input, count=1, html=True)
         self.assertContains(changed, ">You: I have a question</p>")
         removed = self.client.post(
             self.url("leave"), {"variant": "card", "next": destination}, HTTP_HX_REQUEST="true",
         )
-        self.assertContains(removed, next_input, count=2, html=True)
+        self.assertContains(removed, next_input, count=1, html=True)
         self.assertNotContains(removed, ">You:")
         self.assertFalse(ActivityResponse.objects.filter(user=self.viewer).exists())
 
@@ -255,7 +260,7 @@ class ParticipationUITests(TestCase):
         self.activity.available_responses = ["question", "declined"]
         self.activity.save()
         response = self.client.get(reverse("activities:index"))
-        self.assertContains(response, "Details")
+        self.assertContains(response, f'href="{self.url("detail")}" title="{self.activity.title}"')
         self.assertContains(response, f'hx-post="{self.url("respond")}"')
         self.assertNotContains(response, 'value="interested"')
         self.assertNotContains(response, 'value="committed"')
@@ -288,3 +293,23 @@ class ParticipationUITests(TestCase):
         self.assertContains(response, "data-friends-secondary")
         self.assertNotContains(response, "<span>Status</span>")
         self.assertNotContains(response, "<span class=\"font-semibold\">Friends</span>")
+
+    def test_compact_card_artwork_has_no_controls_or_response_counts(self):
+        ActivityResponse.objects.create(user=self.viewer, activity=self.activity, status='question')
+        for artwork in [None, '/static/img/test-artwork.png']:
+            with self.subTest(artwork=artwork), patch.object(Activity, 'header_image_url', new_callable=PropertyMock, return_value=artwork):
+                response = self.client.get(reverse('activities:index'))
+                html = response.content.decode()
+                image_band = html.split('activity-card__band-3', 1)[1].split('activity-card__band-4', 1)[0]
+                self.assertIn('<img' if artwork else 'activity-card__summary', image_band)
+                for control in ['<details', '<summary', '<button', '<form', '<a ', 'responses', 'card-utilities']:
+                    self.assertNotIn(control, image_band)
+                for control in ['<details', '<summary', 'card-utilities', '1 response', '>Hide</button>', '>Remove</button>']:
+                    # Restrict the assertion to the compact card, excluding page menus.
+                    card = html.split('class="activity-card relative', 1)[1].split('data-stack-item', 1)[0].split('</section>', 1)[0]
+                    self.assertNotIn(control, card)
+                self.assertContains(response, f'href="{self.url("detail")}" title="{self.activity.title}"')
+        details = self.client.get(self.url('detail'))
+        self.assertContains(details, '>Hide</button>')
+        self.assertContains(details, 'aria-label="Remove your response"')
+        self.assertContains(details, '1 response')

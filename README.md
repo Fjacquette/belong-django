@@ -173,8 +173,9 @@ a compact organizer avatar. The 160px stack offset exposes both top bands.
 The 128px image and 104px description region preserve the portrait balance.
 The 48px take-action band contains only one or two complete response labels;
 a second choice appears only when it fits without clipping. Remaining choices
-are on Details. Title navigation and an image-corner utility disclosure provide
-Details, counts, Hide/Unhide and later-response removal outside the action band.
+are on Details. Title navigation opens the detail page for counts, Hide/Unhide
+and response removal. The image band contains only image/fallback artwork;
+compact cards have no generic utility menu or response counts.
 A selected direct response clears on repeat-click. Current state is visible through
 the first direct button or a body line for later choices; full truncated descriptive
 values remain available on focus/hover.

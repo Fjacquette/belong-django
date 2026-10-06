@@ -130,14 +130,6 @@
   .activity-card__title-link { @apply text-white no-underline; }
   .activity-card__title-link:hover { @apply underline; }
   .activity-card__title-link:focus-visible { @apply underline outline outline-2 outline-offset-2 outline-white; }
-  .ui-navigation { @apply inline-flex items-center justify-between gap-2 min-h-9 text-sm font-semibold text-belong-purple hover:underline; }
-  .ui-navigation:focus-visible { outline: 2px solid #843A96; outline-offset: 2px; }
-  .card-utilities { position: absolute; right: 8px; top: 8px; z-index: 10; }
-  .card-utilities__trigger { @apply min-w-9 bg-white/95 border-belong-slate/30 text-belong-slate shadow-soft; }
-  .card-utilities__trigger:focus-visible { outline-color: #843A96; }
-  .card-utilities__panel { position: absolute; right: 0; top: 44px; width: 208px; display: flex; flex-direction: column; gap: 8px; }
-  .card-utilities:not([open]) .card-utilities__panel { display: none; }
-  .activity-card > .activity-card__band-3 { overflow: visible; }
   .card-response { display: flex; gap: 8px; width: 100%; }
   .card-response > button { flex: 1 1 auto; white-space: nowrap; }
   .card-response__optional[hidden] { display: none; }
