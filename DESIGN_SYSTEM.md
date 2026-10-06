@@ -265,8 +265,11 @@ Band 1 contains:
 
 #### Title layout
 
-- title is the dominant card text, with a normal target around 20–22px at the current
-  card width
+- title is the dominant card text, but should feel **calm rather than heavy**; use the
+  normal Belong body sans stack for card titles with medium weight rather than a
+  visually dense semibold/bold treatment
+- start around **20px / 24px line-height / medium weight** at the current card width;
+  use the existing bounded step-down strategy only for genuinely long titles
 - allow **up to two title lines**
 - keep Band 1/card geometry stable; do not grow the card merely because content is long
 - for longer titles, strategically step down through a small bounded type scale before
@@ -274,6 +277,8 @@ Band 1 contains:
 - if the title still does not fit the two-line budget, clamp at two lines and show an
   ellipsis rather than clipping glyphs or colliding with logistics
 - use sufficient line-height/leading for descenders at every supported title size
+- treat Band 1 internally as two layout zones: a title zone and a logistics zone,
+  rather than one vertically centered flex blob
 - maintain a real gap between the title line box and logistics line box; do not achieve
   density by overlapping text
 - reserve a small symmetric safe inset at both left and right so the top-right menu
@@ -288,8 +293,9 @@ string.
 - if `when · where` fits cleanly on one line, show it on one line
 - if it does not fit, place **when on one line and where on the next** rather than
   allowing one value (especially location) to wrap messily across both lines
-- use a small bounded font-size reduction if needed to preserve clean one-item-per-line
-  presentation
+- use roughly **13px / 16px line-height / regular weight** for normal logistics text,
+  with a small bounded font-size reduction only if needed to preserve clean
+  one-item-per-line presentation
 - if an individual value still exceeds its line budget, truncate with ellipsis and
   expose the full value on hover/focus
 - do not use the generic `headline` field as a card subtitle
@@ -300,8 +306,11 @@ When and where remain the most important first-pass facts after the activity nam
 
 The card's single contextual menu trigger lives in the **top-right of Band 1**.
 
-- visual treatment: three white dots only; no visible pill, bordered button, or filled
-  button chrome in the resting state
+- use a **vertical kebab `⋮`**, not a horizontal ellipsis; horizontal dots visually
+  collide with centered/truncated title text and read too much like punctuation
+- visual treatment: white, initially somewhat subdued (roughly 70–80% opacity), with
+  no visible pill, border, or filled button chrome in the resting state
+- hover/focus raises the glyph to full opacity
 - semantic treatment: still a real keyboard/touch-accessible button/disclosure with
   an adequate transparent hit target and visible focus state
 - the trigger must not overlap title/logistics text; reserve layout space for its hit
@@ -408,7 +417,13 @@ Rules:
   inherit the activity/card palette
 - default unselected action: white/translucent surface with border/text derived from
   `--card-primary` (or another explicitly defined accessible card accent)
-- selected/committed action: filled card accent with a high-contrast text color
+- selected action: filled card accent with a high-contrast text color
+- **a checkmark is status, not decoration**: render `✓` only when the user's current
+  response is a genuinely confirmed/committed state such as RSVP yes / Count me in
+- a softer selected state such as Interested may use the selected fill treatment but
+  should not automatically receive a checkmark
+- question/vote/external/CTA buttons never receive a checkmark merely because they are
+  available actions
 - if a card palette cannot provide accessible contrast, use a documented accessible
   fallback derived for that card rather than silently reverting the entire footer to
   generic purple
