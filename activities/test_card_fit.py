@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from .card_style import response_accent
+from .card_style import header_gradient, response_accent
 from .forms import ActivityForm
 from .models import Activity
 
@@ -64,10 +64,13 @@ class CardFitTests(TestCase):
         self.assertIn('card-context-menu__trigger', first)
         self.assertNotIn('ui-menu-trigger', first)
         self.assertNotIn('card-context-menu', second)
-        self.assertIn('activity-card__when', first)
-        self.assertIn('activity-card__where', first)
-        self.assertIn('title="Saturday morning"', first)
-        self.assertIn('title="River park"', first)
+        self.assertNotIn('activity-card__when', first)
+        self.assertNotIn('activity-card__where', first)
+        self.assertNotIn('<strong>', second)
+        self.assertIn('activity-card__when', second)
+        self.assertIn('activity-card__where', second)
+        self.assertIn('title="Saturday morning"', second)
+        self.assertIn('title="River park"', second)
         self.assertContains(response, 'ui-response--card')
         detail = self.client.get(reverse('activities:detail', args=[self.activity.pk]))
         self.assertNotContains(detail, 'ui-response--card')
@@ -90,3 +93,23 @@ class CardFitTests(TestCase):
         self.assertContains(response, '--card-accent: #06796b;')
         self.assertContains(response, 'aria-pressed="true"')
         self.assertContains(response, 'ui-response--card')
+
+    def test_header_gradient_is_subtle_darkens_right_and_stays_accessible_throughout(self):
+        for primary, secondary in [('#00ffff', '#ffffff'), ('#843A96', '#5C2969'),
+                                   ('#ffffff', '#000000'), ('invalid', '#FFFF00')]:
+            left, right = header_gradient(primary, secondary)
+            a = [int(left[i:i+2], 16) for i in (1, 3, 5)]
+            b = [int(right[i:i+2], 16) for i in (1, 3, 5)]
+            self.assertTrue(all(y <= x for x, y in zip(a, b)))
+            for step in range(11):
+                color = '#' + ''.join(f'{round(x + (y-x)*step/10):02x}' for x, y in zip(a, b))
+                self.assertGreaterEqual(contrast_with_white(color), 4.5)
+
+    def test_title_preserves_author_casing_and_metadata_order(self):
+        self.activity.title = 'D&D and OW2 Together'
+        self.activity.save()
+        response = self.client.get(reverse('activities:index'))
+        self.assertContains(response, 'D&amp;D and OW2 Together')
+        html = response.content.decode().split('activity-card__metadata', 1)[1]
+        self.assertLess(html.index('Organized by'), html.index('activity-card__when'))
+        self.assertLess(html.index('activity-card__where'), html.index('Everyone'))

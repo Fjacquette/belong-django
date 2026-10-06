@@ -15,3 +15,17 @@ def response_accent(primary):
     while 1.05 / (luminance() + 0.05) < 4.5:
         channels = [int(value * 0.9) for value in channels]
     return '#' + ''.join(f'{value:02x}' for value in channels)
+
+
+def header_gradient(primary, secondary):
+    """Restrained palette depth; every interpolated color supports white text."""
+    left = response_accent(primary)
+    secondary = response_accent(secondary)
+    start = [int(left[i:i+2], 16) for i in (1, 3, 5)]
+    end = [int(secondary[i:i+2], 16) for i in (1, 3, 5)]
+    # Mix just a little secondary hue, then cap each channel below the left.
+    # This guarantees light-left/dark-right even for reversed authored palettes.
+    end = [min(int(a * .85), int((a * .75 + b * .25) * .85))
+           for a, b in zip(start, end)]
+    right = '#' + ''.join(f'{value:02x}' for value in end)
+    return left, right
