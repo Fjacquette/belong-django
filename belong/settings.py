@@ -169,7 +169,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CARD_HEIGHT = 440
 CARD_WIDTH_RATIO = 258 / CARD_HEIGHT  # Preserve the preferred width as height changes.
-CARD_BANDS = [96 / 440, 64 / 440, 128 / 440, 104 / 440, 48 / 440]
+CARD_BANDS = [64 / 440, 72 / 440, 128 / 440, 128 / 440, 48 / 440]
 
 STACK_OFFSET = round(CARD_HEIGHT * sum(CARD_BANDS[:2]))
 BASE_FONT = 16

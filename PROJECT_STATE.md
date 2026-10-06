@@ -115,13 +115,15 @@ The Groups foundation (#21) is merged. Persistent Group and GroupMembership enti
 **#28 is complete and merged via PR #30.** It implements the shared control families documented in `DESIGN_SYSTEM.md`
 and `assets/tailwind.css`, applied across Discover, activity cards/details, Create,
 account menus, and group forms/actions. Cards use the historical portrait hierarchy:
-name + readable when/where, then organizer/audience/cost, a substantial image,
+title-only Band 1, then organizer/when/where/audience/cost in Band 2, a substantial image,
 useful description and one/two fully readable activity actions. The 440px card
-retains its 258px preferred/max width; 160px overlap exposes both top bands.
-Band 1 has calm medium-weight titles in fixed title/logistics zones, bounded
-two-line fitting, and a vertical-kebab
-contextual menu for related Discover filters and private activity/organizer hiding.
-Band 2 aligns a fixed circular avatar against both metadata rows. Card responses
+retains its 258px preferred/max width; 64/72px top bands and 136px overlap expose
+all core metadata. Band 1 uses a restrained accessible horizontal palette gradient,
+a centered medium-weight two-line title and a quiet contextual vertical kebab.
+Band 2 supports three/four aligned single-line metadata rows with deliberate
+logistics splitting and full-value hover/focus. Metadata and description use 13px
+body text, with 16px/18px leading respectively; the description band is 128px.
+Band 2 centers a fixed circular avatar against the full metadata block. Card responses
 use accessible accents derived from their activity palette; checkmarks indicate
 only an actual committed response, while softer intent uses selected fill alone. Activity forms guide
 48-character titles and 40-character venue labels; legacy model storage is retained. Search, facets and

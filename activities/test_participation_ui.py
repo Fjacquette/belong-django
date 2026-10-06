@@ -132,8 +132,9 @@ class ParticipationUITests(TestCase):
         second = html.split('activity-card__band-2', 1)[1].split('activity-card__band-3', 1)[0]
         self.assertIn(self.activity.title, first)
         self.assertNotIn(self.activity.headline, first)
-        self.assertIn('title="Saturday morning"', first)
-        self.assertIn('title="River trail"', first)
+        self.assertNotIn('activity-card__logistics', first)
+        self.assertIn('title="Saturday morning"', second)
+        self.assertIn('title="River trail"', second)
         self.assertNotIn('class="ui-link', first)
         for value in ["Janine", "Everyone", "Free"]:
             self.assertIn(value, second)
