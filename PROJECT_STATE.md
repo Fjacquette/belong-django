@@ -112,7 +112,7 @@ Existing demo metadata is enriched without reseeding accounts or responses.
 
 The Groups foundation (#21) is merged. Persistent Group and GroupMembership entities are separate from legacy personal FriendGroup lists. The floating + discloses Activity (primary) and Group (secondary) creation. The settled group access modes are Open, Closed, Unlisted, and Private. Activities may link to groups but remain independently visible/participable according to their own audience rules. Invitation mechanics remain #22.
 
-**#28** implements the shared control families documented in `DESIGN_SYSTEM.md`
+**#28 is complete and merged via PR #30.** It implements the shared control families documented in `DESIGN_SYSTEM.md`
 and `assets/tailwind.css`, applied across Discover, activity cards/details, Create,
 account menus, and group forms/actions. Cards use the historical portrait hierarchy:
 name + readable when/where, then organizer/audience/cost, a substantial image,
@@ -130,8 +130,7 @@ changes and can be cleared independently; organizer suppression is reversible an
 separate from blocking/participation. The image band contains artwork only. Title
 navigation opens Details for response counts, removal and external CTAs. Generic headlines stay on Details.
 Known seed-owned choices and stale sample responses are reconciled without altering
-real/custom/transferred data. GitHub is
-authoritative for merge status; #22 follows this visual-system iteration.
+real/custom/transferred data. **#22 — email invitations and joining is now the immediate next implementation slice.**
 
 ### Groups / recurring activity sequence
 
