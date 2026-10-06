@@ -167,12 +167,12 @@ LOGOUT_REDIRECT_URL = 'activities:index'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-CARD_HEIGHT = 400            # example height in px
-CARD_WIDTH_RATIO = 0.645      # width = height * ratio
-CARD_BANDS = [0.20, 0.12, 0.32, 0.20, 0.16]
+CARD_HEIGHT = 440
+CARD_WIDTH_RATIO = 258 / CARD_HEIGHT  # Preserve the preferred width as height changes.
+CARD_BANDS = [96 / 440, 64 / 440, 128 / 440, 104 / 440, 48 / 440]
 
-STACK_OFFSET = round(CARD_HEIGHT * CARD_BANDS[0])
-BASE_FONT = round(CARD_HEIGHT * 0.04)   # ≈4% of height
+STACK_OFFSET = round(CARD_HEIGHT * sum(CARD_BANDS[:2]))
+BASE_FONT = 16
 CARD_MIN_WIDTH = round(CARD_HEIGHT * CARD_WIDTH_RATIO)
 
 

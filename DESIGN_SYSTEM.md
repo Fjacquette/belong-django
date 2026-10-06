@@ -151,10 +151,10 @@ coordinates cannot match a distance bucket.
 **Cost**
 - Free
 - $ = $1–10
-- $ = $11–25
-- $$ = $26–50
-- $$ = $51–100
-- $$$ = $100+
+- $$ = $11–25
+- $$$ = $26–50
+- $$$$ = $51–100
+- $$$$$ = $100+
 
 Use the dollar-sign count as the visible shorthand in compact filter UI. Keep the
 underlying numeric ranges explicit in labels/tooltips/accessibility text where useful.
@@ -311,6 +311,7 @@ The card's single contextual menu trigger lives in the **top-right of Band 1**.
 - visual treatment: white, initially somewhat subdued (roughly 70–80% opacity), with
   no visible pill, border, or filled button chrome in the resting state
 - hover/focus raises the glyph to full opacity
+- offset only the visible glyph 4px right within its unchanged transparent hit target
 - semantic treatment: still a real keyboard/touch-accessible button/disclosure with
   an adequate transparent hit target and visible focus state
 - the trigger must not overlap title/logistics text; reserve layout space for its hit
@@ -526,7 +527,112 @@ Prefer native elements first.
 Keyboard focus must be visible. State must be exposed to assistive technology and
 visually apparent.
 
-## 12. Review rule
+## 12. Implemented discovery facets
+
+`ui-facet` wraps a native details/summary trigger and checkbox fieldset. The
+`ui-facet__panel` uses the menu family; `ui-facet__option` has standard 40px
+checkbox targets. Triggers show a selected count (or the cost shorthand) and an
+active border/background. Mobile uses two columns; desktop uses a compact cluster.
+Checkbox changes submit immediately and preserve the applied search text, open
+facet and keyboard position. Search/Enter commits text. Without JS, Apply filters
+submits the same checkbox values. Search, facets and view/recovery clusters use
+one wrapping `discovery-toolbar`, 40px controls and uniform 8px gaps. The view and
+quiet Show hidden controls wrap together, so recovery never occupies its own row.
+
+Repeated `when`, `where`, `cost`, and `audience` parameters are the canonical
+facet state and survive pagination and response changes. Empty facets are unrestricted.
+Now means an event currently between its start/end, a start within the last two
+hours with no end, or explicit dateless `Now` intent. Today/Tomorrow use the pilot
+local calendar; This week runs from today through Sunday; This weekend covers the
+current or next Saturday/Sunday. No arbitrary time prose is parsed.
+
+Physical distance buckets are [0,1), [1,3), [3,5), [5,10), [10,25), [25,infinity)
+in miles. Only in-person/hybrid activities with valid coordinates match them.
+Online/hybrid match Online; OR permits both modes. Geolocation denial clears only
+distance choices, preserving Online and other facets with visible feedback.
+
+`cost_amount` is an optional nonnegative exact USD amount. Paid tiers use positive
+amounts through 10, then (10,25], (25,50], (50,100], and over 100, keeping decimal
+prices and boundary values disjoint. Free uses explicit free cost type. Forms
+reject contradictory free/paid/unknown numeric costs. Arbitrary cost display text
+and unknown numeric amounts never determine tiers. Exact/display costs remain on
+cards. Only matching tracked, owner-preserved authored demo prices are populated.
+
+## 13. Implemented card patterns
+
+- Geometry: 440px height, preferred/max width 258px, 96/64/128/104/48px bands.
+  The 160px stack offset reveals all identity/logistics and participation context.
+- Card title: `activity-card__title-link`, hover/focus navigation without a resting
+  underline. `card-fit.js` uses bounded 20/24, 18/22, 17/22px size/leading pairs at medium
+  weight,
+  then a two-line ellipsis. Title width reserves symmetric 40px outer insets for
+  the top-right 36px transparent vertical-kebab trigger. Band 1 has fixed
+  48px title and 32px logistics zones with a 4px gap; shorter
+  titles center within their own zone rather than moving logistics upward. The
+  white kebab rests at 75% opacity and becomes fully opaque on hover/focus.
+- Logistics: structured when and where share one line only when they fit at 13px.
+  Otherwise each receives the full line width; 13/12px sizes with 16px leading
+  precede individual ellipsis. Full title/when/where values remain available on
+  hover/focus. Font loading, resize and HTMX replacement trigger refitting;
+  without JS, the two-line title and separate logistics rows remain bounded.
+- Primary responses: `ui-button ui-button--compact ui-response ui-response--card`,
+  complete 12px labels. Card-local `--card-accent` derives from the primary palette:
+  retain colors with at least 4.5:1 contrast against white, otherwise darken RGB
+  channels together by 10% steps until they meet that ratio. Invalid colors use
+  neutral #333333. White unselected surfaces use accent text/borders; selected
+  fills use the accent with white text. `ui-response--confirmed` supplies the
+  checkmark only for an actual selected `committed` response, on cards and Details.
+  Interested, question, more, vote, declined and external actions have no check.
+  General application actions stay purple.
+  The first choice works without JavaScript. `card-actions.js` exposes a second
+  choice only when both full labels plus any possible committed-state check fit.
+  Remaining choices stay available on Details. HTMX refreshes the entire card's state.
+- `activity-card__context` has two columns: a fixed 36px circular avatar centered
+  against both metadata rows, and aligned text. The image never stretches. The
+  single contextual trigger is in the top-right of Band 1. Known numeric
+  prices / Free use concise metadata; longer names/cost prose expose full text
+  on hover/focus and retain up to two lines per metadata field. The single native
+  `card-context-menu` contains related Discover links and private hiding. Escape
+  and clicking outside dismiss it; it remains usable without JavaScript.
+- Band 3 contains only the activity image or fallback artwork. No controls,
+  counts, badges or platform overlays appear in the image band.
+- Details navigation uses the title link. Response counts, removal and richer
+  participation live on Details; activity/organizer hiding also lives in the Band 1 menu.
+- Current response: the first direct response exposes pressed state. A
+  `card-current-response` line in the body identifies later/historical choices,
+  including a second choice that might not fit. Removal is available on Details.
+- The top-aligned description has up to five lines; a current response may use
+  a line. External CTAs and the generic headline stay on Details.
+
+### Form fit guardrails
+
+`ActivityForm` limits titles to 48 characters and short venue labels to 40; model
+storage stays at 160/200 to preserve legacy data. These limits apply to new and
+instance-bound forms. Inline character counters warn at 80% (39/48 and 32/40),
+with HTML maxlength and server validation. Longer copy belongs in descriptions,
+structured addresses and instructions. Browser comparison of normal prose and
+wide/narrow glyph strings informed the limits; runtime fitting remains necessary.
+
+## 14. Contextual Discover operations
+
+Context links retain applied search, repeated facets and other context, reset
+pagination, and AND with current filters. Each active context has an independent
+clear link; toolbar submissions, pagination and response forms preserve it.
+`organizer` is the activity's actual host account. `context_time` / `context_place`
+refer to a visible source activity: scheduled time matches its pilot local calendar
+day, dateless time matches the same explicit timing text; physical place matches
+its supplied structured location fields (or exact valid GPS when those are absent).
+Online place matches online/hybrid. Category uses the existing category slug.
+Unresolved time/place/category commands are omitted rather than inventing context.
+Invisible/missing source context cannot reveal private activities.
+
+`HiddenOrganizer` is a private, unique viewer/host preference, separate from
+friendship, user blocking and activity responses. Default Discover excludes both
+individually hidden activities and suppressed organizers; Show hidden includes them
+and the menu offers Unhide. Unhiding an organizer does not clear activity-specific
+hiding. No accounts or response data are changed by suppression.
+
+## 15. Review rule
 
 A UI change is not complete if it merely "works."
 

@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -135,6 +136,7 @@ class Activity(models.Model):
     allow_friend_of_friend_invites = models.BooleanField(default=False)
     is_personal_invitation = models.BooleanField(default=False)
     cost_type = models.CharField(max_length=12, choices=ActivityCostType.choices, default=ActivityCostType.UNKNOWN)
+    cost_amount = models.DecimalField(max_digits=9, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(Decimal("0"))], help_text="Amount per person in USD. Leave blank if not yet known.")
     cost_display = models.CharField(max_length=120, blank=True)
     cost_has_details = models.BooleanField(default=False)
     accommodations = models.TextField(blank=True)
@@ -238,3 +240,13 @@ class HiddenActivity(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=("user", "activity"), name="unique_hidden_activity")]
+
+
+class HiddenOrganizer(models.Model):
+    """Private Discover suppression; does not affect friendship or participation."""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="hidden_organizers")
+    organizer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="discovery_suppressions")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("user", "organizer"), name="unique_hidden_organizer")]

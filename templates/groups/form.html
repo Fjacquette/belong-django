@@ -10,8 +10,8 @@
       <div>{{ field.label_tag }}{{ field }}{% if field.help_text %}<p class="mt-1 text-sm" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</p>{% endif %}{{ field.errors }}</div>
     {% endfor %}
     <div class="flex items-center gap-4">
-      <button type="submit" class="rounded-full bg-belong-purple text-white px-5 py-3">Create group</button>
-      <a href="{% url 'activities:index' %}" class="text-belong-purple underline">Back to Discover</a>
+      <button type="submit" class="ui-button ui-button--primary ui-button--comfortable">Create group</button>
+      <a href="{% url 'activities:index' %}" class="ui-link">Back to Discover</a>
     </div>
   </form>
 </section>

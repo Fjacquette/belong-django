@@ -191,6 +191,40 @@ class DemoSeedingTests(TestCase):
         self.assertTrue(Activity.objects.filter(cost_type='unknown').exists())
         self.assertTrue(Activity.objects.exclude(location_gps='').exists())
         self.assertGreater(len({tuple(a.available_responses) for a in Activity.objects.all()}), 2)
+        for example in ACTIVITY_DATA:
+            activity = Activity.objects.get(title=example['title'])
+            self.assertEqual(activity.available_responses, example['available_responses'])
+            self.assertEqual(activity.cost_amount, example['cost_amount'])
+            self.assertNotEqual(activity.available_responses, ['interested', 'committed'])
+            self.assertIn(activity.responses.get().status, activity.available_responses)
+
+    def test_response_migration_updates_only_known_legacy_demo_choices(self):
+        from importlib import import_module
+        from django.apps import apps
+        self.seed()
+        update = import_module('activities.migrations.0009_demo_response_semantics').update_demo_responses
+        demo = self.first_demo_activity()
+        demo.available_responses = ['interested', 'committed', 'question']
+        demo.save()
+        personal = Activity.objects.create(host=demo.host, title=demo.title, description='Personal copy', available_responses=['interested', 'committed'])
+        responses = list(ActivityResponse.objects.values())
+        update(apps, None)
+        demo.refresh_from_db()
+        personal.refresh_from_db()
+        self.assertEqual(demo.available_responses, ['interested', 'more'])
+        self.assertEqual(personal.available_responses, ['interested', 'committed'])
+        self.assertEqual(list(ActivityResponse.objects.values()), responses)
+        demo.available_responses = ['vote', 'question']
+        demo.save()
+        update(apps, None)
+        demo.refresh_from_db()
+        self.assertEqual(demo.available_responses, ['vote', 'question'])
+        demo.available_responses = ['interested', 'committed']
+        demo.host = get_user_model().objects.get(username='belong_demo')
+        demo.save()
+        update(apps, None)
+        demo.refresh_from_db()
+        self.assertEqual(demo.available_responses, ['interested', 'committed'])
 
     def test_metadata_migration_preserves_custom_values_and_untracked_activity(self):
         from importlib import import_module
@@ -207,3 +241,65 @@ class DemoSeedingTests(TestCase):
         personal.refresh_from_db()
         self.assertEqual((demo.cost_type,demo.location_gps), ('paid','41,-76'))
         self.assertEqual((personal.cost_type,personal.location_gps), ('unknown',''))
+
+    def test_reconcile_only_stale_tracked_demo_responses(self):
+        from importlib import import_module
+        from django.apps import apps
+        self.seed()
+        reconcile = import_module('activities.migrations.0010_reconcile_demo_sample_responses').reconcile_demo_responses
+        repair = Activity.objects.get(title='Firefighter flashover training')
+        custom = Activity.objects.get(title='Co-ed softball league')
+        transferred = Activity.objects.get(title='Wednesday night paddle')
+        missing_tracking = Activity.objects.get(title='Need help moving')
+        for activity in [repair, custom, transferred, missing_tracking]:
+            activity.responses.update(status='interested')
+        custom.available_responses = ['question']
+        custom.save()
+        transferred.host = get_user_model().objects.get(username='belong_demo')
+        transferred.save()
+        DemoSeedRecord.objects.filter(key='response:need-help-moving:demo').delete()
+        real = get_user_model().objects.create_user(username='real-viewer')
+        real_response = ActivityResponse.objects.create(activity=repair, user=real, status='interested')
+        before = {r.pk: r.status for r in ActivityResponse.objects.all()}
+        reconcile(apps, None)
+        sample = repair.responses.exclude(user=real).get()
+        self.assertEqual(sample.status, 'committed')
+        after = {r.pk: r.status for r in ActivityResponse.objects.all()}
+        self.assertEqual({k: v for k, v in after.items() if k != sample.pk}, {k: v for k, v in before.items() if k != sample.pk})
+        real_response.refresh_from_db()
+        self.assertEqual(real_response.status, 'interested')
+        reconcile(apps, None)
+        self.assertEqual({r.pk: r.status for r in ActivityResponse.objects.all()}, after)
+
+    def test_structured_cost_migration_preserves_custom_and_untracked_data(self):
+        from importlib import import_module
+        from django.apps import apps
+        from decimal import Decimal
+        self.seed()
+        populate = import_module('activities.migrations.0012_demo_structured_cost').populate_demo_amounts
+        activity = Activity.objects.get(title='Firefighter flashover training')
+        activity.cost_amount = None
+        activity.save()
+        custom = Activity.objects.get(title='Wednesday night paddle')
+        custom.cost_amount = None
+        custom.cost_display = 'Custom quoted cost'
+        custom.save()
+        personal = Activity.objects.create(host=activity.host, title=activity.title, description='Personal', cost_type='paid', cost_display='$100')
+        transferred = Activity.objects.get(title='Co-ed softball league')
+        transferred.cost_amount = None
+        transferred.host = get_user_model().objects.get(username='belong_demo')
+        transferred.save()
+        responses = list(ActivityResponse.objects.values())
+        populate(apps, None)
+        for obj in [activity, custom, personal, transferred]:
+            obj.refresh_from_db()
+        self.assertEqual(activity.cost_amount, Decimal('100'))
+        self.assertIsNone(custom.cost_amount)
+        self.assertIsNone(personal.cost_amount)
+        self.assertIsNone(transferred.cost_amount)
+        self.assertEqual(list(ActivityResponse.objects.values()), responses)
+        activity.cost_amount = Decimal('75')
+        activity.save()
+        populate(apps, None)
+        activity.refresh_from_db()
+        self.assertEqual(activity.cost_amount, Decimal('75'))

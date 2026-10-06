@@ -22,7 +22,7 @@ class DiscoveryTests(TestCase):
         defaults = dict(host=cls.host, description='Do something together', starts_at=NOW-timedelta(hours=1),
                         location_type='hybrid', location_gps='40.0,-75.0', cost_type='free', category=cls.category)
         cls.near = Activity.objects.create(title='Nearby today', **defaults)
-        cls.paid = Activity.objects.create(title='Paid in person', **{**defaults, 'cost_type': 'paid', 'location_type': 'in_person'})
+        cls.paid = Activity.objects.create(title='Paid in person', **{**defaults, 'cost_type': 'paid', 'cost_amount': 5, 'location_type': 'in_person'})
         cls.far = Activity.objects.create(title='Far today', **{**defaults, 'location_gps': '35,-80'})
         cls.open = Activity.objects.create(title='Open-ended online', **{**defaults, 'starts_at': None, 'location_type': 'online'})
         cls.unknown = Activity.objects.create(title='Unknown cost', cost_display='Free-ish?', **{**defaults, 'cost_type': 'unknown'})
@@ -41,16 +41,16 @@ class DiscoveryTests(TestCase):
     def test_today_uses_local_date_and_excludes_dateless(self):
         self.assertEqual(self.ids({'today': '1'}), {a.pk for a in [self.near, self.paid, self.far, self.unknown]})
         self.assertEqual(self.ids({'timing': 'dateless'}), {self.open.pk})
-        self.assertEqual(self.ids({'timing': 'upcoming'}), {self.tomorrow.pk})
+        self.assertEqual(self.ids({'when': 'tomorrow'}), {self.tomorrow.pk})
 
     def test_individual_and_cumulative_filters(self):
         self.assertEqual(self.ids({'online': '1'}), {a.pk for a in [self.near, self.far, self.open, self.unknown, self.tomorrow]})
         self.assertEqual(self.ids({'free': '1'}), {a.pk for a in [self.near, self.far, self.open, self.tomorrow]})
         location = {'nearby': '1', 'lat': '40', 'lon': '-75'}
-        self.assertEqual(self.ids(location), {a.pk for a in [self.near, self.paid, self.open, self.unknown]})
-        self.assertEqual(self.ids({**location, 'today': '1', 'online': '1', 'free': '1'}), {self.near.pk})
+        self.assertEqual(self.ids(location), {a.pk for a in [self.near, self.paid, self.unknown]})
+        self.assertEqual(self.ids({'where': 'under_1', 'when': 'today', 'cost': 'free', 'lat': '40', 'lon': '-75'}), {self.near.pk})
         self.assertEqual(self.ids({'location': 'in_person', 'cost': 'paid', 'category': 'outdoors'}), {self.paid.pk})
-        self.assertEqual(self.ids({'cost': 'unknown'}), {self.unknown.pk})
+        self.assertNotIn(self.unknown.pk, self.ids({'cost': '1_10'}))
 
     def test_nearby_radius_and_invalid_coordinates(self):
         from .discovery import coordinates, distance_miles
@@ -63,8 +63,8 @@ class DiscoveryTests(TestCase):
         self.assertNotIn(self.near.pk, self.ids({'nearby': '1', 'lat': '40', 'lon': '-75'}))
         for location in [{}, {'lat': 'NaN', 'lon': '0'}, {'lat': '100', 'lon': '0'}]:
             response = self.discover({'nearby': '1', **location})
-            self.assertContains(response, 'Nearby is off')
-            self.assertFalse(next(f for f in response.context['quick_filters'] if f['name']=='nearby')['active'])
+            self.assertContains(response, 'Distance filters are off')
+            self.assertNotIn('nearby', response.context['filter_params'])
 
     def test_hide_unhide_are_private_and_preserve_participation(self):
         participation = ActivityResponse.objects.create(user=self.viewer, activity=self.near, status='question', note='Keep my question')
@@ -106,7 +106,7 @@ class DiscoveryTests(TestCase):
         for n in range(15):
             Activity.objects.create(host=self.host, title=f'Match {n}', description='Match', category=self.category,
                                     starts_at=NOW, location_gps='40,-75', location_type='online', cost_type='free')
-        params = {'q':'Match','category':'outdoors','timing':'today','nearby':'1','lat':'40','lon':'-75','location':'online_capable','cost':'free','hidden':'include'}
+        params = {'q':'Match','category':'outdoors','when':'today','where':'online','cost':'free','hidden':'include'}
         response = self.discover(params)
         self.assertTrue(response.context['page_obj'].has_next())
         from urllib.parse import parse_qs
@@ -118,11 +118,12 @@ class DiscoveryTests(TestCase):
     def test_quick_urls_normalize_to_one_canonical_state_and_closed_panel(self):
         response = self.discover({'today': '1', 'free': '1', 'online': '1'})
         self.assertEqual(response.context['filter_params'].dict(),
-                         {'timing': 'today', 'cost': 'free', 'location': 'online_capable'})
-        self.assertContains(response, '<option value="today" selected>Today</option>', html=True)
-        self.assertContains(response, '<option value="free" selected>Free</option>', html=True)
-        self.assertContains(response, '<option value="online_capable" selected>Online or hybrid</option>', html=True)
-        self.assertContains(response, '>Advanced filters</summary>')
+                         {'when': 'today', 'cost': 'free', 'where': 'online'})
+        facets = {f['name']: f for f in response.context['facets']}
+        self.assertTrue(facets['when']['active'])
+        self.assertTrue(facets['where']['active'])
+        self.assertTrue(facets['cost']['active'])
+        self.assertNotContains(response, 'Advanced filters')
         self.assertNotContains(response, '<details open')
         self.assertNotContains(response, 'name="today"')
         self.assertNotContains(response, 'name="free"')
@@ -133,22 +134,22 @@ class DiscoveryTests(TestCase):
         response = self.discover({'today': '1', 'timing': 'dateless', 'online': '1',
                                   'location': 'online', 'free': '1', 'cost': 'free'})
         self.assertEqual({a.pk for a in response.context['activities']}, {self.open.pk})
-        quick = {item['name']: item['active'] for item in response.context['quick_filters']}
-        self.assertFalse(quick['today'])
-        self.assertFalse(quick['online'])
-        self.assertTrue(quick['free'])
+        facets = {item['name']: item['active'] for item in response.context['facets']}
+        self.assertTrue(facets['when'])
+        self.assertTrue(facets['where'])
+        self.assertTrue(facets['cost'])
         self.assertEqual(self.ids({'free': '1', 'cost': 'paid', 'online': '1', 'location': 'in_person'}), {self.paid.pk})
         self.assertEqual(self.ids({'today': '1', 'timing': ''}), self.ids({}))
 
-    def test_clearing_each_quick_dimension_restores_results_from_empty_state(self):
-        # One paid, in-person activity scheduled tomorrow: each quick filter excludes it.
+    def test_clearing_each_facet_restores_results_from_empty_state(self):
         self.paid.starts_at = NOW + timedelta(days=1)
         self.paid.save()
         base = {'q': self.paid.title, 'category': 'outdoors', 'hidden': 'include'}
         for dimension, value, remaining in [
-            ('timing', 'today', {'cost': 'paid', 'location': 'in_person'}),
-            ('location', 'online_capable', {'cost': 'paid'}),
-            ('cost', 'free', {'location': 'in_person'}),
+            ('when', 'today', {'cost': '1_10'}),
+            ('where', 'online', {'cost': '1_10'}),
+            ('cost', 'free', {}),
+            ('audience', 'friends', {}),
         ]:
             with self.subTest(dimension=dimension):
                 baseline = {**base, **remaining}
@@ -156,15 +157,13 @@ class DiscoveryTests(TestCase):
                 self.assertEqual(self.ids({**baseline, dimension: value}), set())
                 response = self.discover({**baseline, dimension: ''})
                 self.assertEqual({a.pk for a in response.context['activities']}, {self.paid.pk})
-                self.assertEqual(response.context['filter_params'][dimension], '')
+                self.assertNotIn(dimension, response.context['filter_params'])
                 for name, expected in baseline.items():
                     self.assertEqual(response.context['filter_params'][name], expected)
-                self.assertFalse(any(item['active'] for item in response.context['quick_filters']))
-        baseline = {**base, 'cost': 'paid', 'location': 'in_person'}
-        self.assertEqual(self.ids({**baseline, 'nearby': '1', 'lat': '0', 'lon': '0'}), set())
+        baseline = {**base, 'cost': '1_10'}
+        self.assertEqual(self.ids({**baseline, 'where': 'under_1', 'lat': '0', 'lon': '0'}), set())
         response = self.discover({**baseline, 'lat': '', 'lon': ''})
         self.assertEqual({a.pk for a in response.context['activities']}, {self.paid.pk})
-        self.assertNotIn('nearby', response.context['filter_params'])
         self.assertNotIn('lat', response.context['filter_params'])
         self.assertNotIn('lon', response.context['filter_params'])
 
@@ -182,22 +181,25 @@ class DiscoveryTests(TestCase):
         self.assertContains(empty, 'js/discovery.js')
         self.assertNotContains(empty, 'class="activity-grid w-full"')
 
-    def test_view_selector_is_explicit_and_belongs_to_results_not_filters(self):
+    def test_view_selector_and_recovery_share_the_compact_toolbar(self):
         response = self.discover()
         self.assertContains(response, '<legend class="sr-only">Card view</legend>', html=True)
         self.assertContains(response, 'type="radio" name="card-view" value="stacked"')
         self.assertContains(response, 'type="radio" name="card-view" value="all"')
         self.assertContains(response, '>Stacked</span>')
         self.assertContains(response, '>Spread out</span>')
-        self.assertContains(response, 'data-results-utilities')
-        self.assertContains(response, '<select form="discovery-filters" name="timing"')
+        self.assertContains(response, 'class="discovery-toolbar"')
+        self.assertContains(response, 'data-facet="when"')
         markup = response.content.decode()
         filter_form = markup.split('id="discovery-filters"', 1)[1].split('</form>', 1)[0]
-        self.assertNotIn('card-view-selector', filter_form)
+        self.assertIn('card-view-selector', filter_form)
+        self.assertIn('Show hidden', filter_form)
+        self.assertLess(filter_form.index('type="hidden" name="hidden"'),
+                        filter_form.index('type="submit" form="discovery-filters" name="hidden"'))
         results = markup.split('data-activity-results', 1)[1]
-        self.assertIn('card-view-selector', results)
-        self.assertIn('>Advanced filters</summary>', results)
-        self.assertLess(results.index('card-view-selector'), results.index('data-stack-root'))
+        self.assertNotIn('card-view-selector', results)
+        self.assertNotIn('Advanced filters', results)
+        self.assertLess(markup.index('card-view-selector'), markup.index('data-stack-root\n'))
 
     def test_card_tooltips_details_private_buttons_and_floating_create(self):
         self.near.title = 'Long activity title ' * 8
@@ -208,10 +210,10 @@ class DiscoveryTests(TestCase):
         response = self.discover({'q':'Long activity'})
         self.assertContains(response, f'title="{self.near.title}"')
         self.assertContains(response, f'title="{self.near.description}"')
-        self.assertContains(response, f'title="{self.near.organizer_name}"')
-        self.assertContains(response, 'Full details and all response choices')
-        self.assertContains(response, '>Details</a>')
-        self.assertContains(response, '>Hide</button>')
+        self.assertContains(response, self.near.organizer_name)
+        self.assertContains(response, f'href="{reverse("activities:detail", args=[self.near.pk])}"')
+        self.assertNotContains(response, 'card-utilities')
+        self.assertNotContains(response, '>Hide</button>')
         self.assertContains(response, 'aria-label="Create"')
         self.assertNotContains(response, 'href="/discover/categories/"')
 

@@ -22,6 +22,9 @@ _DATETIME_INPUT_KWARGS = {
 
 
 class ActivityForm(forms.ModelForm):
+    title = forms.CharField(max_length=48, help_text="Keep the activity name short (48 characters max). Put longer copy in the description.")
+    location_name = forms.CharField(max_length=40, required=False, label="Venue / short location label",
+                                   help_text="Use a short place name (40 characters max). Put the full address and directions below.")
     starts_at = forms.DateTimeField(**_DATETIME_INPUT_KWARGS)
     ends_at = forms.DateTimeField(**_DATETIME_INPUT_KWARGS)
     post_until = forms.DateTimeField(**_DATETIME_INPUT_KWARGS)
@@ -30,7 +33,7 @@ class ActivityForm(forms.ModelForm):
         required=False,
         initial=list(DEFAULT_RESPONSE_CHOICES),
         widget=forms.CheckboxSelectMultiple,
-        help_text="Choose what intent is useful for this activity. The first two appear on its card; all choices appear in Details.",
+        help_text="Choose what intent is useful for this activity. One or two complete choices appear on its card when they fit; all choices appear in Details.",
     )
 
     class Meta:
@@ -65,6 +68,7 @@ class ActivityForm(forms.ModelForm):
             "allow_friend_of_friend_invites",
             "is_personal_invitation",
             "cost_type",
+            "cost_amount",
             "cost_display",
             "cost_has_details",
             "accommodations",
@@ -98,18 +102,20 @@ class ActivityForm(forms.ModelForm):
             Q(owner=user) | Q(memberships__user=user, memberships__role="organizer", memberships__status="active")
         ).distinct() if user and user.is_authenticated else Group.objects.none()
         self.fields["group"].help_text = "Optional. Link an activity to a group you organize; participation still follows the activity audience."
-        self.fields["location_gps"].help_text = "Latitude, longitude; used for Nearby within 25 miles."
+        self.fields["location_gps"].help_text = "Latitude, longitude; used for discovery distance tiers."
         self.fields["audience"].choices = PILOT_AUDIENCE_CHOICES
-        base_classes = (
-            "mt-1 w-full border border-white/70 rounded-xl px-4 py-2 bg-white "
-            "focus:outline-none focus:ring-2 focus:ring-belong-purple/30 focus:border-belong-purple"
-        )
+        for name in ("title", "location_name"):
+            field_id = self[name].auto_id
+            self.fields[name].widget.attrs["aria-describedby"] = f"{field_id}_helptext {field_id}_counter"
+        base_classes = "ui-field mt-1"
         for name, field in self.fields.items():
             widget = field.widget
             existing = widget.attrs.get("class", "")
             widget.attrs["class"] = f"{existing} {base_classes}".strip()
             if isinstance(widget, forms.CheckboxSelectMultiple):
                 widget.attrs["class"] = "grid grid-cols-1 gap-2"
+            elif isinstance(widget, forms.CheckboxInput):
+                widget.attrs["class"] = "ui-check"
 
         if self.instance and self.instance.pk and self.instance.available_responses:
             self.fields["available_responses"].initial = self.instance.available_responses
@@ -119,6 +125,19 @@ class ActivityForm(forms.ModelForm):
         self.fields["organizer_image"].queryset = ImageAsset.objects.filter(
             purpose=ImageAssetPurpose.ORGANIZER
         )
+
+    def clean(self):
+        data = super().clean()
+        amount = data.get('cost_amount')
+        kind = data.get('cost_type')
+        if amount is not None:
+            if kind == 'free' and amount != 0:
+                self.add_error('cost_amount', 'A free activity must have a zero cost.')
+            elif kind != 'free' and amount == 0:
+                self.add_error('cost_type', 'Choose Free for a zero cost.')
+            elif kind == 'unknown':
+                self.add_error('cost_type', 'Choose Paid when the numeric cost is known.')
+        return data
 
     def clean_location_gps(self):
         from .discovery import coordinates

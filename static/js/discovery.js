@@ -1,49 +1,59 @@
 (function () {
   const form = document.getElementById('discovery-filters');
   if (!form) return;
-  const nearby = form.elements.nearby;
   const feedback = document.getElementById('location-feedback');
-  const shortcuts = {today: ['timing', 'today'], online: ['location', 'online_capable'], free: ['cost', 'free']};
-  const quickInputs = form.querySelectorAll('[data-quick-filter]');
-  const syncQuick = () => quickInputs.forEach(input => {
-    const mapping = shortcuts[input.dataset.quickFilter];
-    if (mapping) input.checked = form.elements[mapping[0]].value === mapping[1];
-  });
-  Object.values(shortcuts).forEach(([dimension]) => form.elements[dimension].addEventListener('change', syncQuick));
-  // Quick/advanced filter submissions retain the applied text query, not a draft.
+  const distanceInputs = Array.from(form.querySelectorAll('[data-distance]'));
+  let generation = 0;
+  function submit(facet, value) {
+    try { sessionStorage.setItem('belong-open-facet', JSON.stringify({facet, value})); } catch (_) {}
+    form.requestSubmit();
+  }
+  // Facet/list-management changes retain the applied search, not unsubmitted typing.
   form.addEventListener('submit', event => {
     if (!event.submitter || !event.submitter.hasAttribute('data-text-search')) form.elements.q.value = form.dataset.query;
   });
-  const fail = (message) => {
-    nearby.checked = false;
-    nearby.disabled = false;
-    form.elements.lat.value = '';
-    form.elements.lon.value = '';
-    feedback.textContent = message;
-  };
-  quickInputs.forEach(input => input.addEventListener('change', () => {
-    const mapping = shortcuts[input.dataset.quickFilter];
-    if (mapping) {
-      form.elements[mapping[0]].value = input.checked ? mapping[1] : '';
-      form.requestSubmit();
-      return;
-    }
-    if (!nearby.checked) {
+  form.querySelectorAll('[data-facet] input').forEach(input => input.addEventListener('change', () => {
+    const token = ++generation;
+    const facet = input.closest('[data-facet]').dataset.facet;
+    const hasDistance = distanceInputs.some(choice => choice.checked);
+    form.elements.location_notice.value = '';
+    if (!hasDistance) {
       form.elements.lat.value = '';
       form.elements.lon.value = '';
-      form.requestSubmit();
+      submit(facet, input.value);
       return;
     }
-    if (!navigator.geolocation) { fail('Nearby is off. This browser cannot provide location.'); return; }
-    nearby.disabled = true;
+    if (form.elements.lat.value && form.elements.lon.value) { submit(facet, input.value); return; }
     feedback.textContent = 'Getting your location…';
+    const fail = () => {
+      if (token !== generation) return;
+      distanceInputs.forEach(choice => { choice.checked = false; });
+      form.elements.lat.value = '';
+      form.elements.lon.value = '';
+      form.elements.location_notice.value = 'unavailable';
+      submit(facet, input.value);
+    };
+    if (!navigator.geolocation) { fail(); return; }
     navigator.geolocation.getCurrentPosition(position => {
-      nearby.disabled = false;
+      if (token !== generation) return;
       form.elements.lat.value = position.coords.latitude;
       form.elements.lon.value = position.coords.longitude;
-      form.requestSubmit();
-    }, () => fail('Nearby is off. Location access was denied or unavailable.'),
-    {timeout: 10000, maximumAge: 60000, enableHighAccuracy: false});
+      submit(facet, input.value);
+    }, fail, {timeout: 10000, maximumAge: 60000, enableHighAccuracy: false});
   }));
-  syncQuick();
+  form.querySelectorAll('[data-facet]').forEach(menu => menu.addEventListener('toggle', () => {
+    if (menu.open) form.querySelectorAll('[data-facet]').forEach(peer => { if (peer !== menu) peer.open = false; });
+  }));
+  try {
+    const state = JSON.parse(sessionStorage.getItem('belong-open-facet'));
+    sessionStorage.removeItem('belong-open-facet');
+    if (state) {
+      const menu = Array.from(form.querySelectorAll('[data-facet]')).find(item => item.dataset.facet === state.facet);
+      if (menu) {
+        menu.open = true;
+        const input = Array.from(menu.querySelectorAll('input')).find(item => item.value === state.value);
+        (input || menu.querySelector('summary')).focus();
+      }
+    }
+  } catch (_) {}
 }());

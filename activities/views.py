@@ -1,19 +1,24 @@
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import datetime, time, timedelta
 from typing import Dict, List
+from urllib.parse import urlsplit
+from zoneinfo import ZoneInfo
+
+from django.conf import settings
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
 from django.utils.http import url_has_allowed_host_and_scheme
-from .discovery import canonical_filters, filter_activities
-from django.http import HttpRequest, HttpResponse
+from .discovery import canonical_filters, filter_activities, facet_context
+from django.http import HttpRequest, HttpResponse, QueryDict
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.utils import timezone
+from django.utils.formats import date_format
 
 from .forms import ActivityForm
 from .visibility import visible_activities
@@ -21,6 +26,7 @@ from .models import (
     Activity,
     ActivityCostType,
     HiddenActivity,
+    HiddenOrganizer,
     ActivityCategory,
     ActivityLocationType,
     ActivityResponse,
@@ -45,20 +51,25 @@ def _decorate_activity(activity: Activity) -> None:
     )
     activity.display_category_name = category.name if category else "Belong"
 
-    if activity.headline:
-        activity.display_subline = activity.headline
+    when = date_format(timezone.localtime(activity.starts_at), "D M j, g:i A") if activity.starts_at else activity.freetext_when or "Date TBD"
+    if when.strip().lower() in {"tbd", "tba"}:
+        when = "Date TBD"
+    if activity.location_type == ActivityLocationType.ONLINE:
+        where = "Online"
     else:
-        meta_parts = []
-        if activity.freetext_when:
-            meta_parts.append(activity.freetext_when)
-        if activity.location_city:
-            location = activity.location_city
-            if activity.location_state:
-                location = f"{location}, {activity.location_state}"
-            meta_parts.append(location)
-        elif activity.location_type == ActivityLocationType.ONLINE:
-            meta_parts.append("Online")
-        activity.display_subline = " • ".join(meta_parts)
+        where = activity.location_name or ", ".join(filter(None, [activity.location_city, activity.location_state])) or "Location TBD"
+        if activity.location_type == ActivityLocationType.HYBRID:
+            where += " / Online"
+    activity.display_when = when
+    activity.display_where = where
+    from .card_style import response_accent
+    activity.card_accent = response_accent(activity.display_color_primary)
+    activity.display_audience = activity.get_audience_display()
+    activity.display_cost = activity.cost_display or (f"${activity.cost_amount:g}" if activity.cost_amount is not None and activity.cost_type == "paid" else "") or {"free": "Free", "paid": "Paid", "unknown": "Cost TBD"}.get(activity.cost_type, "Cost TBD")
+
+    activity.compact_cost = ("Free" if activity.cost_type == "free" else
+                             f"${activity.cost_amount.normalize():f}" if activity.cost_type == "paid" and activity.cost_amount is not None
+                             else activity.display_cost)
 
 
 def _friend_context(user) -> List[Dict[str, object]]:
@@ -140,7 +151,11 @@ def _build_join_context(request: HttpRequest, activity: Activity) -> Dict[str, o
         "activity": activity,
         "attendee_count": attendee_count,
         "response_count": len(responses),
-        "response_counts_label": "; ".join(f"{label}: {sum(r.status == value for r in responses)}" for value, label in ActivityResponseStatus.choices),
+        "response_counts_label": "; ".join(
+            f"{label}: {sum(r.status == value for r in responses)}"
+            for value, label in ActivityResponseStatus.choices
+            if value in activity.active_responses() or any(r.status == value for r in responses)
+        ),
         "interested_count": interested_count,
         "committed_count": committed_count,
         "joined": activity.is_joined,
@@ -187,14 +202,17 @@ def index(request: HttpRequest) -> HttpResponse:
     params = canonical_filters(request.GET)
     hidden_mode = params.get("hidden", "exclude")
     hidden_ids = HiddenActivity.objects.filter(user=request.user).values("activity_id")
+    hidden_organizers = set(HiddenOrganizer.objects.filter(user=request.user).values_list("organizer_id", flat=True))
+    hidden_condition = Q(pk__in=hidden_ids) | Q(host_id__in=hidden_organizers)
     if hidden_mode == "only":
-        activities_qs = activities_qs.filter(pk__in=hidden_ids)
+        activities_qs = activities_qs.filter(hidden_condition)
     elif hidden_mode != "include":
-        activities_qs = activities_qs.exclude(pk__in=hidden_ids)
+        activities_qs = activities_qs.exclude(hidden_condition)
     activities_qs, nearby, filter_warning = filter_activities(activities_qs, params)
     if not nearby:
         for name in ("nearby", "lat", "lon"):
             params.pop(name, None)
+    activities_qs, active_context = _filter_context(request, activities_qs, params)
     category_slug = params.get("category")
     if category_slug:
         activities_qs = activities_qs.filter(category__slug=category_slug)
@@ -219,6 +237,8 @@ def index(request: HttpRequest) -> HttpResponse:
     hidden_set = set(hidden_ids.values_list("activity_id", flat=True))
     for activity in activities:
         activity.is_hidden = activity.pk in hidden_set
+    for activity in activities:
+        _card_context(request, activity, params, hidden_organizers)
     pagination_params = params.copy()
     pagination_params.pop("page", None)
 
@@ -229,11 +249,10 @@ def index(request: HttpRequest) -> HttpResponse:
         "categories": ActivityCategory.objects.all().order_by("name"),
         "active_category": category_slug,
         "filter_params": params,
+        "active_context": active_context,
+        "context_params": [(key, value) for key in ("organizer", "context_time", "context_place") for value in params.getlist(key)],
         "filter_warning": filter_warning,
-        "quick_filters": [{"name": name, "label": label, "active": params.get(dimension) == value}
-                          for name, label, dimension, value in [("today", "Today", "timing", "today"), ("nearby", "Nearby", "nearby", "1"), ("online", "Online", "location", "online_capable"), ("free", "Free", "cost", "free")]],
-        "location_choices": [("online_capable", "Online or hybrid"), *ActivityLocationType.choices],
-        "cost_choices": ActivityCostType.choices,
+        "facets": facet_context(params),
         "pagination_query": pagination_params.urlencode(),
         "query": query,
     }
@@ -345,6 +364,10 @@ def _render_join_region(request: HttpRequest, activity: Activity) -> HttpRespons
         return redirect(_participation_next_path(request, activity))
     context = _build_join_context(request, activity)
     context["variant"] = variant
+    if variant == "card":
+        _decorate_activity(activity)
+        _card_context(request, activity, canonical_filters(QueryDict(urlsplit(context["next_path"]).query)))
+        return render(request, "activities/_card.html", context)
     return render(request, "activities/_join_region.html", context)
 
 
@@ -362,3 +385,100 @@ def hide(request: HttpRequest, pk: int) -> HttpResponse:
     if request.headers.get("HX-Request") == "true":
         return HttpResponse(headers={"HX-Refresh": "true"})
     return redirect(destination)
+
+
+def _context_url(params, key, value=None):
+    params = params.copy()
+    params.pop("page", None)
+    if value is None:
+        params.pop(key, None)
+    else:
+        params[key] = str(value)
+    query = params.urlencode()
+    return reverse("activities:index") + ("?" + query if query else "")
+
+
+def _card_context(request, activity, params, hidden_organizers=None):
+    activity.context_actions = [
+        {"label": "More from this organizer", "url": _context_url(params, "organizer", activity.host_id)},
+        {"label": "More at this time", "url": _context_url(params, "context_time", activity.pk)}
+        if activity.starts_at or activity.freetext_when.strip() else None,
+        {"label": "More at this place", "url": _context_url(params, "context_place", activity.pk)}
+        if activity.location_type == "online" or _place_fields(activity) else None,
+        {"label": "More in this category", "url": _context_url(params, "category", activity.category.slug)}
+        if activity.category else None,
+    ]
+    activity.context_actions = [item for item in activity.context_actions if item]
+    activity.organizer_hidden = (activity.host_id in hidden_organizers if hidden_organizers is not None
+                                 else HiddenOrganizer.objects.filter(user=request.user, organizer_id=activity.host_id).exists())
+
+
+def _place_fields(activity):
+    # Structured address wins; named locations and valid GPS points remain useful.
+    from .discovery import coordinates
+    fields = ["location_name", "location_address1", "location_address2", "location_city", "location_state", "location_zip"]
+    values = {field + "__iexact": getattr(activity, field).strip() for field in fields if getattr(activity, field).strip()}
+    if not values and coordinates(activity.location_gps):
+        values = {"location_gps": activity.location_gps}
+    return values
+
+
+def _filter_context(request, queryset, params):
+    """Context filters AND with existing facets/search; each can be cleared independently."""
+    active = []
+    for key in ("organizer", "context_time", "context_place"):
+        value = params.get(key, "")
+        if not value.isdecimal() or len(value) > 18:
+            params.pop(key, None)
+            continue
+        if key == "organizer":
+            # Resolve through activities the viewer may see, never expose private context.
+            source = visible_activities(request.user).filter(host_id=int(value)).select_related("host").first()
+        else:
+            source = visible_activities(request.user).filter(pk=int(value)).select_related("host").first()
+        if source is None:
+            params.pop(key, None)
+            continue
+        if key == "organizer":
+            queryset = queryset.filter(host_id=source.host_id)
+            label = "Organizer: " + (source.organizer_name or source.host.get_full_name() or source.host.username)
+        elif key == "context_time":
+            if source.starts_at:
+                zone = ZoneInfo(settings.PILOT_TIME_ZONE)
+                day = source.starts_at.astimezone(zone).date()
+                start = datetime.combine(day, time.min, tzinfo=zone)
+                queryset = queryset.filter(starts_at__gte=start, starts_at__lt=start+timedelta(days=1))
+                label = "Time: " + date_format(start, "D M j")
+            elif source.freetext_when.strip():
+                queryset = queryset.filter(starts_at__isnull=True, freetext_when__iexact=source.freetext_when.strip())
+                label = "Time: " + source.freetext_when
+            else:
+                params.pop(key, None)
+                continue
+        else:
+            if source.location_type == "online":
+                queryset = queryset.filter(location_type__in=["online", "hybrid"])
+                label = "Place: Online"
+            elif _place_fields(source):
+                queryset = queryset.filter(location_type__in=["in_person", "hybrid"], **_place_fields(source))
+                label = "Place: " + (source.location_name or source.location_city or "Selected location")
+            else:
+                params.pop(key, None)
+                continue
+        active.append({"label": label, "clear_url": _context_url(params, key)})
+    if params.get("category"):
+        category = ActivityCategory.objects.filter(slug=params["category"]).first()
+        if category:
+            active.append({"label": "Category: " + category.name, "clear_url": _context_url(params, "category")})
+    return queryset, active
+
+
+@login_required
+@require_POST
+def hide_organizer(request: HttpRequest, pk: int) -> HttpResponse:
+    activity = get_object_or_404(visible_activities(request.user), pk=pk)
+    if request.POST.get("hidden") == "0":
+        HiddenOrganizer.objects.filter(user=request.user, organizer_id=activity.host_id).delete()
+    else:
+        HiddenOrganizer.objects.get_or_create(user=request.user, organizer_id=activity.host_id)
+    return redirect(_participation_next_path(request, activity))

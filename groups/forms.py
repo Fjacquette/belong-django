@@ -14,4 +14,4 @@ class GroupForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
-            field.widget.attrs["class"] = "mt-1 w-full min-w-0 border rounded-xl px-3 py-2 bg-white"
+            field.widget.attrs["class"] = "ui-field mt-1"
