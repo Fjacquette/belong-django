@@ -161,7 +161,7 @@ class GroupTests(TestCase):
         self.client.force_login(self.owner)
         page = self.client.get(reverse("groups:create"))
         form = page.context["form"]
-        self.assertEqual(list(form.fields), ["name", "description", "access"])
+        self.assertEqual(list(form.fields), ["name", "description", "access", "image", "image_upload", "default_activity_image", "default_activity_image_upload"])
         self.assertEqual([value for value, label in form.fields["access"].choices if value], GroupAccess.values)
         from django.test import RequestFactory
         request = RequestFactory().get("/admin/")
@@ -273,7 +273,8 @@ class GroupTests(TestCase):
     def test_activity_creation_prefills_group_and_saves_optional_link(self):
         self.client.force_login(self.owner)
         response = self.client.get(reverse("activities:create"), {"group": self.group.pk})
-        self.assertEqual(response.context["form"].initial["group"], str(self.group.pk))
+        self.assertEqual(response.context["form"].initial["group"], self.group.pk)
+        self.assertTrue(response.context["form"].fields["group"].disabled)
         data = {"title": "Saturday hike", "description": "Trail walk", "location_type": "tbd", "audience": "everyone", "cost_type": "unknown"}
         for group_id in [self.group.pk, ""]:
             response = self.client.post(reverse("activities:create"), {**data, "group": group_id})

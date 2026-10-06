@@ -94,13 +94,21 @@ class ActivityForm(forms.ModelForm):
             "location_type": forms.Select(choices=ActivityLocationType.choices),
         }
 
-    def __init__(self, *args, user=None, **kwargs) -> None:
+    def __init__(self, *args, user=None, context_group=None, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         from django.db.models import Q
         from groups.models import Group
         self.fields["group"].queryset = Group.objects.filter(
             Q(owner=user) | Q(memberships__user=user, memberships__role="organizer", memberships__status="active")
         ).distinct() if user and user.is_authenticated else Group.objects.none()
+        self.fields['group'].label = 'For a group?'
+        self.context_group = context_group
+        if context_group:
+            self.initial['group'] = context_group.pk
+            self.fields['group'].disabled = True
+            if not self.is_bound:
+                self.initial.setdefault('header_image', context_group.default_activity_image_id)
+        self.order_fields(['group'] + [name for name in self.fields if name != 'group'])
         self.fields["group"].help_text = "Optional. Link an activity to a group you organize; participation still follows the activity audience."
         self.fields["location_gps"].help_text = "Latitude, longitude; used for discovery distance tiers."
         self.fields["audience"].choices = PILOT_AUDIENCE_CHOICES
@@ -152,6 +160,8 @@ class ActivityForm(forms.ModelForm):
 
     def save(self, commit=True):
         instance: Activity = super().save(commit=False)
+        if not instance.pk and not instance.header_image_id and instance.group_id:
+            instance.header_image = instance.group.default_activity_image
         if not instance.available_responses:
             instance.available_responses = list(DEFAULT_RESPONSE_CHOICES)
         if commit:

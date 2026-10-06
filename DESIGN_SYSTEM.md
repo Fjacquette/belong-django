@@ -502,6 +502,11 @@ Compactness comes from hierarchy and omission, not from shrinking random control
 - standard field height/radius/border family
 - help text only when it changes successful use
 
+Group access uses `ui-radio-choice`: native radios in a fieldset with an explicit
+legend, a full descriptive label and a visible selected border/background. Create
+workflows suppress the global + and remain full-page forms. Group-scoped activity
+creation shows its context above the main fields; image defaults seed new records.
+
 ## 10. Responsive behavior
 
 Mobile is designed, not compressed.

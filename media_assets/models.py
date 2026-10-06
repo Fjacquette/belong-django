@@ -14,6 +14,7 @@ class ImageAssetPurpose(models.TextChoices):
     GENERIC = "generic", "Generic"
     PROFILE_AVATAR = "profile_avatar", "Profile avatar"
     ORGANIZER = "organizer", "Activity organizer"
+    GROUP_IMAGE = "group_image", "Group image"
     ACTIVITY_HEADER = "activity_header", "Activity header"
 
 

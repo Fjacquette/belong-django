@@ -3,11 +3,13 @@
 {% block content %}
 <section class="max-w-2xl mx-auto space-y-5 break-words">
   <a href="{% url 'activities:index' %}" class="ui-link">← Discover</a>
+  {% if group.image %}<img src="{{ group.image.get_absolute_url }}" alt="{{ group.name }} group image" class="h-24 w-24 rounded-xl object-cover">{% endif %}
   <h1 class="text-3xl font-display">{{ group.name }}</h1>
   <p class="whitespace-pre-line">{{ group.description }}</p>
   <p class="text-sm">Primary organizer: {{ group.owner.get_full_name|default:group.owner.username }}</p>
   <p class="text-sm">{{ group.get_access_display }} · {{ group.access_description }}</p>
   {% if organizer %}
+    <a href="{% url 'groups:edit' group.pk %}" class="ui-link inline-flex items-center min-h-11">Edit group and image defaults</a>
     <a href="{% url 'activities:create' %}?group={{ group.pk }}" class="ui-link inline-flex items-center min-h-11">Create an activity for this group</a>
   {% endif %}
   {% if organizer %}

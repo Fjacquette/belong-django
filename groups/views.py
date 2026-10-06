@@ -20,7 +20,7 @@ def _visible_group(user, pk):
 
 @login_required
 def create(request):
-    form = GroupForm(request.POST if request.method == "POST" else None)
+    form = GroupForm(request.POST if request.method == "POST" else None, request.FILES if request.method == "POST" else None, user=request.user)
     if request.method == "POST" and form.is_valid():
         with transaction.atomic():
             group = form.save(commit=False)
@@ -28,7 +28,21 @@ def create(request):
             group.save()
             GroupMembership.objects.create(group=group, user=request.user, role=MemberRole.ORGANIZER)
         return redirect(group)
-    return render(request, "groups/form.html", {"form": form})
+    return render(request, "groups/form.html", {"form": form, "suppress_create": True})
+
+
+@login_required
+def edit(request, pk):
+    group = get_object_or_404(Group, pk=pk)
+    if not group.can_organize(request.user):
+        raise Http404
+    form = GroupForm(request.POST if request.method == 'POST' else None,
+                     request.FILES if request.method == 'POST' else None, instance=group, user=request.user)
+    if request.method == 'POST' and form.is_valid():
+        with transaction.atomic():
+            form.save()
+        return redirect(group)
+    return render(request, 'groups/form.html', {'form': form, 'group': group, 'suppress_create': True})
 
 
 @login_required

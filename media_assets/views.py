@@ -6,7 +6,7 @@ from django.http import Http404, HttpResponse
 from django.utils.http import content_disposition_header, http_date
 from django.views import View
 
-from .models import ImageAsset
+from .models import ImageAsset, ImageAssetPurpose
 from .images import image_mime_type
 
 
@@ -15,10 +15,13 @@ class ServeImageAssetView(LoginRequiredMixin, View):
 
     def get(self, request, pk: str) -> HttpResponse:  # pragma: no cover - thin wrapper
         try:
-            asset = ImageAsset.objects.only("data", "content_type", "size", "filename", "updated_at").get(pk=pk)
+            asset = ImageAsset.objects.only("purpose", "data", "content_type", "size", "filename", "updated_at").get(pk=pk)
         except ImageAsset.DoesNotExist as exc:  # pragma: no cover
             raise Http404("Image not found") from exc
 
+        if asset.purpose == ImageAssetPurpose.GROUP_IMAGE:
+            if not any(group.can_view(request.user) for group in asset.group_images.all()):
+                raise Http404('Image not found')
         payload = bytes(asset.data)
         try:
             content_type = image_mime_type(payload)
