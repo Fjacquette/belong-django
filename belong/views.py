@@ -7,10 +7,10 @@ from django.contrib.auth.views import LoginView, PasswordChangeView, PasswordCha
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.shortcuts import redirect, render
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.views.decorators.http import require_http_methods
 
-from .forms import StyledAuthenticationForm, StyledUserCreationForm, InvitedUserCreationForm, ProfileForm, EmailChangeForm, VerificationEmailForm, style_fields
+from .forms import StyledAuthenticationForm, StyledUserCreationForm, InvitedUserCreationForm, ProfileForm, EmailChangeForm, VerificationEmailForm, InterestsForm, style_fields
 from .email_verification import send_verification, confirm_email
 
 logger = logging.getLogger(__name__)
@@ -39,10 +39,9 @@ class BrandLoginView(LoginView):
     template_name = 'registration/login.html'
 
     def get_success_url(self):
-        from groups.invitations import finish_pending
         if not self.request.user.profile.can_use_belong:
             return reverse_lazy('verification_status')
-        return finish_pending(self.request) or super().get_success_url()
+        return after_verification(self.request, super().get_success_url())
 
 
 @require_http_methods(['GET', 'POST'])
@@ -70,8 +69,7 @@ def signup(request):
 @require_http_methods(['GET', 'POST'])
 def verification_status(request):
     if request.user.profile.can_use_belong:
-        from groups.invitations import finish_pending
-        return redirect(finish_pending(request) or 'account_settings')
+        return redirect(after_verification(request))
     profile = request.user.profile
     from groups.invitations import pending_invitation, usable
     invitation = pending_invitation(request)
@@ -102,10 +100,9 @@ def verify_email(request, token):
         else:
             messages.success(request, 'Email verified.')
             if request.user.is_authenticated and request.user.pk == user.pk:
-                from groups.invitations import finish_pending
                 # Refresh the cached profile after confirmation.
                 request.user.refresh_from_db()
-                return redirect(finish_pending(request) or 'account_settings')
+                return redirect(after_verification(request))
             return redirect('login')
     response = render(request, 'registration/verify_email.html', {'error': error, 'suppress_create': True})
     response['Cache-Control'] = 'no-store'
@@ -149,3 +146,40 @@ class BrandPasswordChangeView(PasswordChangeView):
 class BrandPasswordChangeDoneView(PasswordChangeDoneView):
     template_name = 'registration/password_change_done.html'
     extra_context = {'suppress_create': True}
+
+
+def after_verification(request, fallback='account_settings'):
+    from groups.invitations import finish_pending
+    destination = finish_pending(request)
+    if request.user.profile.interests_prompt_pending:
+        if destination:
+            # Only a server-generated invitation destination is stored, never a supplied URL.
+            request.session['interests_return'] = destination
+        return reverse('account_interests')
+    return destination or fallback
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def account_interests(request):
+    profile = request.user.profile
+    onboarding = profile.interests_prompt_pending
+    form = InterestsForm(request.POST if request.method == 'POST' else None, profile=profile)
+    if request.method == 'POST':
+        if request.POST.get('action') == 'skip' and onboarding:
+            profile.interests_prompt_pending = False
+            profile.save(update_fields=['interests_prompt_pending'])
+            return redirect(request.session.pop('interests_return', None) or 'activities:index')
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Interests saved.')
+            return redirect(request.session.pop('interests_return', None) or ('activities:index' if onboarding else 'account_settings'))
+    # Group canonical form choices without introducing a second set of submitted inputs.
+    sections = {}
+    for choice, interest in zip(form['interests'], form.fields['interests'].queryset):
+        sections.setdefault(interest.section or 'Other interests', []).append(choice)
+    response = render(request, 'registration/interests.html', {
+        'form': form, 'sections': sections, 'onboarding': onboarding, 'suppress_create': True,
+    })
+    response['Cache-Control'] = 'no-store'
+    return response

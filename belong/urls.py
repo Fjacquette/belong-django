@@ -25,6 +25,7 @@ urlpatterns = [
     path('accounts/signup/', views.signup, name='signup'),
     path('accounts/verification/', views.verification_status, name='verification_status'),
     path('accounts/verify/<str:token>/', views.verify_email, name='verify_email'),
+    path('accounts/interests/', views.account_interests, name='account_interests'),
     path('accounts/settings/', views.account_settings, name='account_settings'),
     path('accounts/password_change/', views.BrandPasswordChangeView.as_view(), name='password_change'),
     path('accounts/password_change/done/', views.BrandPasswordChangeDoneView.as_view(), name='password_change_done'),

@@ -7,7 +7,7 @@ from django.db import transaction
 
 from media_assets.images import normalized_avatar
 from media_assets.models import ImageAsset, ImageAssetPurpose
-from social.models import UserProfile
+from social.models import UserProfile, Interest, InterestSuggestion
 from .email_verification import email_available
 
 BASE_INPUT_CLASSES = 'ui-field min-h-11'
@@ -59,7 +59,8 @@ class StyledUserCreationForm(UserCreationForm):
                 profile.account_type = self.cleaned_data['account_type']
                 profile.display_name = self.cleaned_data['display_name']
                 profile.legacy_access = False
-                profile.save(update_fields=['account_type', 'display_name', 'legacy_access'])
+                profile.interests_prompt_pending = True
+                profile.save(update_fields=['account_type', 'display_name', 'legacy_access', 'interests_prompt_pending'])
             return user
 
 
@@ -139,3 +140,30 @@ class VerificationEmailForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         style_fields(self)
+
+
+class InterestsForm(forms.Form):
+    interests = forms.ModelMultipleChoiceField(queryset=Interest.objects.all(), required=False,
+                                               widget=forms.CheckboxSelectMultiple)
+    suggestion = forms.CharField(label='Something else?', max_length=300, required=False,
+        help_text='Suggest an interest for us to consider. Suggestions are private and do not become matching tags.',
+        widget=forms.TextInput(attrs={'class': BASE_INPUT_CLASSES}))
+
+    def __init__(self, *args, profile, **kwargs):
+        self.profile = profile
+        kwargs.setdefault('initial', {'interests': profile.interests.all()})
+        super().__init__(*args, **kwargs)
+
+    def clean_interests(self):
+        interests = self.cleaned_data['interests']
+        if len(interests) > 20:
+            raise forms.ValidationError('Choose up to 20 interests.')
+        return interests
+
+    def save(self):
+        with transaction.atomic():
+            self.profile.interests.set(self.cleaned_data['interests'])
+            if self.cleaned_data['suggestion']:
+                InterestSuggestion.objects.create(profile=self.profile, text=self.cleaned_data['suggestion'])
+            self.profile.interests_prompt_pending = False
+            self.profile.save(update_fields=['interests_prompt_pending'])

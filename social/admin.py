@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import FriendGroup, FriendGroupMembership, FriendRequest, Friendship, UserProfile
+from .models import FriendGroup, FriendGroupMembership, FriendRequest, Friendship, UserProfile, Interest, InterestSuggestion
 
 
 @admin.register(UserProfile)
@@ -34,3 +34,20 @@ class FriendGroupAdmin(admin.ModelAdmin):
     list_display = ("name", "owner", "created_at")
     search_fields = ("name", "owner__username")
     inlines = [FriendGroupMembershipInline]
+
+
+@admin.register(Interest)
+class InterestAdmin(admin.ModelAdmin):
+    list_display = ('name', 'slug', 'section')
+    search_fields = ('name', 'slug', 'section')
+    list_filter = ('section',)
+
+
+@admin.register(InterestSuggestion)
+class InterestSuggestionAdmin(admin.ModelAdmin):
+    list_display = ('text', 'profile', 'created_at')
+    search_fields = ('text',)
+    readonly_fields = ('profile', 'text', 'created_at')
+
+    def has_add_permission(self, request):
+        return False

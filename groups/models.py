@@ -23,6 +23,7 @@ class MemberStatus(models.TextChoices):
 
 
 class Group(models.Model):
+    interests = models.ManyToManyField("social.Interest", blank=True, related_name="groups")
     image = models.ForeignKey("media_assets.ImageAsset", on_delete=models.SET_NULL, null=True, blank=True, related_name="group_images", limit_choices_to={"purpose": "group_image"})
     default_activity_image = models.ForeignKey("media_assets.ImageAsset", on_delete=models.SET_NULL, null=True, blank=True, related_name="default_activity_groups", limit_choices_to={"purpose": "activity_header"})
     name = models.CharField(max_length=120)

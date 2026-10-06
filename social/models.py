@@ -9,7 +9,30 @@ from media_assets.models import ImageAssetPurpose
 User = settings.AUTH_USER_MODEL
 
 
+class Interest(models.Model):
+    slug = models.SlugField(max_length=80, unique=True)
+    name = models.CharField(max_length=100)
+    section = models.CharField(max_length=100, blank=True)
+
+    class Meta:
+        ordering = ('section', 'name')
+
+    def __str__(self):
+        return self.name
+
+
+class InterestSuggestion(models.Model):
+    profile = models.ForeignKey('UserProfile', on_delete=models.CASCADE, related_name='interest_suggestions')
+    text = models.CharField(max_length=300)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('-created_at',)
+
+
 class UserProfile(models.Model):
+    interests = models.ManyToManyField(Interest, blank=True, related_name='profiles')
+    interests_prompt_pending = models.BooleanField(default=False)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     account_type = models.CharField(max_length=16, choices=[('individual', 'Individual'), ('organization', 'Organization')], default='individual')
     display_name = models.CharField(max_length=120, default='')
