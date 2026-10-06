@@ -224,3 +224,9 @@ class ActivitySeriesForm(ActivityDefaultsValidationMixin, forms.ModelForm):
         if commit:
             instance.save()
         return instance
+
+
+class CancelActivityForm(forms.Form):
+    reason = forms.CharField(max_length=500, required=False, label='Cancellation reason (optional)',
+                             widget=forms.Textarea(attrs={'class': 'ui-field', 'rows': 3}),
+                             help_text='Visible to people who can view this activity. Cancels only this occurrence; responses are retained.')

@@ -77,7 +77,16 @@ DEFAULT_RESPONSE_CHOICES = [
 ]
 
 
+class ActivityStatus(models.TextChoices):
+    ACTIVE = 'active', 'Active'
+    CANCELLED = 'cancelled', 'Cancelled'
+
+
 class Activity(models.Model):
+    status = models.CharField(max_length=12, choices=ActivityStatus.choices, default=ActivityStatus.ACTIVE, db_default=ActivityStatus.ACTIVE)
+    cancellation_reason = models.TextField(max_length=500, blank=True, default='', db_default='')
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+    cancelled_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='cancelled_activities')
     interests = models.ManyToManyField("social.Interest", blank=True, related_name="activities")
     series = models.ForeignKey('ActivitySeries', on_delete=models.SET_NULL, null=True, blank=True, related_name='occurrences')
     group = models.ForeignKey(
@@ -166,6 +175,7 @@ class Activity(models.Model):
 
     class Meta:
         ordering = ["-starts_at", "-created_at"]
+        constraints = [models.CheckConstraint(condition=models.Q(status__in=ActivityStatus.values), name='activity_valid_status')]
 
     def __str__(self) -> str:  # pragma: no cover
         return self.title
@@ -174,6 +184,13 @@ class Activity(models.Model):
         super().clean()
         if self.cost_type == ActivityCostType.PAID and self.cost_amount == 0:
             raise ValidationError({'cost_type': 'Choose Free for a zero cost.'})
+
+    @property
+    def is_cancelled(self):
+        return self.status == ActivityStatus.CANCELLED
+
+    def can_organize(self, user):
+        return user.is_authenticated and (self.host_id == user.pk or bool(self.group_id and self.group.can_organize(user)))
 
     def active_responses(self):  # pragma: no cover - helper for templates later
         if not self.available_responses:

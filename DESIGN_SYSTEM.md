@@ -729,3 +729,22 @@ canonical transparent `Purple rocket logo white on dark.png` unchanged, at 32px
 high on mobile and 48px from the small breakpoint, with intrinsic proportions.
 The shared favicon is the original 192px `Purple rocket 192.png`. Both assets
 retain their original filenames under `static/img/brand/`.
+
+## Occurrence management
+
+Activity hosts and authorized Group organizers use a separate management page for
+person/response rows, vocabulary-specific counts, capacity and cancellation.
+`ui-roster` is a full-width, fixed-layout two-column table with semantic headings,
+wrapping identity text and light row separators. Forms reuse standard fields and
+secondary comfortable buttons; Create is suppressed during management.
+
+Only Count me in consumes capacity. A full activity disables that choice for
+people without a commitment, labels it Full, and keeps interest/questions available.
+Existing commitments can be withdrawn while active. The server serializes response
+changes and cancellation on the occurrence before checking remaining places.
+Cancelled cards prefix the title with Cancelled in Band 1 and replace Band 5's
+response controls with Cancelled; the body retains any current response. Details
+and management show the optional reason. No controls appear in the image band.
+Cancellation freezes responses, retaining their identities/states/timestamps, and
+does not alter sibling occurrences, Group or Series. No waitlist, reactivation or
+notification workflow is introduced.

@@ -14,7 +14,7 @@
     <a href="{% url 'activities:series_edit' series.pk %}" class="ui-link inline-flex items-center min-h-11">Edit series defaults</a>
   </div>
   <h2 class="text-xl font-display">Occurrences</h2>
-  {% if occurrences %}<ul class="space-y-2">{% for activity in occurrences %}<li><a href="{% url 'activities:detail' activity.pk %}" class="ui-link">{{ activity.title }}</a>{% if activity.starts_at %} · {{ activity.starts_at|date:'M j, Y, g:i a' }}{% endif %}</li>{% endfor %}</ul>
+  {% if occurrences %}<ul class="space-y-2">{% for activity in occurrences %}<li><a href="{% url 'activities:roster' activity.pk %}" class="ui-link">{{ activity.title }}</a>{% if activity.is_cancelled %} · Cancelled{% endif %}{% if activity.starts_at %} · {{ activity.starts_at|date:'M j, Y, g:i a' }}{% endif %}</li>{% endfor %}</ul>
   {% else %}<p>No visible occurrences yet.</p>{% endif %}
 </section>
 {% endblock %}
