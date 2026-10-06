@@ -179,6 +179,26 @@ The product does **not** need an Advanced filters panel while these facets cover
 active discovery dimensions. Hidden activities remain private list-management state
 with a separate quiet recovery control.
 
+### Discovery toolbar layout
+
+Discovery controls should read as one compact toolbar, not several unrelated rows.
+
+Desktop target:
+- search field + Search
+- When / Where / Cost / Open to facet triggers
+- Stacked / Spread out view selector
+- quiet hidden-activity recovery only where it can fit without forcing an otherwise
+  unnecessary row
+
+Use the standard 40px control height and consistent 8px gaps within a row. Prefer one
+row when the available content width permits. When wrapping is necessary, wrap by
+semantic cluster with the **same row gap and vertical rhythm**; do not create three
+unevenly spaced bands through arbitrary margins/padding.
+
+Search should consume flexible width; facet triggers and view controls should remain
+content-sized. On narrow mobile layouts, deliberate wrapping is expected, but rows
+must still align cleanly and use consistent spacing.
+
 This tiered model is intentional: Belong is designed for people whose mobility and
 means may be constrained. A free or $5 activity within a mile is materially different
 from a $100 activity several miles away; the interface must preserve that distinction
@@ -242,6 +262,11 @@ Band 1 contains:
 - the **activity/event name**
 - directly beneath it, a compact **when · where** subheader
 
+The activity title must feel like the dominant card element. At the current card
+width, prefer roughly 20–22px title text with a tight line-height and less vertical
+padding than the recent implementation; do not make the title look small inside an
+oversized padded band.
+
 When and where are the most important first-pass facts after the activity name.
 This deliberately follows the strongest historical Belong prototypes.
 
@@ -259,22 +284,46 @@ than permanent underlined-link styling.
 A two-color gradient/fade using the card's primary/secondary colors is an
 encouraged Belong treatment where it works visually.
 
-### Band 2 — organizer + participation context
+### Band 2 — organizer + participation context + contextual menu
 
 Band 2 contains the remaining high-value decision information:
 1. organizer
 2. audience / who it is open to
 3. cost
 
-Two compact readable lines are usually sufficient, for example:
-`Organized by Janine Smith`
+Two compact readable text rows are usually sufficient, for example:
+`Janine Smith`
 `Friends of friends · Free`
 
+Use a three-column layout:
+- left: organizer/profile image
+- middle: the two metadata text rows
+- right: compact three-dot contextual menu trigger
+
 The organizer/profile image is part of the social identity of the activity and should
-remain in Band 2 when available. Use the compact avatar treatment from the original
-Belong cards and design the metadata lines around it. Do not remove the organizer
-image merely to make a poor metadata layout fit; instead shorten/rebalance metadata
-presentation while keeping the core facts readable.
+remain in Band 2 when available. The avatar should vertically span the **full two-row
+metadata block**, rather than aligning to only the first line. Both text rows share
+the same left edge in the middle column; text should not indent around the avatar on
+one row and then jump left on the next.
+
+The contextual menu belongs in Band 2 because this band remains visible while cards
+are stacked and because its commands operate on activity context rather than primary
+participation. It must not reduce the core metadata to unreadable fragments.
+
+Recommended menu:
+- More from this organizer
+- More at this time
+- More at this place
+- More in this category
+- divider
+- Hide this activity
+- Hide this organizer's activities
+
+The first four commands keep the user in Discover and change discovery context rather
+than sending them into the activity Details room. `Hide this organizer's activities`
+is a private discovery preference. Do not label it `Block` unless/until Belong defines
+true user-blocking semantics separately; blocking has broader safety/social effects
+than simply suppressing discovery cards.
 
 Core decision facts must be understandable without hover/focus. Shorten presentation,
 rebalance lines, or remove decoration before truncating essential meaning.
@@ -296,10 +345,13 @@ viewport so far that normal subject matter is routinely cut off.
 
 Band 4 should have enough height for several useful lines of description.
 
+- Content is **top-aligned consistently** across all cards; do not vertically center
+  short descriptions.
 - Prefer roughly 4–6 readable lines at standard card size.
 - Do not spend this band on a generic subtitle/headline.
-- Optional external/context link(s) may appear here only when they materially help
-  understand the activity; do not crowd the description with platform controls.
+- Do not place activity CTAs such as `Join on Discord`, `Hold my spot`, RSVP,
+  payment, or similar actions as stray body hyperlinks. If an action deserves a
+  card-level shortcut, it belongs in Band 5; otherwise it belongs on Details.
 
 ### Band 5 — take action
 
@@ -326,9 +378,12 @@ Rules:
 
 Platform utilities are secondary to the activity itself:
 - Details is available through the title/card navigation pattern
-- do **not** add a generic card utility menu merely to house leftover controls
-- Hide/Unhide, response removal, and similar private/infrequent housekeeping may live
-  on the activity detail page rather than occupying discovery-card space
+- Band 2 may expose the defined contextual three-dot menu for repeated Discover-room
+  operations such as related-activity exploration and hiding
+- do not create additional generic utility menus elsewhere on the card merely to
+  house leftover controls
+- response removal, payment, questions, voting, and other richer interaction belong
+  on Details unless explicitly promoted to Band 5 as a high-value shortcut
 - response counts are information, not actions, and need not appear on the compact
   discovery card
 
@@ -368,8 +423,9 @@ remain secondary and must not re-enter that band.
 - clicking a selected direct response may clear it
 - if a historical/current response is no longer directly offered, show that state
   coherently on Details rather than cluttering the compact card
-- prefer omitting secondary platform utilities from the compact discovery card
-  entirely; place them on Details unless a later product need justifies card-level access
+- use the single Band 2 contextual menu for repeated Discover-room operations
+- richer/infrequent interaction that does not support repeated card scanning belongs
+  on Details
 - do not place menu triggers or utility overlays in the image band
 - do not mix response buttons, menu triggers, tiny mutation controls, and navigation
   links in one row merely because they all happen to be clickable
