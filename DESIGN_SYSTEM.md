@@ -311,6 +311,7 @@ The card's single contextual menu trigger lives in the **top-right of Band 1**.
 - visual treatment: white, initially somewhat subdued (roughly 70–80% opacity), with
   no visible pill, border, or filled button chrome in the resting state
 - hover/focus raises the glyph to full opacity
+- offset only the visible glyph 4px right within its unchanged transparent hit target
 - semantic treatment: still a real keyboard/touch-accessible button/disclosure with
   an adequate transparent hit target and visible focus state
 - the trigger must not overlap title/logistics text; reserve layout space for its hit

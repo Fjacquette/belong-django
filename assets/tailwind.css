@@ -57,7 +57,7 @@
   .activity-card__metadata p { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
   .card-context-menu { position: absolute; right: 4px; top: 4px; }
   .card-context-menu__trigger { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; color: white; background: transparent; border: 0; border-radius: 8px; font-size: 24px; line-height: 1; cursor: pointer; list-style: none; }
-  .card-context-menu__trigger > span { opacity: 0.75; }
+  .card-context-menu__trigger > span { opacity: 0.75; transform: translateX(4px); }
   .card-context-menu__trigger:hover > span, .card-context-menu__trigger:focus > span { opacity: 1; }
   .card-context-menu__trigger::-webkit-details-marker { display: none; }
   .card-context-menu__trigger:focus-visible { outline: 2px solid white; outline-offset: -3px; }
