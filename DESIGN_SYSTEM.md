@@ -260,57 +260,56 @@ because result count is low. The target should remain comfortable on modern phon
 
 Band 1 contains:
 - the **activity/event name**
-- directly beneath it, a compact **when · where** subheader
+- directly beneath it, structured **when** and **where** logistics
+- a visually minimal contextual `⋯` trigger in the top-right corner
 
-The activity title must feel like the dominant card element. At the current card
-width, prefer roughly 20–22px title text with a tight line-height and less vertical
-padding than the recent implementation; do not make the title look small inside an
-oversized padded band.
+#### Title layout
 
-When and where are the most important first-pass facts after the activity name.
-This deliberately follows the strongest historical Belong prototypes.
+- title is the dominant card text, with a normal target around 20–22px at the current
+  card width
+- allow **up to two title lines**
+- keep Band 1/card geometry stable; do not grow the card merely because content is long
+- for longer titles, strategically step down through a small bounded type scale before
+  clipping (for example normal / slightly reduced / minimum readable size)
+- if the title still does not fit the two-line budget, clamp at two lines and show an
+  ellipsis rather than clipping glyphs or colliding with logistics
+- use sufficient line-height/leading for descenders at every supported title size
+- maintain a real gap between the title line box and logistics line box; do not achieve
+  density by overlapping text
+- reserve a small symmetric safe inset at both left and right so the top-right menu
+  trigger does not overlap or visually push the centered title off-axis
 
-Examples:
-`Sat Oct 10, 10 AM · Ridley Creek`
-`Now · Online`
-`Date TBD · Hershey, PA`
+#### When/where layout
 
-Do not use the generic `headline` field as a card subtitle. It may remain in the
-data model/details, but it is not entitled to scarce card space.
+Treat when and where as **two structured atomic values**, not one arbitrary wrapping
+string.
 
-The title may navigate to Details, but it should retain title typography rather
-than permanent underlined-link styling.
+- allow up to **two logistics lines total**
+- if `when · where` fits cleanly on one line, show it on one line
+- if it does not fit, place **when on one line and where on the next** rather than
+  allowing one value (especially location) to wrap messily across both lines
+- use a small bounded font-size reduction if needed to preserve clean one-item-per-line
+  presentation
+- if an individual value still exceeds its line budget, truncate with ellipsis and
+  expose the full value on hover/focus
+- do not use the generic `headline` field as a card subtitle
 
-A two-color gradient/fade using the card's primary/secondary colors is an
-encouraged Belong treatment where it works visually.
+When and where remain the most important first-pass facts after the activity name.
 
-### Band 2 — organizer + participation context + contextual menu
+#### Contextual menu trigger
 
-Band 2 contains the remaining high-value decision information:
-1. organizer
-2. audience / who it is open to
-3. cost
+The card's single contextual menu trigger lives in the **top-right of Band 1**.
 
-Two compact readable text rows are usually sufficient, for example:
-`Janine Smith`
-`Friends of friends · Free`
+- visual treatment: three white dots only; no visible pill, bordered button, or filled
+  button chrome in the resting state
+- semantic treatment: still a real keyboard/touch-accessible button/disclosure with
+  an adequate transparent hit target and visible focus state
+- the trigger must not overlap title/logistics text; reserve layout space for its hit
+  target while preserving visual centering of the text
+- the opened menu may float above card content temporarily; this does not authorize
+  any persistent control overlay in the image band
 
-Use a three-column layout:
-- left: organizer/profile image
-- middle: the two metadata text rows
-- right: compact three-dot contextual menu trigger
-
-The organizer/profile image is part of the social identity of the activity and should
-remain in Band 2 when available. The avatar should vertically span the **full two-row
-metadata block**, rather than aligning to only the first line. Both text rows share
-the same left edge in the middle column; text should not indent around the avatar on
-one row and then jump left on the next.
-
-The contextual menu belongs in Band 2 because this band remains visible while cards
-are stacked and because its commands operate on activity context rather than primary
-participation. It must not reduce the core metadata to unreadable fragments.
-
-Recommended menu:
+Recommended menu contents:
 - More from this organizer
 - More at this time
 - More at this place
@@ -321,10 +320,47 @@ Recommended menu:
 
 The first four commands keep the user in Discover and change discovery context rather
 than sending them into the activity Details room. `Hide this organizer's activities`
-is a private discovery preference. Do not label it `Block` unless/until Belong defines
-true user-blocking semantics separately; blocking has broader safety/social effects
-than simply suppressing discovery cards.
+is a private discovery preference, not a full user block.
 
+A two-color gradient/fade using the card's primary/secondary colors is encouraged
+where it preserves legibility.
+
+#### Creation-time fit guardrails
+
+Do not rely solely on runtime truncation. Activity creation/editing should guide
+authors toward card-safe values.
+
+- impose a practical card-title limit in the form layer rather than exposing the
+  model's much larger storage limit as the normal authoring allowance
+- provide a visible character counter and warning before the hard limit
+- apply similar guidance to the short location/venue label used in Band 1
+- structured date/time fields should generate compact display text automatically
+- longer descriptions, addresses, instructions, and marketing copy belong on Details,
+  not in Band 1
+
+Character limits are guardrails, not a substitute for rendering safeguards: cards
+must still clamp/ellipsis safely because glyph widths and mobile widths vary.
+### Band 2 — organizer + participation context
+
+Band 2 contains:
+1. organizer
+2. audience / who it is open to
+3. cost
+
+Use a two-column layout:
+- left: a **fixed-size circular** organizer/profile image
+- right: the two metadata text rows
+
+The avatar's **grid cell spans both metadata rows**, but the avatar itself does not
+stretch. Keep equal width and height and `border-radius: 50%`; center the circle
+vertically against the combined two-row text block.
+
+Both metadata rows share exactly the same left edge in the text column. The second
+row must not tuck under the avatar or shift horizontally.
+
+Example:
+`Janine Smith`
+`Friends of friends · Free`
 Core decision facts must be understandable without hover/focus. Shorten presentation,
 rebalance lines, or remove decoration before truncating essential meaning.
 
@@ -368,6 +404,15 @@ Rules:
 - maximum two primary actions on the card
 - labels must be fully readable; never ellipsize action labels
 - actions use one coherent button geometry/family
+- **do not use global Belong purple as the default card-action color**; Band 5 should
+  inherit the activity/card palette
+- default unselected action: white/translucent surface with border/text derived from
+  `--card-primary` (or another explicitly defined accessible card accent)
+- selected/committed action: filled card accent with a high-contrast text color
+- if a card palette cannot provide accessible contrast, use a documented accessible
+  fallback derived for that card rather than silently reverting the entire footer to
+  generic purple
+- peer actions on the same card must use the same card-local accent system
 - stateful response actions expose selected state
 - external/action links rendered as primary activity actions may use the same
   footprint but must expose their navigation/external semantics appropriately
@@ -378,7 +423,7 @@ Rules:
 
 Platform utilities are secondary to the activity itself:
 - Details is available through the title/card navigation pattern
-- Band 2 may expose the defined contextual three-dot menu for repeated Discover-room
+- Band 1 exposes the defined contextual three-dot menu for repeated Discover-room
   operations such as related-activity exploration and hiding
 - do not create additional generic utility menus elsewhere on the card merely to
   house leftover controls
@@ -423,7 +468,7 @@ remain secondary and must not re-enter that band.
 - clicking a selected direct response may clear it
 - if a historical/current response is no longer directly offered, show that state
   coherently on Details rather than cluttering the compact card
-- use the single Band 2 contextual menu for repeated Discover-room operations
+- use the single Band 1 contextual menu for repeated Discover-room operations
 - richer/infrequent interaction that does not support repeated card scanning belongs
   on Details
 - do not place menu triggers or utility overlays in the image band
