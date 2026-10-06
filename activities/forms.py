@@ -127,7 +127,7 @@ class ActivityForm(ActivityDefaultsValidationMixin, forms.ModelForm):
             "summary": forms.Textarea(attrs={"rows": 3}),
             "accommodations": forms.Textarea(attrs={"rows": 2}),
             "restrictions": forms.Textarea(attrs={"rows": 2}),
-            "audience": forms.Select(choices=ActivityVisibility.choices),
+            "audience": forms.Select(choices=PILOT_AUDIENCE_CHOICES),
             "location_type": forms.Select(choices=ActivityLocationType.choices),
         }
 

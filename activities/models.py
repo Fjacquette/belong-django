@@ -131,7 +131,7 @@ class Activity(models.Model):
     organizer_name = models.CharField(max_length=160, blank=True)
     audience = models.CharField(
         max_length=40,
-        choices=ActivityVisibility.choices,
+        choices=PILOT_AUDIENCE_CHOICES,
         default=ActivityVisibility.EVERYONE,
     )
     allow_friend_invites = models.BooleanField(default=True)
@@ -169,6 +169,11 @@ class Activity(models.Model):
 
     def __str__(self) -> str:  # pragma: no cover
         return self.title
+
+    def clean(self):
+        super().clean()
+        if self.cost_type == ActivityCostType.PAID and self.cost_amount == 0:
+            raise ValidationError({'cost_type': 'Choose Free for a zero cost.'})
 
     def active_responses(self):  # pragma: no cover - helper for templates later
         if not self.available_responses:
