@@ -357,8 +357,9 @@ Band 2 contains up to four deliberate 16px lines, in this order:
 3. second logistics line only when needed
 4. audience / cost
 
-Use two columns: a fixed 36px circular avatar, vertically centered against the
-entire metadata block, and one aligned text column. Never stretch the avatar.
+Use two columns: a fixed 44px circular avatar, vertically centered against the
+entire metadata block, and one aligned text column with an 8px gap. Band 2 uses
+2px vertical and 8px horizontal padding. Never stretch the avatar.
 Each field uses a single-line ellipsis with full-value hover/focus. No empty
 placeholder rows; unresolved facts use meaningful Date TBD / Location TBD text.
 Without JavaScript, when and place occupy separate bounded lines.
@@ -578,7 +579,7 @@ cards. Only matching tracked, owner-preserved authored demo prices are populated
   The first choice works without JavaScript. `card-actions.js` exposes a second
   choice only when both full labels plus any possible committed-state check fit.
   Remaining choices stay available on Details. HTMX refreshes the entire card's state.
-- `activity-card__context` has two columns: a fixed 36px circular avatar centered
+- `activity-card__context` has two columns: a fixed 44px circular avatar centered
   against the entire three/four-line metadata block, and aligned text. The image never stretches. The
   single contextual trigger is in the top-right of Band 1. Known numeric
   prices / Free use concise metadata; longer names/cost prose expose full text

@@ -51,8 +51,8 @@
   .discovery-toolbar .ui-segmented { height: 40px; }
   .discovery-toolbar .ui-segment { @apply px-2 text-xs; min-height: 34px; }
   .discovery-toolbar > [role="status"] { flex-basis: 100%; }
-  .activity-card__context { display: grid; grid-template-columns: 36px minmax(0, 1fr); align-items: center; gap: 4px; padding: 4px 8px; background: #ffffffb3; }
-  .activity-card__avatar { height: 36px; width: 36px; border-radius: 50%; overflow: hidden; background: white; }
+  .activity-card__context { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: center; gap: 8px; padding: 2px 8px; background: #ffffffb3; }
+  .activity-card__avatar { height: 44px; width: 44px; border-radius: 50%; overflow: hidden; background: white; }
   .activity-card__metadata { min-width: 0; line-height: 16px; }
   .activity-card__metadata p { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 400; }
   .card-context-menu { position: absolute; right: 4px; top: 4px; }
