@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Group invitation · Belong{% endblock %}
+{% block content %}
+<section class="max-w-2xl mx-auto space-y-5 break-words">
+  <h1 class="text-3xl font-display">Group invitation</h1>
+  {% if invitation %}
+    <h2 class="text-xl font-display">{{ invitation.group.name }}</h2>
+    <p class="whitespace-pre-line">{{ invitation.group.description }}</p>
+    <p>{{ invitation.inviter.get_full_name|default:invitation.inviter.username }} invited you to join.</p>
+    {% if user.is_authenticated %}
+      <form method="post">{% csrf_token %}<button class="ui-button ui-button--primary ui-button--comfortable">Accept invitation</button></form>
+    {% else %}
+      <p>Sign in or create an account using the invited email address to accept.</p>
+      <form method="post" class="flex flex-wrap gap-2">{% csrf_token %}
+        <button name="auth" value="login" class="ui-button ui-button--primary ui-button--comfortable">Sign in and accept</button>
+        <button name="auth" value="signup" class="ui-button ui-button--secondary ui-button--comfortable">Create account and accept</button>
+      </form>
+    {% endif %}
+  {% elif available %}
+    <p>This invitation is for a different email address. Sign out and use the invited account.</p>
+    <form method="post">{% csrf_token %}<button name="auth" value="switch" class="ui-button ui-button--primary ui-button--comfortable">Sign in with another account</button></form>
+  {% else %}
+    <p>This invitation has expired or is no longer available. Ask the organizer for a new invitation.</p>
+  {% endif %}
+  <a href="{% url 'activities:index' %}" class="ui-link">Discover activities</a>
+</section>
+{% endblock %}

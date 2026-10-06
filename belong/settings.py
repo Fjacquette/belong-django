@@ -187,3 +187,7 @@ CARD_LAYOUT = {
     "max_stack_size": 3,
     "max_stack_columns": 5,
 }
+
+# Local previews use console delivery; deployment may configure a real backend.
+EMAIL_BACKEND = CONFIG.get('DJANGO_EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+DEFAULT_FROM_EMAIL = CONFIG.get('DJANGO_DEFAULT_FROM_EMAIL', 'Belong <noreply@localhost>')
