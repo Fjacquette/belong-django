@@ -48,6 +48,29 @@
   .ui-filter:focus-within { outline: 2px solid #843A96; outline-offset: 3px; }
   .ui-menu-trigger:focus-visible, .ui-link--inverse:focus-visible { outline-color: white; }
   .ui-button:disabled { @apply opacity-50 cursor-not-allowed; }
+  .discover-workspace { display: flex; flex-direction: column; gap: 16px; }
+  .discover-panes { display: flex; flex-direction: column; gap: 24px; }
+  .discover-pane { min-width: 0; }
+  .discover-pane[hidden], .discover-divider[hidden], .discover-pane-switch[hidden] { display: none; }
+  .discover-page { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+  .discover-page > header { flex-shrink: 0; }
+  .discover-page .discovery-main { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .discover-page .discover-workspace, .discover-page .discover-panes { flex: 1; min-height: 0; }
+  .discover-page .discover-panes { gap: 0; }
+  .discover-page .discover-pane { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; padding-bottom: 72px; }
+  .discover-pane:focus-visible { outline: 2px solid #843A96; outline-offset: -2px; }
+  .discover-divider { position: relative; cursor: col-resize; touch-action: none; border-radius: 8px; }
+  .discover-divider::before { content: ''; position: absolute; top: 0; bottom: 0; width: 2px; left: 11px; background: #843a9666; }
+  .discover-divider:hover::before, .discover-divider:focus-visible::before { background: #843A96; }
+  .discover-divider:focus-visible { outline: 2px solid #843A96; outline-offset: -2px; }
+  [data-stack-root] { display: grid; gap: var(--stack-gap, 24px); justify-content: start; grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--card-width)), var(--card-width))); }
+  [data-stack-column] { position: relative; }
+  @media (min-width: 1024px) {
+    .discover-page .discover-panes { display: grid; grid-template-columns: var(--friends-width, 240px) 24px minmax(0, 1fr); }
+    .discover-page .discover-pane-switch { display: none; }
+    .discover-page .discover-pane--friends { padding-right: 8px; }
+    .discover-page .discover-pane--activities { padding-left: 8px; }
+  }
   .discovery-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
   .discovery-search { display: flex; align-items: center; gap: 8px; flex: 1 1 220px; min-width: 0; }
   .discovery-view-cluster { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }

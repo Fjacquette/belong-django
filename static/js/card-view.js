@@ -13,7 +13,7 @@
   const columns = () => Math.max(1, Math.min(maxColumns, Math.floor((root.clientWidth + gap) / (minWidth + gap))));
   function applyLayout() {
     modes.forEach(input => { input.checked = input.value === (showAll ? 'all' : 'stacked'); });
-    if (!root) return;
+    if (!root || !root.clientWidth) return;
     const count = columns();
     root.dataset.stackColumns = count;
     root.dataset.view = showAll ? 'all' : 'stacked';

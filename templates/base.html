@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{% block title %}Belong{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}?v=series-35-master">
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}?v=panes-40">
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
     <script src="{% static 'js/full-text.js' %}?v=truncated-37" defer></script>
   </head>
@@ -39,7 +39,7 @@
       </div>
     </header>
 
-    <main class="ui-page-gutter w-full pt-6 pb-24">
+    <main class="{% block main_class %}ui-page-gutter w-full pt-6 pb-24{% endblock %}">
       {% if messages %}
         <div class="space-y-2 mb-6">
           {% for message in messages %}

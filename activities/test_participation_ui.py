@@ -296,7 +296,9 @@ class ParticipationUITests(TestCase):
         response = self.client.get(reverse("activities:index"))
         self.assertContains(response, "Up for a walk")
         self.assertContains(response, "Who’s around")
-        self.assertContains(response, "data-friends-secondary")
+        self.assertNotContains(response, "data-friends-secondary")
+        self.assertContains(response, "data-friends-column", count=1)
+        self.assertContains(response, "Up for a walk", count=2)
         self.assertNotContains(response, "<span>Status</span>")
         self.assertNotContains(response, "<span class=\"font-semibold\">Friends</span>")
 
