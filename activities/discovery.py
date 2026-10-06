@@ -37,6 +37,7 @@ DISTANCES = {'under_1': (0, 1), '1_3': (1, 3), '3_5': (3, 5), '5_10': (5, 10), '
 def canonical_filters(params):
     """Normalize repeated facet values; old shortcuts map into the same controls."""
     params = params.copy()
+    params.pop("card-view", None)
     if 'when' not in params:
         timing = params.get('timing') if 'timing' in params else 'today' if params.get('today') == '1' else ''
         params.setlist('when', {'today': ['today'], 'dateless': ['open']}.get(timing, []))

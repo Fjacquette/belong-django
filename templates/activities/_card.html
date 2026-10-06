@@ -1,23 +1,37 @@
 {% with primary=activity.display_color_primary secondary=activity.display_color_secondary %}
 <div id="participation-{{ activity.pk }}" aria-live="polite" class="activity-card relative rounded-[22px] border border-white/60 shadow-soft overflow-hidden"
      style="--card-primary: {{ primary }}; --card-secondary: {{ secondary }};">
-  <div class="activity-card__band-1 flex flex-col justify-center gap-1 items-center text-center text-white font-body" style="padding: 8px 12px;">
+  <div class="activity-card__band-1 flex flex-col justify-center gap-1 items-center text-center text-white font-body" style="padding: 4px 12px;">
     <h2 class="activity-card__headline font-body font-semibold w-full"><a href="{% url 'activities:detail' activity.pk %}" title="{{ activity.title }}" class="activity-card__title-link">{{ activity.title }}</a></h2>
     {% if activity.display_when_where %}
       <p tabindex="0" title="{{ activity.display_when_where }}" class="activity-card__subtitle font-body text-white w-full">{{ activity.display_when_where }}</p>
     {% endif %}
   </div>
-  <div class="activity-card__band-2 relative text-black font-body activity-card__meta" style="padding: 4px 12px;">
-    <div class="absolute inset-0 bg-white/70"></div>
-    <div class="relative">
-      <div class="flex items-center gap-2 min-h-6">
-        <div class="h-6 w-6 shrink-0 rounded-full overflow-hidden bg-white border border-white/80">
-          {% if activity.organizer_image_url %}<img src="{{ activity.organizer_image_url }}" alt="" class="h-full w-full object-cover">{% else %}<span class="h-full w-full flex items-center justify-center text-belong-purple font-semibold">{{ activity.organizer_name|default:activity.host.username|slice:':1'|upper }}</span>{% endif %}
-        </div>
-        <p class="font-body activity-card__meta"><span class="sr-only">Organized by </span><strong class="font-semibold">{{ activity.organizer_name|default:activity.host.get_full_name|default:activity.host.username }}</strong></p>
-      </div>
-      <p class="activity-card__meta">{{ activity.display_audience }} · {{ activity.display_cost }}</p>
+  <div class="activity-card__band-2 activity-card__context text-black font-body activity-card__meta">
+    <div class="activity-card__avatar">
+      {% if activity.organizer_image_url %}<img src="{{ activity.organizer_image_url }}" alt="" class="h-full w-full object-cover">{% else %}<span class="h-full w-full flex items-center justify-center text-belong-purple font-semibold">{{ activity.organizer_name|default:activity.host.username|slice:':1'|upper }}</span>{% endif %}
     </div>
+    <div class="activity-card__metadata">
+      <p tabindex="0" title="{{ activity.organizer_name|default:activity.host.get_full_name|default:activity.host.username }}"><span class="sr-only">Organized by </span><strong>{{ activity.organizer_name|default:activity.host.get_full_name|default:activity.host.username }}</strong></p>
+      <p tabindex="0" title="{{ activity.display_audience }} · {{ activity.display_cost }}">{{ activity.display_audience }} · {{ activity.compact_cost }}</p>
+    </div>
+    <details class="card-context-menu">
+      <summary class="ui-menu-trigger ui-button--compact" aria-label="Discover options for {{ activity.title }}">⋯</summary>
+      <div class="card-context-menu__panel ui-menu-panel">
+        {% for item in activity.context_actions %}<a href="{{ item.url }}" class="ui-context-action">{{ item.label }}</a>{% endfor %}
+        <hr class="border-belong-purple/20">
+        <form method="post" action="{% url 'activities:hide' activity.pk %}">
+          {% csrf_token %}<input type="hidden" name="next" value="{{ next_path }}">
+          <input type="hidden" name="hidden" value="{% if activity.is_hidden %}0{% else %}1{% endif %}">
+          <button class="ui-context-action" type="submit">{% if activity.is_hidden %}Unhide this activity{% else %}Hide this activity{% endif %}</button>
+        </form>
+        <form method="post" action="{% url 'activities:hide_organizer' activity.pk %}">
+          {% csrf_token %}<input type="hidden" name="next" value="{{ next_path }}">
+          <input type="hidden" name="hidden" value="{% if activity.organizer_hidden %}0{% else %}1{% endif %}">
+          <button class="ui-context-action" type="submit">{% if activity.organizer_hidden %}Unhide{% else %}Hide{% endif %} this organizer's activities</button>
+        </form>
+      </div>
+    </details>
   </div>
   <div class="activity-card__band-3 relative">
     {% if activity.header_image_url %}
@@ -28,13 +42,8 @@
       </div>
     {% endif %}
   </div>
-  <div class="activity-card__band-4 flex flex-col justify-center gap-1 bg-white/70 text-black font-body activity-card__body" style="padding: 4px 12px;">
+  <div class="activity-card__band-4 flex flex-col justify-start gap-1 bg-white/70 text-black font-body activity-card__body" style="padding: 4px 12px;">
     <p tabindex="0" title="{{ activity.description }}" aria-label="{{ activity.description }}" class="activity-card__description">{{ activity.description|truncatechars:320 }}</p>
-    <div class="text-xs shrink-0">
-    {% if activity.action1_url %}
-      <a href="{{ activity.action1_href }}" title="{{ activity.action1_label|default:'More information' }}" class="ui-link block text-xs shrink-0">{{ activity.action1_label|default:'More information' }}</a>
-    {% endif %}
-    </div>
     {% if current_status and current_status != card_response_options.0.value %}<p class="card-current-response text-xs" aria-label="You: {{ current_status_label }}">You: {{ current_status_label }}</p>{% endif %}
   </div>
   <div class="activity-card__band-5 bg-white/90 flex items-center justify-center activity-card__cta" style="padding: 4px 12px;">

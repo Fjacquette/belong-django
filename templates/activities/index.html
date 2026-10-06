@@ -34,11 +34,12 @@
     </aside>
     {% endif %}
     <section class="flex flex-1 flex-col gap-6 min-w-0" data-activity-frame data-card-min-width="{{ card_layout.min_width }}">
-      <form method="get" role="search" id="discovery-filters" data-query="{{ query|default:'' }}" class="space-y-1">
+      <form method="get" role="search" id="discovery-filters" data-query="{{ query|default:'' }}" class="discovery-toolbar">
+        <input type="hidden" name="hidden" value="{{ filter_params.hidden|default:'exclude' }}">
         <input type="hidden" name="lat" value="{{ filter_params.lat|default:'' }}">
         <input type="hidden" name="lon" value="{{ filter_params.lon|default:'' }}">
-        <div class="flex flex-wrap items-center gap-2 lg:flex-nowrap" data-discovery-bar>
-          <div class="flex items-center gap-2 w-full lg:w-auto lg:flex-1 min-w-0" data-search-cluster>
+        <div class="discovery-search" data-discovery-bar>
+          <div class="discovery-search" data-search-cluster>
             <label for="activity-search" class="sr-only">Find something</label>
             <input id="activity-search" type="search" name="q" value="{{ query|default:'' }}" placeholder="Find something" class="ui-field flex-1" />
             <button type="submit" data-text-search class="ui-button ui-button--primary shrink-0">Search</button>
@@ -62,21 +63,8 @@
             </details>
           {% endfor %}
         </div>
-        <input type="hidden" name="location_notice" value="">
-        {% if filter_params.category %}<input type="hidden" name="category" value="{{ filter_params.category }}">{% endif %}
-        <input type="hidden" name="hidden" value="{{ filter_params.hidden|default:'exclude' }}">
-        <noscript><button type="submit" class="ui-button ui-button--secondary">Apply filters</button></noscript>
-        <p id="location-feedback" role="status" class="empty:hidden text-sm text-belong-slate/80">{{ filter_warning }}</p>
-      </form>
-      <script src="{% static 'js/discovery.js' %}?v=facets-1" defer></script>
-      <script src="{% static 'js/discovery-layout.js' %}" defer></script>
-      <script src="{% static 'js/card-view.js' %}" defer></script>
-      <script src="{% static 'js/card-actions.js' %}" defer></script>
-
-      <div data-activity-results>
-        <div class="discovery-utilities" data-results-utilities>
-        <button type="submit" form="discovery-filters" name="hidden" value="{% if filter_params.hidden == 'include' or filter_params.hidden == 'only' %}exclude{% else %}include{% endif %}" class="ui-button ui-button--quiet" aria-pressed="{% if filter_params.hidden == 'include' or filter_params.hidden == 'only' %}true{% else %}false{% endif %}">{% if filter_params.hidden == 'include' or filter_params.hidden == 'only' %}Hide hidden{% else %}Show hidden{% endif %}</button>
-        <fieldset id="card-view-selector" class="ml-auto w-fit shrink-0" hidden>
+        <div class="discovery-view-cluster">
+        <fieldset id="card-view-selector" class="discovery-view" hidden>
           <legend class="sr-only">Card view</legend>
           <div class="ui-segmented">
             <label class="cursor-pointer">
@@ -89,7 +77,24 @@
             </label>
           </div>
         </fieldset>
+        <button type="submit" form="discovery-filters" name="hidden" value="{% if filter_params.hidden == 'include' or filter_params.hidden == 'only' %}exclude{% else %}include{% endif %}" class="ui-button ui-button--quiet" aria-pressed="{% if filter_params.hidden == 'include' or filter_params.hidden == 'only' %}true{% else %}false{% endif %}">{% if filter_params.hidden == 'include' or filter_params.hidden == 'only' %}Hide hidden{% else %}Show hidden{% endif %}</button>
         </div>
+        <input type="hidden" name="location_notice" value="">
+        {% for key, value in context_params %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
+        {% if filter_params.category %}<input type="hidden" name="category" value="{{ filter_params.category }}">{% endif %}
+        <noscript><button type="submit" class="ui-button ui-button--secondary">Apply filters</button></noscript>
+        <p id="location-feedback" role="status" class="empty:hidden text-sm text-belong-slate/80">{{ filter_warning }}</p>
+      </form>
+      {% if active_context %}<div class="ui-cluster" aria-label="Discovery context">
+        {% for context in active_context %}<a class="ui-button ui-button--quiet" href="{{ context.clear_url }}" aria-label="Clear {{ context.label }}">{{ context.label }} ×</a>{% endfor %}
+      </div>{% endif %}
+      <script src="{% static 'js/discovery.js' %}?v=context-3" defer></script>
+      <script src="{% static 'js/discovery-layout.js' %}" defer></script>
+      <script src="{% static 'js/card-view.js' %}?v=context-3" defer></script>
+      <script src="{% static 'js/card-actions.js' %}" defer></script>
+      <script src="{% static 'js/card-context.js' %}" defer></script>
+
+      <div data-activity-results>
       {% if activities %}
         <div class="activity-grid w-full"
              data-stack-root

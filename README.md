@@ -173,9 +173,13 @@ a compact organizer avatar. The 160px stack offset exposes both top bands.
 The 128px image and 104px description region preserve the portrait balance.
 The 48px take-action band contains only one or two complete response labels;
 a second choice appears only when it fits without clipping. Remaining choices
-are on Details. Title navigation opens the detail page for counts, Hide/Unhide
-and response removal. The image band contains only image/fallback artwork;
-compact cards have no generic utility menu or response counts.
+are on Details. Title navigation opens the detail page for counts, external CTAs
+and response removal. The image band contains only image/fallback artwork.
+Band 2 aligns the organizer avatar across metadata rows and has one contextual
+menu for related Discover filtering and private activity/organizer hiding.
+These filters preserve search/facets, reset pagination and can be cleared individually.
+Show hidden enables Unhide; organizer suppression changes neither friendship nor
+participation. Search/facets/view/recovery share one compact 40px toolbar with 8px gaps.
 A selected direct response clears on repeat-click. Current state is visible through
 the first direct button or a body line for later choices; full truncated descriptive
 values remain available on focus/hover.

@@ -43,8 +43,29 @@
   .ui-filter:focus-within { outline: 2px solid #843A96; outline-offset: 3px; }
   .ui-menu-trigger:focus-visible, .ui-link--inverse:focus-visible { outline-color: white; }
   .ui-button:disabled { @apply opacity-50 cursor-not-allowed; }
-  .discovery-utilities { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 16px; }
-  .discovery-facets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding-top: 8px; }
+  .discovery-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .discovery-search { display: flex; align-items: center; gap: 8px; flex: 1 1 220px; min-width: 0; }
+  .discovery-view-cluster { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+  .discovery-view { flex: 0 0 auto; }
+  .discovery-view-cluster > button { @apply px-2 text-xs; }
+  .discovery-toolbar .ui-segmented { height: 40px; }
+  .discovery-toolbar .ui-segment { @apply px-2 text-xs; min-height: 34px; }
+  .discovery-toolbar > [role="status"] { flex-basis: 100%; }
+  .activity-card__context { display: grid; grid-template-columns: 32px minmax(0, 1fr) 36px; align-items: center; gap: 4px; padding: 4px 8px; background: #ffffffb3; }
+  .activity-card__avatar { align-self: stretch; min-height: 32px; width: 32px; border-radius: 12px; overflow: hidden; background: white; }
+  .activity-card__metadata { min-width: 0; line-height: 14px; }
+  .activity-card__metadata p { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
+  .card-context-menu { position: relative; }
+  .card-context-menu > summary { width: 36px; padding: 0; color: #5C2969; background: #ffffffb3; font-size: 20px; }
+  .card-context-menu > summary:focus-visible { outline-color: #843A96; }
+  .card-context-menu__panel { position: absolute; right: 0; top: 40px; width: 232px; z-index: 200; }
+  .card-context-menu:not([open]) .card-context-menu__panel { display: none; }
+  .activity-card:has(.card-context-menu[open]) { overflow: visible; z-index: 200; }
+  .activity-card > .activity-card__band-2 { overflow: visible; }
+  [data-stack-item]:has(.card-context-menu[open]) { z-index: 200 !important; }
+  .ui-context-action { @apply flex items-center min-h-10 w-full rounded-lg px-2 text-left text-sm text-belong-purple hover:bg-belong-purple/10; }
+  .ui-context-action:focus-visible { outline: 2px solid #843A96; outline-offset: 2px; }
+  .discovery-facets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .ui-facet { position: relative; min-width: 0; }
   .ui-facet > summary { width: 100%; }
   .ui-facet--active { @apply border-belong-purple bg-belong-purple/10; }
@@ -127,6 +148,8 @@
     overflow: hidden;
     overflow-wrap: anywhere;
   }
+  .activity-card__band-1 { border-radius: 21px 21px 0 0; }
+  .activity-card__band-5 { border-radius: 0 0 21px 21px; }
   .activity-card__title-link { @apply text-white no-underline; }
   .activity-card__title-link:hover { @apply underline; }
   .activity-card__title-link:focus-visible { @apply underline outline outline-2 outline-offset-2 outline-white; }
@@ -136,15 +159,13 @@
   .activity-card__subtitle, .activity-card__meta { overflow-wrap: anywhere; }
   .card-current-response { line-height: 16px; }
   .activity-card__band-4:has(.card-current-response) .activity-card__description { -webkit-line-clamp: 4; }
-  .activity-card__band-4:has(a) .activity-card__description { -webkit-line-clamp: 4; }
-  .activity-card__band-4:has(a):has(.card-current-response) .activity-card__description { -webkit-line-clamp: 3; }
   html { scroll-padding-bottom: 5rem; }
   .activity-card button, .activity-card a { scroll-margin-bottom: 5rem; }
   .account-menu summary::-webkit-details-marker { display: none; }
 
   .activity-card__headline {
-    font-size: 18px;
-    line-height: 20px;
+    font-size: 21px;
+    line-height: 22px;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;

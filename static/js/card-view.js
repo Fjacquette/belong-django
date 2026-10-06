@@ -1,17 +1,19 @@
 (function () {
   const root = document.querySelector('[data-stack-root]');
   const selector = document.getElementById('card-view-selector');
-  if (!root || !selector) return;
+  if (!selector) return;
   const modes = Array.from(selector.querySelectorAll('input[name="card-view"]'));
-  const items = Array.from(root.querySelectorAll('[data-stack-item]'));
-  const minWidth = Number(root.dataset.cardMinWidth);
-  const gap = Number(root.dataset.stackGap);
-  const maxColumns = Math.min(Number(root.dataset.maxColumns), items.length);
+  const items = root ? Array.from(root.querySelectorAll('[data-stack-item]')) : [];
+  const minWidth = Number(root?.dataset.cardMinWidth);
+  const gap = Number(root?.dataset.stackGap);
+  const maxColumns = Math.min(Number(root?.dataset.maxColumns), items.length);
   let showAll = false;
   try { showAll = localStorage.getItem('belong-card-view') === 'all'; } catch (_) {}
   items.forEach(item => item.classList.add('activity-stack__layer'));
   const columns = () => Math.max(1, Math.min(maxColumns, Math.floor((root.clientWidth + gap) / (minWidth + gap))));
   function applyLayout() {
+    modes.forEach(input => { input.checked = input.value === (showAll ? 'all' : 'stacked'); });
+    if (!root) return;
     const count = columns();
     root.dataset.stackColumns = count;
     root.dataset.view = showAll ? 'all' : 'stacked';

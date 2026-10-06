@@ -181,23 +181,25 @@ class DiscoveryTests(TestCase):
         self.assertContains(empty, 'js/discovery.js')
         self.assertNotContains(empty, 'class="activity-grid w-full"')
 
-    def test_view_selector_is_explicit_and_belongs_to_results_not_filters(self):
+    def test_view_selector_and_recovery_share_the_compact_toolbar(self):
         response = self.discover()
         self.assertContains(response, '<legend class="sr-only">Card view</legend>', html=True)
         self.assertContains(response, 'type="radio" name="card-view" value="stacked"')
         self.assertContains(response, 'type="radio" name="card-view" value="all"')
         self.assertContains(response, '>Stacked</span>')
         self.assertContains(response, '>Spread out</span>')
-        self.assertContains(response, 'data-results-utilities')
+        self.assertContains(response, 'class="discovery-toolbar"')
         self.assertContains(response, 'data-facet="when"')
         markup = response.content.decode()
         filter_form = markup.split('id="discovery-filters"', 1)[1].split('</form>', 1)[0]
-        self.assertNotIn('card-view-selector', filter_form)
+        self.assertIn('card-view-selector', filter_form)
+        self.assertIn('Show hidden', filter_form)
+        self.assertLess(filter_form.index('type="hidden" name="hidden"'),
+                        filter_form.index('type="submit" form="discovery-filters" name="hidden"'))
         results = markup.split('data-activity-results', 1)[1]
-        self.assertIn('card-view-selector', results)
+        self.assertNotIn('card-view-selector', results)
         self.assertNotIn('Advanced filters', results)
-        self.assertIn('Show hidden', results)
-        self.assertLess(results.index('card-view-selector'), results.index('data-stack-root'))
+        self.assertLess(markup.index('card-view-selector'), markup.index('data-stack-root\n'))
 
     def test_card_tooltips_details_private_buttons_and_floating_create(self):
         self.near.title = 'Long activity title ' * 8

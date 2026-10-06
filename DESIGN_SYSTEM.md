@@ -474,7 +474,9 @@ checkbox targets. Triggers show a selected count (or the cost shorthand) and an
 active border/background. Mobile uses two columns; desktop uses a compact cluster.
 Checkbox changes submit immediately and preserve the applied search text, open
 facet and keyboard position. Search/Enter commits text. Without JS, Apply filters
-submits the same checkbox values. Show hidden is a separate quiet list control.
+submits the same checkbox values. Search, facets and view/recovery clusters use
+one wrapping `discovery-toolbar`, 40px controls and uniform 8px gaps. The view and
+quiet Show hidden controls wrap together, so recovery never occupies its own row.
 
 Repeated `when`, `where`, `cost`, and `audience` parameters are the canonical
 facet state and survive pagination and response changes. Empty facets are unrestricted.
@@ -497,24 +499,49 @@ cards. Only matching tracked, owner-preserved authored demo prices are populated
 
 ## 13. Implemented card patterns
 
-- Geometry: 440px height, preferred/max width 258px, 112/48/128/104/48px bands.
+- Geometry: 440px height, preferred/max width 258px, 96/64/128/104/48px bands.
   The 160px stack offset reveals all identity/logistics and participation context.
 - Card title: `activity-card__title-link`, normal title type with hover/focus underline.
 - Primary responses: `ui-button ui-button--compact ui-response`, complete 12px labels.
   The first choice works without JavaScript. `card-actions.js` exposes a second
   choice only when both full labels plus selected-state check fit. Remaining
   choices stay available on Details. HTMX refreshes the entire card's state.
+- `activity-card__context` uses a 32px-wide avatar spanning the metadata block,
+  aligned metadata text, and a 36px Band 2 contextual trigger. Known numeric
+  prices / Free use concise metadata; longer names/cost prose expose full text
+  on hover/focus and retain up to two lines per metadata field. The single native
+  `card-context-menu` contains related Discover links and private hiding. Escape
+  and clicking outside dismiss it; it remains usable without JavaScript.
 - Band 3 contains only the activity image or fallback artwork. No controls,
-  counts, badges or platform overlays appear on compact cards.
-- Details navigation uses the title link. Hide/Unhide, response counts, response
-  removal and other housekeeping live on the detail page.
+  counts, badges or platform overlays appear in the image band.
+- Details navigation uses the title link. Response counts, removal and richer
+  participation live on Details; activity/organizer hiding also lives in Band 2.
 - Current response: the first direct response exposes pressed state. A
   `card-current-response` line in the body identifies later/historical choices,
   including a second choice that might not fit. Removal is available on Details.
-- The description has up to five lines; a current response or material external
-  link may use a line. The generic headline stays off the card surface.
+- The top-aligned description has up to five lines; a current response may use
+  a line. External CTAs and the generic headline stay on Details.
 
-## 14. Review rule
+## 14. Contextual Discover operations
+
+Context links retain applied search, repeated facets and other context, reset
+pagination, and AND with current filters. Each active context has an independent
+clear link; toolbar submissions, pagination and response forms preserve it.
+`organizer` is the activity's actual host account. `context_time` / `context_place`
+refer to a visible source activity: scheduled time matches its pilot local calendar
+day, dateless time matches the same explicit timing text; physical place matches
+its supplied structured location fields (or exact valid GPS when those are absent).
+Online place matches online/hybrid. Category uses the existing category slug.
+Unresolved time/place/category commands are omitted rather than inventing context.
+Invisible/missing source context cannot reveal private activities.
+
+`HiddenOrganizer` is a private, unique viewer/host preference, separate from
+friendship, user blocking and activity responses. Default Discover excludes both
+individually hidden activities and suppressed organizers; Show hidden includes them
+and the menu offers Unhide. Unhiding an organizer does not clear activity-specific
+hiding. No accounts or response data are changed by suppression.
+
+## 15. Review rule
 
 A UI change is not complete if it merely "works."
 

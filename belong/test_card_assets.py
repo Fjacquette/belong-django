@@ -24,7 +24,7 @@ class CardAssetTests(SimpleTestCase):
     def test_card_bands_preserve_image_and_compact_footer(self):
         self.assertEqual(settings.CARD_HEIGHT, 440)
         bands = [round(settings.CARD_HEIGHT * band) for band in settings.CARD_BANDS]
-        self.assertEqual(bands, [112, 48, 128, 104, 48])
+        self.assertEqual(bands, [96, 64, 128, 104, 48])
         self.assertEqual(settings.STACK_OFFSET, sum(bands[:2]))
         css = (Path(settings.BASE_DIR) / 'static/css/tailwind.css').read_text()
         card = re.search(r'\.activity-card\s*\{([^}]+)\}', css)

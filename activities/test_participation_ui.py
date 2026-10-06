@@ -40,7 +40,10 @@ class ParticipationUITests(TestCase):
                     self.assertNotContains(response, 'value="declined"')
                     self.assertNotContains(response, '<select id="response-')
                     self.assertNotContains(response, '>Save</button>')
-                self.assertContains(response, 'href="https://example.com/walk"')
+                if url == self.url("detail"):
+                    self.assertContains(response, 'href="https://example.com/walk"')
+                else:
+                    self.assertNotContains(response, 'href="https://example.com/walk"')
                 self.assertContains(response, f'hx-post="{self.url("respond")}"')
                 self.assertContains(response, f'hx-target="#participation-{self.activity.pk}"')
                 self.assertContains(response, 'hx-swap="outerHTML"')
@@ -209,12 +212,12 @@ class ParticipationUITests(TestCase):
             self.url("respond"), {"status": "question", "variant": "card", "next": destination},
             HTTP_HX_REQUEST="true",
         )
-        self.assertContains(changed, next_input, count=1, html=True)
+        self.assertContains(changed, next_input, count=3, html=True)
         self.assertContains(changed, ">You: I have a question</p>")
         removed = self.client.post(
             self.url("leave"), {"variant": "card", "next": destination}, HTTP_HX_REQUEST="true",
         )
-        self.assertContains(removed, next_input, count=1, html=True)
+        self.assertContains(removed, next_input, count=3, html=True)
         self.assertNotContains(removed, ">You:")
         self.assertFalse(ActivityResponse.objects.filter(user=self.viewer).exists())
 
@@ -304,7 +307,7 @@ class ParticipationUITests(TestCase):
                 self.assertIn('<img' if artwork else 'activity-card__summary', image_band)
                 for control in ['<details', '<summary', '<button', '<form', '<a ', 'responses', 'card-utilities']:
                     self.assertNotIn(control, image_band)
-                for control in ['<details', '<summary', 'card-utilities', '1 response', '>Hide</button>', '>Remove</button>']:
+                for control in ['card-utilities', '1 response', '>Remove</button>']:
                     # Restrict the assertion to the compact card, excluding page menus.
                     card = html.split('class="activity-card relative', 1)[1].split('data-stack-item', 1)[0].split('</section>', 1)[0]
                     self.assertNotIn(control, card)

@@ -118,8 +118,12 @@ account menus, and group forms/actions. Cards use the historical portrait hierar
 name + readable when/where, then organizer/audience/cost, a substantial image,
 useful description and one/two fully readable activity actions. The 440px card
 retains its 258px preferred/max width; 160px overlap exposes both top bands.
-The image band contains artwork only. Title navigation opens Details, where
-Hide/Unhide, response counts and response removal live. Generic headlines stay on Details.
+Band 2 aligns an avatar across metadata rows and exposes a contextual menu for
+related Discover filters and private activity/organizer hiding. Search, facets and
+view/recovery controls share one compact wrapping toolbar. Context survives query
+changes and can be cleared independently; organizer suppression is reversible and
+separate from blocking/participation. The image band contains artwork only. Title
+navigation opens Details for response counts, removal and external CTAs. Generic headlines stay on Details.
 Known seed-owned choices and stale sample responses are reconciled without altering
 real/custom/transferred data. GitHub is
 authoritative for merge status; #22 follows this visual-system iteration.

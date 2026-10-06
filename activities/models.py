@@ -240,3 +240,13 @@ class HiddenActivity(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=("user", "activity"), name="unique_hidden_activity")]
+
+
+class HiddenOrganizer(models.Model):
+    """Private Discover suppression; does not affect friendship or participation."""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="hidden_organizers")
+    organizer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="discovery_suppressions")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("user", "organizer"), name="unique_hidden_organizer")]
