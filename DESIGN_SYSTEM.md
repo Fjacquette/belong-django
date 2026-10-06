@@ -265,12 +265,17 @@ Band 1 contains:
 
 #### Title layout
 
-- title is the dominant card text, roughly 20–22px at the current card width
+- title is the dominant card text, with a normal target around 20–22px at the current
+  card width
 - allow **up to two title lines**
-- use sufficient line-height/leading for descenders; title glyphs must never be clipped
-  by the subtitle/logistics region
+- keep Band 1/card geometry stable; do not grow the card merely because content is long
+- for longer titles, strategically step down through a small bounded type scale before
+  clipping (for example normal / slightly reduced / minimum readable size)
+- if the title still does not fit the two-line budget, clamp at two lines and show an
+  ellipsis rather than clipping glyphs or colliding with logistics
+- use sufficient line-height/leading for descenders at every supported title size
 - maintain a real gap between the title line box and logistics line box; do not achieve
-  density by overlapping/clipping text
+  density by overlapping text
 - reserve a small symmetric safe inset at both left and right so the top-right menu
   trigger does not overlap or visually push the centered title off-axis
 
@@ -283,8 +288,10 @@ string.
 - if `when · where` fits cleanly on one line, show it on one line
 - if it does not fit, place **when on one line and where on the next** rather than
   allowing one value (especially location) to wrap messily across both lines
-- each item should remain unbroken when it fits within the full line; only an
-  individually overlong item may truncate, with its full value available on hover/focus
+- use a small bounded font-size reduction if needed to preserve clean one-item-per-line
+  presentation
+- if an individual value still exceeds its line budget, truncate with ellipsis and
+  expose the full value on hover/focus
 - do not use the generic `headline` field as a card subtitle
 
 When and where remain the most important first-pass facts after the activity name.
@@ -317,6 +324,22 @@ is a private discovery preference, not a full user block.
 
 A two-color gradient/fade using the card's primary/secondary colors is encouraged
 where it preserves legibility.
+
+#### Creation-time fit guardrails
+
+Do not rely solely on runtime truncation. Activity creation/editing should guide
+authors toward card-safe values.
+
+- impose a practical card-title limit in the form layer rather than exposing the
+  model's much larger storage limit as the normal authoring allowance
+- provide a visible character counter and warning before the hard limit
+- apply similar guidance to the short location/venue label used in Band 1
+- structured date/time fields should generate compact display text automatically
+- longer descriptions, addresses, instructions, and marketing copy belong on Details,
+  not in Band 1
+
+Character limits are guardrails, not a substitute for rendering safeguards: cards
+must still clamp/ellipsis safely because glyph widths and mobile widths vary.
 ### Band 2 — organizer + participation context
 
 Band 2 contains:
