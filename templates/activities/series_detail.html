@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}{{ series.title }} · Belong{% endblock %}
+{% block content %}
+<section class="max-w-2xl mx-auto space-y-4 break-words">
+  <a href="{% if series.group %}{{ series.group.get_absolute_url }}{% else %}{% url 'activities:index' %}{% endif %}" class="ui-link">{% if series.group %}{{ series.group.name }}{% else %}Discover{% endif %}</a>
+  <h1 class="text-3xl font-display">{{ series.title }}</h1>
+  <p class="whitespace-pre-line">{{ series.description }}</p>
+  <p>{{ series.get_cadence_display }}{% if series.weekday != None %} · {{ series.get_weekday_display }}{% endif %}{% if series.usual_start_time %} · {{ series.usual_start_time|time:'g:i a' }}{% endif %}</p>
+  {% if series.cadence_description %}<p>{{ series.cadence_description }}</p>{% endif %}
+  <p>{{ series.get_audience_display }} · {{ series.location_name|default:'Location TBD' }} · {{ series.cost_display|default:series.get_cost_type_display }}</p>
+  <p>Response choices: {{ response_labels|join:', ' }}</p>
+  <div class="flex flex-wrap items-center gap-4">
+    <a href="{% url 'activities:create' %}?series={{ series.pk }}" class="ui-link inline-flex items-center min-h-11 font-semibold">Create occurrence</a>
+    <a href="{% url 'activities:series_edit' series.pk %}" class="ui-link inline-flex items-center min-h-11">Edit series defaults</a>
+  </div>
+  <h2 class="text-xl font-display">Occurrences</h2>
+  {% if occurrences %}<ul class="space-y-2">{% for activity in occurrences %}<li><a href="{% url 'activities:detail' activity.pk %}" class="ui-link">{{ activity.title }}</a>{% if activity.starts_at %} · {{ activity.starts_at|date:'M j, Y, g:i a' }}{% endif %}</li>{% endfor %}</ul>
+  {% else %}<p>No visible occurrences yet.</p>{% endif %}
+</section>
+{% endblock %}

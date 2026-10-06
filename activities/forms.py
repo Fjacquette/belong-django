@@ -4,12 +4,15 @@ from media_assets.models import ImageAsset, ImageAssetPurpose
 
 from .models import (
     Activity,
+    ActivitySeries,
     ActivityLocationType,
     ActivityResponseStatus,
     ActivityVisibility,
     DEFAULT_RESPONSE_CHOICES,
     PILOT_AUDIENCE_CHOICES,
 )
+
+from .series import SERIES_DEFAULT_FIELDS
 
 _DATETIME_INPUT_KWARGS = {
     "widget": forms.DateTimeInput(
@@ -21,7 +24,41 @@ _DATETIME_INPUT_KWARGS = {
 }
 
 
-class ActivityForm(forms.ModelForm):
+class ResponseChoicesWidget(forms.CheckboxSelectMultiple):
+    def create_option(self, *args, **kwargs):
+        option = super().create_option(*args, **kwargs)
+        option['attrs']['class'] = 'ui-check'
+        return option
+
+
+class ActivityDefaultsValidationMixin:
+    def clean(self):
+        data = super().clean()
+        amount = data.get('cost_amount')
+        kind = data.get('cost_type')
+        if amount is not None:
+            if kind == 'free' and amount != 0:
+                self.add_error('cost_amount', 'A free activity must have a zero cost.')
+            elif kind != 'free' and amount == 0:
+                self.add_error('cost_type', 'Choose Free for a zero cost.')
+            elif kind == 'unknown':
+                self.add_error('cost_type', 'Choose Paid when the numeric cost is known.')
+        return data
+
+    def clean_location_gps(self):
+        from .discovery import coordinates
+        value = self.cleaned_data.get("location_gps", "").strip()
+        if value and coordinates(value) is None:
+            raise forms.ValidationError("Use latitude, longitude (for example 40.0, -75.0).")
+        return value
+
+    def clean_available_responses(self):
+        responses = self.cleaned_data.get("available_responses") or []
+        return list(responses)
+
+
+
+class ActivityForm(ActivityDefaultsValidationMixin, forms.ModelForm):
     title = forms.CharField(max_length=48, help_text="Use Title Case, keeping names/acronyms like D&D or OW2 intact. Keep the activity name short (48 characters max). Put longer copy in the description.")
     location_name = forms.CharField(max_length=40, required=False, label="Venue / short location label",
                                    help_text="Use a short place name (40 characters max). Put the full address and directions below.")
@@ -32,7 +69,7 @@ class ActivityForm(forms.ModelForm):
         choices=ActivityResponseStatus.choices,
         required=False,
         initial=list(DEFAULT_RESPONSE_CHOICES),
-        widget=forms.CheckboxSelectMultiple,
+        widget=ResponseChoicesWidget,
         help_text="Choose what intent is useful for this activity. One or two complete choices appear on its card when they fit; all choices appear in Details.",
     )
 
@@ -94,7 +131,7 @@ class ActivityForm(forms.ModelForm):
             "location_type": forms.Select(choices=ActivityLocationType.choices),
         }
 
-    def __init__(self, *args, user=None, context_group=None, **kwargs) -> None:
+    def __init__(self, *args, user=None, context_group=None, context_series=None, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         from django.db.models import Q
         from groups.models import Group
@@ -103,6 +140,7 @@ class ActivityForm(forms.ModelForm):
         ).distinct() if user and user.is_authenticated else Group.objects.none()
         self.fields['group'].label = 'For a group?'
         self.context_group = context_group
+        self.context_series = context_series
         if context_group:
             self.initial['group'] = context_group.pk
             self.fields['group'].disabled = True
@@ -121,7 +159,7 @@ class ActivityForm(forms.ModelForm):
             existing = widget.attrs.get("class", "")
             widget.attrs["class"] = f"{existing} {base_classes}".strip()
             if isinstance(widget, forms.CheckboxSelectMultiple):
-                widget.attrs["class"] = "grid grid-cols-1 gap-2"
+                widget.attrs["class"] = "ui-choice-list"
             elif isinstance(widget, forms.CheckboxInput):
                 widget.attrs["class"] = "ui-check"
 
@@ -134,32 +172,12 @@ class ActivityForm(forms.ModelForm):
             purpose=ImageAssetPurpose.ORGANIZER
         )
 
-    def clean(self):
-        data = super().clean()
-        amount = data.get('cost_amount')
-        kind = data.get('cost_type')
-        if amount is not None:
-            if kind == 'free' and amount != 0:
-                self.add_error('cost_amount', 'A free activity must have a zero cost.')
-            elif kind != 'free' and amount == 0:
-                self.add_error('cost_type', 'Choose Free for a zero cost.')
-            elif kind == 'unknown':
-                self.add_error('cost_type', 'Choose Paid when the numeric cost is known.')
-        return data
-
-    def clean_location_gps(self):
-        from .discovery import coordinates
-        value = self.cleaned_data.get("location_gps", "").strip()
-        if value and coordinates(value) is None:
-            raise forms.ValidationError("Use latitude, longitude (for example 40.0, -75.0).")
-        return value
-
-    def clean_available_responses(self):
-        responses = self.cleaned_data.get("available_responses") or []
-        return list(responses)
-
     def save(self, commit=True):
         instance: Activity = super().save(commit=False)
+        if not instance.pk and self.context_series:
+            instance.series = self.context_series
+            if not instance.header_image_id:
+                instance.header_image = self.context_series.header_image
         if not instance.pk and not instance.header_image_id and instance.group_id:
             instance.header_image = instance.group.default_activity_image
         if not instance.available_responses:
@@ -167,4 +185,42 @@ class ActivityForm(forms.ModelForm):
         if commit:
             instance.save()
             self.save_m2m()
+        return instance
+
+
+class ActivitySeriesForm(ActivityDefaultsValidationMixin, forms.ModelForm):
+    title = forms.CharField(max_length=48, help_text='A short name for this series, such as Weekend Hikes.')
+    location_name = forms.CharField(max_length=40, required=False, label='Usual venue / short location label')
+    available_responses = forms.MultipleChoiceField(choices=ActivityResponseStatus.choices, required=False,
+                                                   initial=list(DEFAULT_RESPONSE_CHOICES), widget=ResponseChoicesWidget,
+                                                   help_text='Initial response choices for new occurrences.')
+
+    class Meta:
+        model = ActivitySeries
+        fields = ['title', 'group', 'cadence', 'weekday', 'usual_start_time', 'cadence_description'] + [f for f in SERIES_DEFAULT_FIELDS if f != 'title']
+        widgets = {'description': forms.Textarea(attrs={'rows': 3}), 'location_instructions': forms.Textarea(attrs={'rows': 2}),
+                   'usual_start_time': forms.TimeInput(attrs={'type': 'time'})}
+        labels = {'group': 'For a group?', 'cadence': 'How often?', 'weekday': 'Usual day', 'usual_start_time': 'Usual start time', 'cadence_description': 'Schedule details'}
+
+    def __init__(self, *args, user=None, context_group=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        groups = ActivityForm(user=user).fields['group'].queryset
+        self.fields['group'].queryset = groups
+        self.fields['group'].help_text = 'Optional. Groups and activity audiences remain independent.'
+        self.fields['header_image'].queryset = ImageAsset.objects.filter(purpose=ImageAssetPurpose.ACTIVITY_HEADER)
+        self.fields['header_image'].help_text = 'Optional Series artwork; when blank, new occurrences use the group default.'
+        if context_group:
+            self.initial['group'] = context_group.pk
+            self.fields['group'].disabled = True
+        for name, field in self.fields.items():
+            field.widget.attrs['class'] = 'ui-choice-list' if isinstance(field.widget, forms.CheckboxSelectMultiple) else 'ui-field mt-1'
+        if self.instance.pk:
+            self.initial['available_responses'] = self.instance.available_responses
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if not instance.available_responses:
+            instance.available_responses = list(DEFAULT_RESPONSE_CHOICES)
+        if commit:
+            instance.save()
         return instance

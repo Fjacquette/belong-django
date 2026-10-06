@@ -9,6 +9,7 @@
       </aside>
     {% endif %}
     <section class="flex-1">
+      {% if show_series %}<p>Series: <a href="{{ activity.series.get_absolute_url }}" class="ui-link">{{ activity.series.title }}</a></p>{% endif %}
       <a href="{% url 'activities:index' %}" class="ui-link text-sm">← Back to activities</a>
       <div class="rounded-[36px] border border-white/60 bg-white/95 mt-4 overflow-hidden shadow-soft">
         <div class="p-8 text-white" style="background: linear-gradient(135deg, {{ activity.display_color_primary }} 0%, {{ activity.display_color_secondary }} 100%);">

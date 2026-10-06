@@ -56,6 +56,7 @@ def detail(request, pk, invitation_form=None):
         "group": group, "membership": membership, "organizer": organizer,
         "invitation_form": (invitation_form if invitation_form is not None else InvitationForm()) if organizer else None,
         "invitations": group.invitations.all() if organizer else None,
+        "series": group.series.all() if organizer else None,
         "is_owner": group.owner_id == request.user.pk,
         "members": members if active or organizer else None,
         "member_count": members.count(),
