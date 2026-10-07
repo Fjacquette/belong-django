@@ -5,34 +5,31 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{% block title %}Belong{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}?v=lifecycle-24-integrated">
+    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}?v=account-menu-57">
     <link rel="icon" type="image/png" sizes="192x192" href="{% static 'img/brand/Purple rocket 192.png' %}">
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
     <script src="{% static 'js/full-text.js' %}?v=truncated-37" defer></script>
+    <script src="{% static 'js/account-menu.js' %}" defer></script>
   </head>
   <body class="min-h-screen text-belong-slate bg-belong-background font-body {% block body_class %}{% endblock %}">
     <header class="bg-belong-purple text-white">
       <div class="flex items-center justify-between gap-3 ui-page-gutter py-3">
-        <a href="{% if user.is_authenticated %}{% url 'activities:index' %}{% else %}{% url 'login' %}{% endif %}" class="ui-brand">
+        <a href="{% if user.is_authenticated %}{% url 'activities:index' %}{% else %}{% url 'login' %}{% endif %}" class="ui-brand"{% if user.is_authenticated and user.profile.can_use_belong %} aria-label="Belong · Discover"{% endif %}>
           <img src="{% static 'img/brand/Purple rocket logo white on dark.png' %}" alt="Belong" width="910" height="240" class="ui-brand__wordmark">
         </a>
         {% if user.is_authenticated %}
           <nav aria-label="Main navigation" class="flex min-w-0 items-center gap-3 sm:gap-6">
             {% if user.profile.can_use_belong %}<a href="{% url 'activities:index' %}" class="ui-link ui-link--inverse hidden lg:inline-flex items-center min-h-10 text-sm font-semibold">Discover</a>{% endif %}
             <details class="account-menu relative min-w-0">
-              <summary class="ui-menu-trigger ui-identity-trigger" aria-label="{{ user.profile.identity_label }}: account menu">
+              <summary class="ui-identity-trigger" aria-label="{{ user.profile.identity_label }}: account menu">
                 {% if user.profile.avatar_url %}<img src="{{ user.profile.avatar_url }}" alt="" class="ui-identity-avatar" width="32" height="32">{% else %}<span class="ui-identity-avatar ui-identity-avatar--fallback" aria-hidden="true">{{ user.profile.identity_initials }}</span>{% endif %}
                 <span class="ui-identity-name">{{ user.profile.identity_label }}</span><span class="shrink-0" aria-hidden="true">▾</span>
               </summary>
-              <div class="absolute right-0 top-full z-[200] mt-2 w-56 max-w-[calc(100vw-2rem)] ui-menu-panel">
-                {% if user.profile.can_use_belong %}<div class="lg:hidden border-b border-belong-slate/10 pb-2 mb-2">
-                  <a href="{% url 'activities:index' %}" class="flex items-center min-h-11 text-sm font-semibold hover:underline">Discover</a>
-                </div>{% endif %}
-                <p class="text-sm break-words">{{ user.profile.identity_label }}</p>
-                {% if user.profile.can_use_belong %}<a href="{% url 'account_settings' %}" class="ui-link block min-h-11 py-2">Account settings</a>{% else %}<a href="{% url 'verification_status' %}" class="ui-link block min-h-11 py-2">Verify email</a>{% endif %}
+              <div class="ui-account-menu">
+                {% if user.profile.can_use_belong %}<a href="{% url 'account_settings' %}" class="ui-account-menu__item">Account settings</a>{% else %}<a href="{% url 'verification_status' %}" class="ui-account-menu__item">Verify email</a>{% endif %}
                 <form action="{% url 'logout' %}" method="post">
                   {% csrf_token %}
-                  <button type="submit" class="ui-button ui-button--secondary">Logout</button>
+                  <button type="submit" class="ui-account-menu__item">Logout</button>
                 </form>
               </div>
             </details>

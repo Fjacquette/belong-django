@@ -696,11 +696,17 @@ Verification pages expose only verification and logout; product navigation and
 Create remain hidden until access is granted. Settings and password forms suppress
 Create to keep their task focused. Display names replace opaque usernames in public
 identity, with an explicit “(Organization)” suffix wherever that identity appears.
-The header uses `ui-identity-trigger`, the existing outlined menu family at a 44px
-minimum height, with a fixed 32px circular avatar or initials, the display name
-(full name/username fallback), and disclosure cue. The name truncates within the
-available width; the accessible label and opened menu retain the full identity.
-Native details/summary preserves keyboard operation. Unverified accounts see
+The header uses `ui-identity-trigger`: transparent identity with a 44px minimum
+keyboard/touch target, fixed 32px circular avatar or initials, display name (full
+name/username fallback), and quiet disclosure cue. No outlined capsule. The name
+truncates within available width; the accessible trigger label retains the full
+identity. `ui-account-menu` is a right-aligned 176px white surface with 4px inset,
+8px radius and restrained border/shadow. Account settings and POST Logout use the
+same `ui-account-menu__item` family: full-width 40px rows, plain resting surfaces,
+and consistent hover/focus states. No duplicated identity or navigation drawer.
+Discover remains the desktop header link and the mobile Belong brand destination.
+Native details/summary preserves keyboard operation; optional Escape/outside-click
+dismissal restores trigger focus on Escape. Unverified accounts see
 identity plus Verify email/POST Logout only; verified accounts retain Discover and
 Account settings. Missing profiles are repaired with unverified defaults.
 
