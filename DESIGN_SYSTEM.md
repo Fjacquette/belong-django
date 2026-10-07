@@ -567,16 +567,18 @@ facet state and survive pagination and response changes. Empty facets are unrest
 Now means an event currently between its start/end, a start within the last two
 hours with no end, or explicit dateless `Now` intent. Today/Tomorrow use the pilot
 local calendar; This week runs from today through Sunday; This weekend covers the
-current or next Saturday/Sunday. No arbitrary time prose is parsed.
+current or next Saturday/Sunday, clamping its start to today on Sunday.
+No arbitrary time prose is parsed.
 
 Physical distance buckets are [0,1), [1,3), [3,5), [5,10), [10,25), [25,infinity)
 in miles. Only in-person/hybrid activities with valid coordinates match them.
 Online/hybrid match Online; OR permits both modes. Geolocation denial clears only
 distance choices, preserving Online and other facets with visible feedback.
 
-`cost_amount` is an optional nonnegative exact USD amount. Paid tiers use positive
-amounts through 10, then (10,25], (25,50], (50,100], and over 100, keeping decimal
-prices and boundary values disjoint. Free uses explicit free cost type. Forms
+`cost_amount` is an optional nonnegative exact USD amount. Paid tiers match their
+labels exactly: [1,10], [11,25], [26,50], [51,100], and over 100. Decimal prices
+between labelled ranges do not match a numeric tier. Paid zero is invalid in
+normal model/form validation. Free uses explicit free cost type. Forms
 reject contradictory free/paid/unknown numeric costs. Arbitrary cost display text
 and unknown numeric amounts never determine tiers. Exact/display costs remain on
 cards. Only matching tracked, owner-preserved authored demo prices are populated.
