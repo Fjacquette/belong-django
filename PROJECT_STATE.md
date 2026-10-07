@@ -40,6 +40,16 @@ Default posture: **do it now**. If product behavior needs backend/model work, bu
 - Free-text suggestions are private separate records, reviewable in Django admin;
   they never automatically become public or matching tags.
 
+## Occurrence lifecycle and capacity
+
+- Activity hosts and authorized associated Group organizers manage a private
+  person/response roster with creator-vocabulary counts.
+- Occurrences are Active or Cancelled. Cancellation stores actor/time and optional
+  reason, freezes existing responses, and leaves Group, Series and siblings intact.
+- Only Count me in consumes capacity. Serialized server mutations reject new
+  commitments when full; interest/questions remain possible while active. No
+  waitlist, automatic notifications or reactivation in this slice.
+
 ## Product direction
 
 Belong exists to reduce loneliness by helping people create and deepen relationships through things they do together.

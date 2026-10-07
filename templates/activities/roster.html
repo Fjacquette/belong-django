@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Responses · {{ activity.title }} · Belong{% endblock %}
+{% block content %}
+<section class="max-w-3xl space-y-6">
+  <div class="ui-cluster">
+    <a href="{% url 'activities:index' %}" class="ui-link">← Discover</a>
+    {% if can_view_details %}<a href="{% url 'activities:detail' activity.pk %}" class="ui-link">Activity details</a>{% endif %}
+    {% if show_series %}<a href="{{ activity.series.get_absolute_url }}" class="ui-link">Series: {{ activity.series.title }}</a>{% endif %}
+  </div>
+  <h1 class="text-3xl font-display break-words">{{ activity.title }}</h1>
+  {% if activity.is_cancelled %}
+    <div class="space-y-2">
+      <p class="font-semibold">Cancelled · {{ activity.cancelled_at|date:'M j, Y, g:i a' }}</p>
+      {% if activity.cancellation_reason %}<p class="whitespace-pre-line break-words">{{ activity.cancellation_reason }}</p>{% endif %}
+      <p class="text-sm">Participation is closed. Responses are retained.</p>
+    </div>
+  {% else %}<p>Active</p>{% endif %}
+  <section class="space-y-3" aria-labelledby="roster-heading">
+    <h2 id="roster-heading" class="text-xl font-display">Responses</h2>
+    <p class="text-sm">{% for count in counts %}{{ count.label }}: {{ count.count }}{% if not forloop.last %} · {% endif %}{% endfor %}</p>
+    {% if activity.capacity %}<p class="text-sm">{{ committed_count }} / {{ activity.capacity }} committed. Only Count me in uses a place.</p>{% endif %}
+    {% if responses %}
+      <table class="ui-roster">
+        <caption class="sr-only">Responses to {{ activity.title }}</caption>
+        <thead><tr><th scope="col">Person</th><th scope="col">Response</th></tr></thead>
+        <tbody>{% for response in responses %}<tr><td>{{ response.user.profile.identity_label|default:response.user.username }}</td><td>{{ response.get_status_display }}</td></tr>{% endfor %}</tbody>
+      </table>
+    {% else %}<p class="text-sm">No responses yet.</p>{% endif %}
+  </section>
+  {% if not activity.is_cancelled %}
+    <form action="{% url 'activities:cancel' activity.pk %}" method="post" class="space-y-3">
+      {% csrf_token %}
+      <h2 class="text-xl font-display">Cancel this occurrence</h2>
+      <label for="{{ cancel_form.reason.id_for_label }}" class="block text-sm font-semibold">{{ cancel_form.reason.label }}</label>
+      {{ cancel_form.reason }}
+      {% for error in cancel_form.reason.errors %}<p class="text-sm" role="alert">{{ error }}</p>{% endfor %}
+      <p class="text-sm">{{ cancel_form.reason.help_text }}</p>
+      <button type="submit" class="ui-button ui-button--secondary ui-button--comfortable">Cancel this occurrence</button>
+    </form>
+  {% endif %}
+</section>
+{% endblock %}

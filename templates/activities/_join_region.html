@@ -1,12 +1,14 @@
 <div {% if variant == 'detail' %}id="participation-{{ activity.pk }}" aria-live="polite"{% endif %} class="w-full {% if variant == 'detail' %}space-y-3{% endif %}" aria-label="Participation in {{ activity.title }}">
   {% if variant == 'detail' %}
-    {% if response_options %}
+    {% if activity.is_cancelled %}
+      <p class="text-sm font-semibold">Cancelled · Participation is closed; responses are retained.</p>
+    {% elif response_options %}
       <form method="post" action="{% url 'activities:respond' activity.pk %}" hx-post="{% url 'activities:respond' activity.pk %}" hx-target="#participation-{{ activity.pk }}" hx-swap="outerHTML" class="participation__response ui-cluster">
         {% csrf_token %}
         <input type="hidden" name="variant" value="detail">
         <input type="hidden" name="next" value="{{ next_path }}">
         {% for option in response_options %}
-          <button type="submit" name="status" value="{{ option.value }}" aria-pressed="{% if current_status == option.value %}true{% else %}false{% endif %}" class="ui-button ui-button--comfortable ui-response{% if current_status == option.value and option.value == 'committed' %} ui-response--confirmed{% endif %}">{{ option.label }}</button>
+          <button type="submit" name="status" value="{{ option.value }}" aria-pressed="{% if current_status == option.value %}true{% else %}false{% endif %}"{% if option.disabled %} disabled{% endif %} class="ui-button ui-button--comfortable ui-response{% if current_status == option.value and option.value == 'committed' %} ui-response--confirmed{% endif %}">{{ option.label }}{% if option.disabled %} · Full{% endif %}</button>
         {% endfor %}
       </form>
     {% else %}
@@ -14,18 +16,21 @@
     {% endif %}
     <p class="text-sm">{% if current_status %}You: {{ current_status_label }}{% else %}No response yet{% endif %}</p>
   {% else %}
-    {% if card_response_options %}
+    {% if activity.is_cancelled %}<p class="text-sm text-center text-white font-semibold">Cancelled</p>
+    {% elif card_response_options %}
       <form method="post" action="{% url 'activities:respond' activity.pk %}" hx-post="{% url 'activities:respond' activity.pk %}" hx-target="#participation-{{ activity.pk }}" hx-swap="outerHTML" class="participation__response card-response">
         {% csrf_token %}
         <input type="hidden" name="variant" value="card">
         <input type="hidden" name="next" value="{{ next_path }}">
         {% for option in card_response_options %}
-          <button type="submit" name="status" value="{{ option.value }}" aria-pressed="{% if current_status == option.value %}true{% else %}false{% endif %}" title="{{ option.label }}{% if current_status == option.value %} — select again to clear{% endif %}" class="ui-button ui-button--compact ui-response ui-response--card{% if current_status == option.value and option.value == 'committed' %} ui-response--confirmed{% endif %}{% if not forloop.first %} card-response__optional{% endif %}"{% if not forloop.first %} hidden{% endif %}>{{ option.label }}</button>
+          <button type="submit" name="status" value="{{ option.value }}" aria-pressed="{% if current_status == option.value %}true{% else %}false{% endif %}" title="{{ option.label }}{% if current_status == option.value %} — select again to clear{% endif %}"{% if option.disabled %} disabled{% endif %} class="ui-button ui-button--compact ui-response ui-response--card{% if current_status == option.value and option.value == 'committed' %} ui-response--confirmed{% endif %}{% if not forloop.first %} card-response__optional{% endif %}"{% if not forloop.first %} hidden{% endif %}>{{ option.label }}{% if option.disabled %} · Full{% endif %}</button>
         {% endfor %}
       </form>
     {% endif %}
   {% endif %}
   {% if variant == 'detail' %}
+    {% if participation_notice %}<p class="text-sm" role="status">{{ participation_notice }}</p>{% endif %}
+    {% if activity.capacity %}<p class="text-sm">{{ committed_count }} / {{ activity.capacity }} committed{% if capacity_reached %} · Full{% endif %}. Only Count me in uses a place.</p>{% endif %}
     <p class="text-sm" title="{{ response_counts_label }}">{{ response_count|default:0 }} response{{ response_count|pluralize }} · {{ response_counts_label }}</p>
   {% endif %}
   {% if variant == 'detail' %}{% include 'activities/_participation_actions.html' %}{% endif %}

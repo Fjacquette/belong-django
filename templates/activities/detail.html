@@ -10,9 +10,11 @@
     {% endif %}
     <section class="flex-1">
       {% if show_series %}<p>Series: <a href="{{ activity.series.get_absolute_url }}" class="ui-link">{{ activity.series.title }}</a></p>{% endif %}
+      {% if can_organize %}<a href="{% url 'activities:roster' activity.pk %}" class="ui-link inline-flex items-center min-h-11">Manage responses and occurrence</a>{% endif %}
       <a href="{% url 'activities:index' %}" class="ui-link text-sm">← Back to activities</a>
       <div class="rounded-[36px] border border-white/60 bg-white/95 mt-4 overflow-hidden shadow-soft">
         <div class="p-8 text-white" style="background: linear-gradient(135deg, {{ activity.display_color_primary }} 0%, {{ activity.display_color_secondary }} 100%);">
+          {% if activity.is_cancelled %}<p class="font-semibold">Cancelled</p>{% endif %}
           <h1 class="text-4xl font-display leading-tight">{{ activity.title }}</h1>
           {% if activity.headline %}
             <p class="text-lg text-white/85 mt-2 max-w-2xl">{{ activity.headline }}</p>
@@ -28,6 +30,7 @@
           </div>
         {% endif %}
         <div class="p-8 space-y-6">
+          {% if activity.is_cancelled and activity.cancellation_reason %}<p class="whitespace-pre-line break-words"><strong>Cancellation reason:</strong> {{ activity.cancellation_reason }}</p>{% endif %}
           <div class="grid gap-5 md:grid-cols-2 text-sm text-belong-slate">
             <div>
               <p class="text-sm font-semibold text-belong-slate">Organizer</p>
@@ -104,7 +107,7 @@
           {% endif %}
 
           <div class="rounded-2xl border border-white/60 px-5 py-4 bg-white/80">
-            {% include 'activities/_join_region.html' with activity=activity variant='detail' response_count=join_context.response_count response_counts_label=join_context.response_counts_label interested_count=join_context.interested_count committed_count=join_context.committed_count attendee_count=join_context.attendee_count joined=join_context.joined response_options=join_context.response_options current_status=join_context.current_status current_status_label=join_context.current_status_label next_path=join_context.next_path %}
+            {% include 'activities/_join_region.html' with activity=activity variant='detail' capacity_reached=join_context.capacity_reached response_count=join_context.response_count response_counts_label=join_context.response_counts_label interested_count=join_context.interested_count committed_count=join_context.committed_count attendee_count=join_context.attendee_count joined=join_context.joined response_options=join_context.response_options current_status=join_context.current_status current_status_label=join_context.current_status_label next_path=join_context.next_path %}
           </div>
         </div>
       </div>

@@ -20,7 +20,7 @@ from django.views.decorators.http import require_POST
 from django.utils import timezone
 from django.utils.formats import date_format
 
-from .forms import ActivityForm
+from .forms import ActivityForm, CancelActivityForm
 from .visibility import visible_activities
 from .models import (
     Activity,
@@ -40,6 +40,7 @@ RESPONSE_LABELS = dict(ActivityResponseStatus.choices)
 
 
 def _decorate_activity(activity: Activity) -> None:
+    activity.display_title = f"Cancelled: {activity.title}" if activity.is_cancelled else activity.title
     category = activity.category
     activity.display_color_primary = (
         activity.color_primary
@@ -128,12 +129,14 @@ def _build_join_context(request: HttpRequest, activity: Activity) -> Dict[str, o
     attendee_count = interested_count + committed_count
     current_response = next((r for r in responses if r.user_id == request.user.pk), None)
 
+    capacity_reached = activity.capacity is not None and committed_count >= activity.capacity
     response_options = []
     for value in activity.active_responses():
         response_options.append(
             {
                 "value": value,
                 "label": RESPONSE_LABELS.get(value, value.replace("_", " ").title()),
+                "disabled": value == ActivityResponseStatus.COMMITTED and capacity_reached and (not current_response or current_response.status != value),
             }
         )
 
@@ -154,6 +157,7 @@ def _build_join_context(request: HttpRequest, activity: Activity) -> Dict[str, o
         "activity": activity,
         "attendee_count": attendee_count,
         "response_count": len(responses),
+        "capacity_reached": capacity_reached,
         "response_counts_label": "; ".join(
             f"{label}: {sum(r.status == value for r in responses)}"
             for value, label in ActivityResponseStatus.choices
@@ -276,6 +280,7 @@ def detail(request: HttpRequest, pk: int) -> HttpResponse:
         "activity": activity,
         "join_context": join_context,
         "friends": _friend_context(request.user),
+        "can_organize": activity.can_organize(request.user),
         "show_group": activity.group and activity.group.can_view(request.user),
         "show_series": activity.series and activity.series.can_organize(request.user),
     }
@@ -327,50 +332,42 @@ def create(request: HttpRequest) -> HttpResponse:
 @require_POST
 def respond(request: HttpRequest, pk: int) -> HttpResponse:
     activity = get_object_or_404(visible_activities(request.user).select_related("host"), pk=pk)
-    status = request.POST.get("status")
-    allowed = activity.active_responses()
-    if not status or status not in allowed:
-        return _render_join_region(request, activity)
-
-    existing = ActivityResponse.objects.filter(user=request.user, activity=activity).first()
-    if existing and existing.status == status:
-        existing.delete()
-    else:
-        ActivityResponse.objects.update_or_create(user=request.user, activity=activity, defaults={"status": status})
-    return _render_join_region(request, activity)
+    from .participation import change_response
+    notice = change_response(activity.pk, request.user, request.POST.get('status', ''), toggle=True)
+    activity.refresh_from_db()
+    return _render_join_region(request, activity, notice)
 
 
 @login_required
 @require_POST
 def join(request: HttpRequest, pk: int) -> HttpResponse:
     activity = get_object_or_404(visible_activities(request.user).select_related("host"), pk=pk)
-    allowed_statuses = activity.active_responses()
-    default_status = next(iter(allowed_statuses), None)
-    if default_status is None:
-        return _render_join_region(request, activity)
-    ActivityResponse.objects.update_or_create(
-        user=request.user,
-        activity=activity,
-        defaults={"status": default_status},
-    )
-    return _render_join_region(request, activity)
+    from .participation import change_response
+    notice = change_response(activity.pk, request.user)
+    activity.refresh_from_db()
+    return _render_join_region(request, activity, notice)
 
 
 @login_required
 @require_POST
 def leave(request: HttpRequest, pk: int) -> HttpResponse:
     activity = get_object_or_404(visible_activities(request.user).select_related("host"), pk=pk)
-    ActivityResponse.objects.filter(user=request.user, activity=activity).delete()
-    return _render_join_region(request, activity)
+    from .participation import change_response
+    notice = change_response(activity.pk, request.user, remove=True)
+    activity.refresh_from_db()
+    return _render_join_region(request, activity, notice)
 
 
-def _render_join_region(request: HttpRequest, activity: Activity) -> HttpResponse:
+def _render_join_region(request: HttpRequest, activity: Activity, notice="") -> HttpResponse:
     variant = "detail" if request.POST.get("variant") == "detail" else "card"
     # UI forms also work when HTMX is unavailable. Preserve the existing fragment API.
     if "variant" in request.POST and request.headers.get("HX-Request") != "true":
+        if notice:
+            messages.info(request, notice)
         return redirect(_participation_next_path(request, activity))
     context = _build_join_context(request, activity)
     context["variant"] = variant
+    context["participation_notice"] = notice
     if variant == "card":
         _decorate_activity(activity)
         _card_context(request, activity, canonical_filters(QueryDict(urlsplit(context["next_path"]).query)))
@@ -534,5 +531,45 @@ def series_detail(request, pk):
     choices = dict(ActivityResponseStatus.choices)
     return render(request, 'activities/series_detail.html', {'series': series,
         'response_labels': [choices[c] for c in (series.available_responses or ['interested']) if c in choices],
-        'occurrences': visible_activities(request.user).filter(series=series),
+        'occurrences': Activity.objects.filter(series=series).filter(Q(host=request.user) | (Q(group_id=series.group_id) if series.group_id else Q(pk__in=[]))),
     })
+
+
+def _organizer_activity(user, pk):
+    activity = get_object_or_404(Activity.objects.select_related('group', 'series', 'host__profile'), pk=pk)
+    if not activity.can_organize(user):
+        raise Http404
+    return activity
+
+
+@login_required
+def roster(request, pk):
+    return _render_roster(request, _organizer_activity(request.user, pk))
+
+
+def _render_roster(request, activity, cancel_form=None):
+    _decorate_activity(activity)
+    responses = list(activity.responses.select_related('user__profile').order_by('created_at', 'pk'))
+    counts = [{'label': label, 'count': sum(r.status == value for r in responses)}
+              for value, label in ActivityResponseStatus.choices
+              if value in activity.active_responses() or any(r.status == value for r in responses)]
+    return render(request, 'activities/roster.html', {
+        'activity': activity, 'responses': responses, 'counts': counts,
+        'committed_count': sum(r.status == ActivityResponseStatus.COMMITTED for r in responses),
+        'cancel_form': cancel_form if cancel_form is not None else CancelActivityForm(), 'suppress_create': True,
+        'can_view_details': visible_activities(request.user).filter(pk=activity.pk).exists(),
+        'show_series': activity.series and activity.series.can_organize(request.user),
+    })
+
+
+@login_required
+@require_POST
+def cancel(request, pk):
+    activity = _organizer_activity(request.user, pk)
+    form = CancelActivityForm(request.POST)
+    if not form.is_valid():
+        return _render_roster(request, activity, form)
+    from .participation import cancel_activity
+    if not cancel_activity(activity.pk, request.user, form.cleaned_data['reason']):
+        raise Http404
+    return redirect('activities:roster', pk=pk)

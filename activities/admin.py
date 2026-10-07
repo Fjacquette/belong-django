@@ -11,6 +11,7 @@ class ActivityCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Activity)
 class ActivityAdmin(admin.ModelAdmin):
+    readonly_fields = ('status', 'cancelled_at', 'cancelled_by', 'cancellation_reason')
     def formfield_for_choice_field(self, db_field, request, **kwargs):
         if db_field.name == "audience":
             kwargs["choices"] = PILOT_AUDIENCE_CHOICES
@@ -19,6 +20,7 @@ class ActivityAdmin(admin.ModelAdmin):
     list_display = (
         "title",
         "host",
+        "status",
         "category",
         "audience",
         "starts_at",
