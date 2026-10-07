@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from .forms import GroupForm, InvitationForm
+from activities.announcements import update_context
 from .models import Group, GroupAccess, GroupMembership, MemberRole, MemberStatus
 
 
@@ -53,6 +54,7 @@ def detail(request, pk, invitation_form=None):
     active = membership and membership.status == MemberStatus.ACTIVE
     members = group.memberships.filter(status=MemberStatus.ACTIVE).select_related("user")
     return render(request, "groups/detail.html", {
+        **update_context(request, group, organizer=organizer),
         "group": group, "membership": membership, "organizer": organizer,
         "can_send_invitations": organizer and request.user.profile.email_verified_at and not request.user.profile.outbound_mail_suspended,
         "invitation_form": (invitation_form if invitation_form is not None else InvitationForm()) if organizer else None,

@@ -748,3 +748,12 @@ and management show the optional reason. No controls appear in the image band.
 Cancellation freezes responses, retaining their identities/states/timestamps, and
 does not alter sibling occurrences, Group or Series. No waitlist, reactivation or
 notification workflow is introduced.
+
+## Organizer updates
+
+Updates live on Activity Details/management or Group Details, never on Discover
+cards. Reuse section headings, `ui-link` navigation to a focused compose form,
+`ui-field` plain-text textarea and comfortable primary Post update button. Each
+update shows author identity, semantic timestamp and escaped wrapping text. Lists
+show 20 updates per page with Newer/Older navigation; no feed controls or reactions.
+The compose form names its context and audience and suppresses floating Create.

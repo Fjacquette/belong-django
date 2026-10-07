@@ -334,3 +334,24 @@ class ActivitySeries(models.Model):
         if not user.is_authenticated:
             return False
         return self.group.can_organize(user) if self.group_id else self.owner_id == user.pk
+
+
+class Announcement(models.Model):
+    activity = models.ForeignKey(Activity, null=True, blank=True, on_delete=models.CASCADE, related_name='announcements')
+    group = models.ForeignKey('groups.Group', null=True, blank=True, on_delete=models.CASCADE, related_name='announcements')
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='authored_announcements')
+    body = models.TextField(max_length=2000)
+    recipients = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='received_announcements', blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at', '-pk']
+        constraints = [models.CheckConstraint(
+            condition=(models.Q(activity__isnull=False, group__isnull=True)
+                       | models.Q(activity__isnull=True, group__isnull=False)),
+            name='announcement_exactly_one_context')]
+
+    def clean(self):
+        super().clean()
+        if bool(self.activity_id) == bool(self.group_id):
+            raise ValidationError('Choose exactly one Activity or Group.')

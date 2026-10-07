@@ -101,6 +101,7 @@
             </div>
           {% endif %}
 
+          {% include 'activities/_announcements.html' %}
           <p class="text-base text-belong-slate leading-relaxed whitespace-pre-line">{{ activity.description }}</p>
           {% if show_group %}
             <p>With <a href="{{ activity.group.get_absolute_url }}" class="ui-link">{{ activity.group.name }}</a></p>
