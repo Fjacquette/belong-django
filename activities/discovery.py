@@ -99,8 +99,9 @@ def filter_activities(queryset, params):
                 elif value == 'week':
                     end = midnight+timedelta(days=7-today.weekday())
                 elif value == 'weekend':
-                    start = midnight+timedelta(days=5-today.weekday())
-                    end = start+timedelta(days=2)
+                    saturday = midnight+timedelta(days=5-today.weekday())
+                    start = max(midnight, saturday)
+                    end = saturday+timedelta(days=2)
                 condition |= Q(starts_at__gte=start, starts_at__lt=end)
         queryset = queryset.filter(condition)
     selections = params.getlist('where')
@@ -131,13 +132,14 @@ def filter_activities(queryset, params):
     selections = params.getlist('cost')
     if selections:
         condition = Q(pk__in=[])
-        tiers = {'1_10': (0, 10), '11_25': (10, 25), '26_50': (25, 50), '51_100': (50, 100), '100_plus': (100, None)}
+        tiers = {'1_10': (1, 10), '11_25': (11, 25), '26_50': (26, 50), '51_100': (51, 100), '100_plus': (100, None)}
         for value in selections:
             if value == 'free':
                 condition |= Q(cost_type=value)
             else:
                 low, high = tiers[value]
-                tier = Q(cost_type='paid', cost_amount__gt=low)
+                tier = Q(cost_type='paid')
+                tier &= Q(cost_amount__gt=low) if high is None else Q(cost_amount__gte=low)
                 if high is not None:
                     tier &= Q(cost_amount__lte=high)
                 condition |= tier
