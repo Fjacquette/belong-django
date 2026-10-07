@@ -144,3 +144,28 @@ class HeaderIdentityTests(TestCase):
         self.assertFalse(self.user.profile.can_use_belong)
         self.assertFalse(self.user.profile.legacy_access)
         self.assertIsNone(self.user.profile.email_verified_at)
+
+    def test_missing_profile_repair_preserves_setup_recovery_and_request_routes(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from social.models import AccountEmailProof
+        from .email_verification import digest
+
+        for purpose, route, field in [('signup', 'complete_signup', 'password1'),
+                                      ('recovery', 'complete_recovery', 'new_password1')]:
+            token = 'header-regression-' + purpose
+            proof = AccountEmailProof.objects.create(email='owner@example.invalid', purpose=purpose,
+                user=self.user if purpose == 'recovery' else None,
+                token_digest=digest(token), expires_at=timezone.now()+timedelta(hours=1))
+            self.user.profile.delete()
+            page = self.client.get(reverse(route, args=[token]))
+            self.assertContains(page, f'name="{field}"')
+            self.user.refresh_from_db()
+            self.assertFalse(self.user.profile.can_use_belong)
+            self.assertFalse(self.user.profile.legacy_access)
+            proof.refresh_from_db()
+            self.assertIsNone(proof.used_at)
+        for route in ['password_reset', 'account_email_requested']:
+            self.assertEqual(self.client.get(reverse(route)).status_code, 200)
+        denied = self.client.post(reverse('activities:create'), HTTP_HX_REQUEST='true')
+        self.assertEqual(denied['HX-Redirect'], reverse('verification_status'))
