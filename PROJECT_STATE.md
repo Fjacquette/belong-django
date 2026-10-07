@@ -126,7 +126,9 @@ user signals grant none. Missing BELONG_ENV fails closed as production. SQLite u
 IMMEDIATE transactions. Invitation sessions retain a signed ID, never a bearer
 token; legacy session tokens are scrubbed. Avatars have a 25 MP decode ceiling.
 No fake email backfill.
-#41 can now build the header identity menu from these profile values.
+Header identity uses a transparent avatar/name disclosure and compact Account
+settings / POST Logout rows. Discover remains the desktop header link and mobile
+brand destination; unverified accounts retain Verify email / Logout only.
 
 ## Email abuse controls
 
