@@ -34,11 +34,12 @@ class FacetTests(TestCase):
         return {a.pk for a in self.page(params).context['activities']}
 
     def test_cost_tiers_are_numeric_disjoint_and_display_prose_is_not_parsed(self):
-        cases = [(0, 'free'), ('0.50', '1_10'), (1, '1_10'), (10, '1_10'), ('10.01', '11_25'), (25, '11_25'), ('25.01', '26_50'), (50, '26_50'), ('50.01', '51_100'), (100, '51_100'), ('100.01', '100_plus')]
+        cases = [(0, 'free'), ('0.50', None), (1, '1_10'), (10, '1_10'), ('10.50', None), (11, '11_25'), (25, '11_25'), ('25.50', None), (26, '26_50'), (50, '26_50'), ('50.50', None), (51, '51_100'), (100, '51_100'), ('100.01', '100_plus')]
         expected = {}
         for amount, tier in cases:
             activity = self.activity(str(amount), cost_type='free' if amount == 0 else 'paid', cost_amount=Decimal(str(amount)), cost_display='Human-readable custom price')
-            expected.setdefault(tier, set()).add(activity.pk)
+            if tier is not None:
+                expected.setdefault(tier, set()).add(activity.pk)
         prose = self.activity('Price prose only', cost_type='paid', cost_display='$5')
         unknown = self.activity('Unknown price', cost_type='unknown', cost_display='Free-ish')
         for tier, ids in expected.items():
@@ -76,7 +77,7 @@ class FacetTests(TestCase):
         self.assertEqual(self.ids({'when': 'today'}), {recent.pk, ended.pk})
         self.assertEqual(self.ids({'when': 'tomorrow'}), {tomorrow.pk, monday_edge.pk})
         self.assertEqual(self.ids({'when': 'week'}), {recent.pk, ended.pk})
-        self.assertEqual(self.ids({'when': 'weekend'}), {saturday.pk, recent.pk, ended.pk})
+        self.assertEqual(self.ids({'when': 'weekend'}), {recent.pk, ended.pk})
         self.assertEqual(self.ids({'when': 'open'}), {intent.pk, open_ended.pk})
         self.assertEqual(self.ids({'when': ['now', 'tomorrow']}), {recent.pk, current.pk, intent.pk, tomorrow.pk, monday_edge.pk})
 
@@ -116,3 +117,33 @@ class FacetTests(TestCase):
         activity.save()
         self.assertContains(self.page(), '$5.25')
         self.assertContains(self.client.get(reverse('activities:detail', args=[activity.pk])), '$5.25')
+
+    def test_sunday_weekend_edges_exclude_previous_saturday_and_monday(self):
+        sunday_start = datetime(2026, 10, 4, 4, tzinfo=dt_timezone.utc)
+        before = self.activity('Saturday last minute', starts_at=sunday_start-timedelta(minutes=1))
+        first = self.activity('Sunday first minute', starts_at=sunday_start)
+        last = self.activity('Sunday last minute', starts_at=sunday_start+timedelta(days=1, minutes=-1))
+        after = self.activity('Monday first minute', starts_at=sunday_start+timedelta(days=1))
+        self.assertEqual(self.ids({'when': 'weekend'}), {first.pk, last.pk})
+
+    def test_model_validation_rejects_paid_zero_and_unsupported_audiences(self):
+        from django.core.exceptions import ValidationError
+        from .models import PILOT_AUDIENCE_CHOICES, ActivitySeries
+        activity = Activity(host=self.host, title='Validation', description='Together', cost_type='paid', cost_amount=0)
+        with self.assertRaises(ValidationError) as error:
+            activity.full_clean()
+        self.assertIn('cost_type', error.exception.message_dict)
+        for audience in ['group', 'custom']:
+            activity.cost_amount = 1
+            activity.audience = audience
+            with self.assertRaises(ValidationError) as error:
+                activity.full_clean()
+            self.assertIn('audience', error.exception.message_dict)
+            form = ActivityForm({'title': 'Validation', 'description': 'Together', 'audience': audience,
+                                 'location_type': 'online', 'cost_type': 'paid', 'cost_amount': 1})
+            self.assertFalse(form.is_valid())
+            self.assertIn('audience', form.errors)
+        self.assertEqual(Activity._meta.get_field('audience').choices, ActivitySeries._meta.get_field('audience').choices)
+        for audience, _ in PILOT_AUDIENCE_CHOICES:
+            activity.audience = audience
+            activity.full_clean()
