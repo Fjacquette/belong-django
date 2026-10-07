@@ -52,6 +52,11 @@ class UserProfile(models.Model):
         name = self.display_name or self.user.get_full_name() or self.user.username
         return f'{name} (Organization)' if self.account_type == 'organization' else name
 
+    @property
+    def identity_initials(self):
+        parts = (self.display_name or self.user.get_full_name() or self.user.username).split()
+        return (parts[0][0] + (parts[-1][0] if len(parts) > 1 else '')).upper() if parts else '?'
+
     status_text = models.CharField(max_length=160, blank=True)
     is_visible = models.BooleanField(default=True)
     last_active_at = models.DateTimeField(null=True, blank=True)

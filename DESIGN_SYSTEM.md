@@ -696,8 +696,13 @@ Verification pages expose only verification and logout; product navigation and
 Create remain hidden until access is granted. Settings and password forms suppress
 Create to keep their task focused. Display names replace opaque usernames in public
 identity, with an explicit “(Organization)” suffix wherever that identity appears.
-The header menu retains its existing layout with an Account settings link; #41 owns
-its later identity redesign.
+The header uses `ui-identity-trigger`, the existing outlined menu family at a 44px
+minimum height, with a fixed 32px circular avatar or initials, the display name
+(full name/username fallback), and disclosure cue. The name truncates within the
+available width; the accessible label and opened menu retain the full identity.
+Native details/summary preserves keyboard operation. Unverified accounts see
+identity plus Verify email/POST Logout only; verified accounts retain Discover and
+Account settings. Missing profiles are repaired with unverified defaults.
 
 ## Curated interest picker
 
