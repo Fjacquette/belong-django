@@ -1,6 +1,6 @@
 from belong.test_helpers import create_legacy_user
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import Client, TestCase
 from django.urls import reverse
 
 
@@ -109,6 +109,35 @@ class HeaderIdentityTests(TestCase):
         self.assertIn(reverse('account_settings'), header)
         self.assertIn('method="post"', header)
         self.assertIn('csrfmiddlewaretoken', header)
+
+    def test_dropdown_has_only_peer_account_rows_without_repeated_identity(self):
+        header = self.header()
+        account = header.split('<details', 1)[1].split('</details>', 1)[0]
+        trigger, panel = account.split('</summary>', 1)
+        self.assertIn('class="ui-identity-trigger"', trigger)
+        self.assertNotIn('ui-menu-trigger', trigger)
+        self.assertNotIn(self.user.profile.identity_label, panel)
+        self.assertEqual(panel.count('class="ui-account-menu__item"'), 2)
+        self.assertEqual(panel.count('<a '), 1)
+        self.assertEqual(panel.count('<button '), 1)
+        self.assertIn('Account settings', panel)
+        self.assertIn('Logout', panel)
+        self.assertNotIn('Discover', panel)
+        self.assertNotIn('ui-button', panel)
+        self.assertIn('aria-label="Belong · Discover"', header)
+        self.assertIn('href="'+reverse('activities:index')+'" class="ui-brand"', header)
+
+    def test_menu_logout_keeps_post_and_csrf_protection(self):
+        secure = Client(enforce_csrf_checks=True)
+        secure.force_login(self.user)
+        self.assertEqual(secure.get(reverse('logout')).status_code, 405)
+        self.assertEqual(secure.post(reverse('logout')).status_code, 403)
+        secure.get(reverse('activities:index'))
+        from django.conf import settings
+        csrf = secure.cookies[settings.CSRF_COOKIE_NAME].value
+        self.assertRedirects(secure.post(reverse('logout'), {'csrfmiddlewaretoken': csrf}),
+                             reverse(settings.LOGOUT_REDIRECT_URL), fetch_redirect_response=False)
+        self.assertNotIn('_auth_user_id', secure.session)
 
     def test_avatar_is_used_when_present(self):
         from media_assets.models import ImageAsset, ImageAssetPurpose
