@@ -22,6 +22,7 @@ from django.utils.formats import date_format
 
 from .forms import ActivityForm, CancelActivityForm
 from .visibility import visible_activities
+from .announcements import update_context
 from .models import (
     Activity,
     ActivityCostType,
@@ -284,6 +285,7 @@ def detail(request: HttpRequest, pk: int) -> HttpResponse:
         "show_group": activity.group and activity.group.can_view(request.user),
         "show_series": activity.series and activity.series.can_organize(request.user),
     }
+    context.update(update_context(request, activity, organizer=activity.can_organize(request.user)))
     return render(request, "activities/detail.html", context)
 
 
@@ -554,6 +556,7 @@ def _render_roster(request, activity, cancel_form=None):
               for value, label in ActivityResponseStatus.choices
               if value in activity.active_responses() or any(r.status == value for r in responses)]
     return render(request, 'activities/roster.html', {
+        **update_context(request, activity, organizer=True),
         'activity': activity, 'responses': responses, 'counts': counts,
         'committed_count': sum(r.status == ActivityResponseStatus.COMMITTED for r in responses),
         'cancel_form': cancel_form if cancel_form is not None else CancelActivityForm(), 'suppress_create': True,

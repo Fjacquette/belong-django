@@ -27,6 +27,7 @@
       </table>
     {% else %}<p class="text-sm">No responses yet.</p>{% endif %}
   </section>
+  {% include 'activities/_announcements.html' %}
   {% if not activity.is_cancelled %}
     <form action="{% url 'activities:cancel' activity.pk %}" method="post" class="space-y-3">
       {% csrf_token %}

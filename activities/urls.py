@@ -1,10 +1,12 @@
 from django.urls import path
 
 from . import views
+from .announcements import activity_announce
 
 app_name = "activities"
 
 urlpatterns = [
+    path('activities/<int:pk>/announce/', activity_announce, name='announce'),
     path('series/new/', views.series_create, name='series_create'),
     path('series/<int:pk>/', views.series_detail, name='series_detail'),
     path('series/<int:pk>/edit/', views.series_edit, name='series_edit'),

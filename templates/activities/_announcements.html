@@ -1,0 +1,14 @@
+{% if can_announce or announcements %}
+<section class="space-y-3 break-words" aria-labelledby="updates-heading">
+  <h2 id="updates-heading" class="text-xl font-display">Organizer updates</h2>
+  {% if can_announce %}<a href="{{ announcement_url }}" class="ui-link inline-flex items-center min-h-11">Post an update</a>{% endif %}
+  {% for announcement in announcements %}
+    <article class="space-y-2">
+      <p class="text-sm">{{ announcement.author.profile.identity_label }} · <time datetime="{{ announcement.created_at|date:'c' }}">{{ announcement.created_at|date:'M j, Y, g:i a' }}</time></p>
+      <p class="whitespace-pre-line">{{ announcement.body }}</p>
+    </article>
+  {% empty %}<p class="text-sm">No updates yet.</p>{% endfor %}
+  {% if announcements.has_previous %}<a href="?updates_page={{ announcements.previous_page_number }}#updates-heading" class="ui-link">Newer updates</a>{% endif %}
+  {% if announcements.has_next %}<a href="?updates_page={{ announcements.next_page_number }}#updates-heading" class="ui-link">Older updates</a>{% endif %}
+</section>
+{% endif %}

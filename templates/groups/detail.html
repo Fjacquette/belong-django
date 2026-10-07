@@ -8,6 +8,7 @@
   <p class="whitespace-pre-line">{{ group.description }}</p>
   <p class="text-sm">Primary organizer: {{ group.owner.profile.identity_label }}</p>
   <p class="text-sm">{{ group.get_access_display }} · {{ group.access_description }}</p>
+  {% include 'activities/_announcements.html' %}
   {% if organizer %}
     <a href="{% url 'groups:edit' group.pk %}" class="ui-link inline-flex items-center min-h-11">Edit group and image defaults</a>
     <a href="{% url 'activities:create' %}?group={{ group.pk }}" class="ui-link inline-flex items-center min-h-11">Create an activity for this group</a>
