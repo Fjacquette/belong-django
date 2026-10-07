@@ -1,6 +1,6 @@
 """Reusable values copied into an occurrence, never live inheritance."""
 SERIES_DEFAULT_FIELDS = (
-    'title', 'description', 'category', 'audience', 'available_responses',
+    'title', 'description', 'category', 'audience', 'available_responses', 'invite_group_members',
     'location_type', 'location_name', 'location_address1', 'location_address2',
     'location_city', 'location_state', 'location_zip', 'location_url',
     'location_gps', 'location_instructions', 'cost_type', 'cost_amount',

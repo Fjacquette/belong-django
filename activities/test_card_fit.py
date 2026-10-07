@@ -92,7 +92,7 @@ class CardFitTests(TestCase):
         self.assertContains(response, 'activity-card__when')
         self.assertContains(response, 'card-context-menu__trigger')
         self.assertContains(response, '--card-accent: #06796b;')
-        self.assertContains(response, 'aria-pressed="true"')
+        self.assertContains(response, 'You: Interested')
         self.assertContains(response, 'ui-response--card')
 
     def test_header_gradient_is_subtle_darkens_right_and_stays_accessible_throughout(self):

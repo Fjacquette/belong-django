@@ -34,6 +34,8 @@ class ResponseChoicesWidget(forms.CheckboxSelectMultiple):
 class ActivityDefaultsValidationMixin:
     def clean(self):
         data = super().clean()
+        if data.get('invite_group_members') and not data.get('group'):
+            self.add_error('invite_group_members', 'Choose a Group to invite its members.')
         amount = data.get('cost_amount')
         kind = data.get('cost_type')
         if amount is not None:
@@ -70,7 +72,7 @@ class ActivityForm(ActivityDefaultsValidationMixin, forms.ModelForm):
         required=False,
         initial=list(DEFAULT_RESPONSE_CHOICES),
         widget=ResponseChoicesWidget,
-        help_text="Choose what intent is useful for this activity. One or two complete choices appear on its card when they fit; all choices appear in Details.",
+        help_text="Choose what intent is useful for this activity. Choices appear in Details. Invited viewers can always RSVP coming or not coming.",
     )
 
     class Meta:
@@ -103,7 +105,7 @@ class ActivityForm(ActivityDefaultsValidationMixin, forms.ModelForm):
             "audience",
             "allow_friend_invites",
             "allow_friend_of_friend_invites",
-            "is_personal_invitation",
+            "invite_group_members",
             "cost_type",
             "cost_amount",
             "cost_display",
@@ -140,8 +142,10 @@ class ActivityForm(ActivityDefaultsValidationMixin, forms.ModelForm):
         ).distinct() if user and user.is_authenticated else Group.objects.none()
         self.fields['group'].label = 'For a group?'
         self.context_group = context_group
+        self.fields['invite_group_members'].help_text = 'Ask active members of the associated Group to RSVP; this does not change the activity audience.'
         self.context_series = context_series
         if context_group:
+            self.initial.setdefault('invite_group_members', True)
             self.initial['group'] = context_group.pk
             self.fields['group'].disabled = True
             if not self.is_bound:
@@ -210,10 +214,11 @@ class ActivitySeriesForm(ActivityDefaultsValidationMixin, forms.ModelForm):
         self.fields['header_image'].queryset = ImageAsset.objects.filter(purpose=ImageAssetPurpose.ACTIVITY_HEADER)
         self.fields['header_image'].help_text = 'Optional Series artwork; when blank, new occurrences use the group default.'
         if context_group:
+            self.initial.setdefault('invite_group_members', True)
             self.initial['group'] = context_group.pk
             self.fields['group'].disabled = True
         for name, field in self.fields.items():
-            field.widget.attrs['class'] = 'ui-choice-list' if isinstance(field.widget, forms.CheckboxSelectMultiple) else 'ui-field mt-1'
+            field.widget.attrs['class'] = 'ui-choice-list' if isinstance(field.widget, forms.CheckboxSelectMultiple) else 'ui-check' if isinstance(field.widget, forms.CheckboxInput) else 'ui-field mt-1'
         if self.instance.pk:
             self.initial['available_responses'] = self.instance.available_responses
 
