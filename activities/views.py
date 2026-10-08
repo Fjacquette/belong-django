@@ -138,7 +138,7 @@ def _build_join_context(request: HttpRequest, activity: Activity) -> Dict[str, o
 
     capacity_reached = activity.capacity is not None and committed_count >= activity.capacity
     invited = bool(is_invited(activity, request.user))
-    response_values = list(dict.fromkeys((list(RSVP_LABELS) if invited else []) + activity.active_responses()))
+    response_values = list(dict.fromkeys((list(RSVP_LABELS) if invited and activity.uses_legacy_participation else []) + activity.active_responses()))
     response_options = []
     for value in response_values:
         response_options.append(
@@ -152,7 +152,7 @@ def _build_join_context(request: HttpRequest, activity: Activity) -> Dict[str, o
     current_status = current_response.status if current_response else None
     card_response_options = response_options[:2] if invited and not activity.is_cancelled else []
     card_current_status_label = CARD_RESPONSE_LABELS.get(current_status, 'Previous response') if current_status else ''
-    card_unmatched_response = bool(invited and current_status and current_status not in RSVP_LABELS)
+    card_unmatched_response = bool(activity.uses_legacy_participation and invited and current_status and current_status not in RSVP_LABELS)
 
     if not hasattr(activity, "is_hidden"):
         activity.is_hidden = HiddenActivity.objects.filter(user=request.user, activity=activity).exists()
@@ -552,7 +552,7 @@ def series_detail(request, pk):
     series = _series_for(request.user, pk)
     choices = dict(ActivityResponseStatus.choices)
     return render(request, 'activities/series_detail.html', {'series': series,
-        'response_labels': [choices[c] for c in (current_response_values(series.available_responses) if series.available_responses else DEFAULT_RESPONSE_CHOICES)],
+        'response_labels': [choices[c] for c in (current_response_values(series.available_responses) if series.available_responses else DEFAULT_RESPONSE_CHOICES)] if series.uses_legacy_participation else [],
         'occurrences': Activity.objects.filter(series=series).filter(Q(host=request.user) | (Q(group_id=series.group_id) if series.group_id else Q(pk__in=[]))),
     })
 

@@ -13,17 +13,24 @@ The system is anchored in:
 - Belong's existing purple/teal/slate palette, Rockwell display type, Inter/system
   body type, rounded shapes, warm/lightweight tone, and dense activity-card model.
 
-## Pending participation-pattern design (#74)
+## Participation-pattern foundation (#74, slice A)
 
-[The participation model proposal](docs/PARTICIPATION_MODEL_PROPOSAL.md) is awaiting
-product-owner review. It proposes pattern-specific actions/invitations, independent
+[The reviewed participation model](docs/PARTICIPATION_MODEL_PROPOSAL.md) proposes pattern-specific actions/invitations, independent
 intent/admission/place/payment state, and separate poll/question/contact capabilities.
-#75 and #76 are referenced follow-ups; neither is implemented here. Existing
-#60/#70 Band 5 controls and five current creator choices remain the runtime baseline.
+#75 and #76 are referenced follow-ups; neither is implemented here. Null configuration keeps #60/#70 Band 5 controls and five current creator choices.
+Slice A adds a How will people take part? select to Activity/Series forms: Response
+choices (current flow), or No response required. Unsupported patterns/actions are
+not offered. The latter hides legacy checkboxes as progressive enhancement; without
+JavaScript their help explains that those choices are ignored. Series defaults are
+copied per occurrence. No-response cards use See details, including for invitees;
+Details/rosters state No response required and show only permitted navigation links.
+Acceptance of an email invitation does not imply RSVP. Existing Activity configuration
+is read-only; historical rows remain accessible without mutation.
 The proposed replacement keeps Band 4 description-only, compact Band 5 state/action,
 Details for richer controls, and explicit pending labels that never promise an
 unsecured place. Future slices must validate keyboard/no-JS and 320/375px geometry
-before replacing these rules; the proposal does not activate new controls.
+before replacing the remaining legacy rules. Existing control families/geometry
+are reused; no new card status or unimplemented participation control is introduced.
 
 ## 1. Core geometry
 

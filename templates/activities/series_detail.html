@@ -8,7 +8,7 @@
   <p>{{ series.get_cadence_display }}{% if series.weekday != None %} · {{ series.get_weekday_display }}{% endif %}{% if series.usual_start_time %} · {{ series.usual_start_time|time:'g:i a' }}{% endif %}</p>
   {% if series.cadence_description %}<p>{{ series.cadence_description }}</p>{% endif %}
   <p>{{ series.get_audience_display }} · {{ series.location_name|default:'Location TBD' }} · {{ series.cost_display|default:series.get_cost_type_display }}</p>
-  <p>Response choices: {{ response_labels|join:', ' }}</p>
+  {% if series.uses_legacy_participation %}<p>Response choices: {{ response_labels|join:', ' }}</p>{% else %}<p>{{ series.participation_pattern_label }}</p>{% endif %}
   <div class="flex flex-wrap items-center gap-4">
     <a href="{% url 'activities:create' %}?series={{ series.pk }}" class="ui-link inline-flex items-center min-h-11 font-semibold">Create occurrence</a>
     <a href="{% url 'activities:series_edit' series.pk %}" class="ui-link inline-flex items-center min-h-11">Edit series defaults</a>

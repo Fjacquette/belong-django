@@ -8,6 +8,7 @@ from django.db import models
 from django.utils import timezone
 
 from media_assets.models import ImageAssetPurpose
+from .participation_config import validate_config, configured_pattern_label, navigation_allowed
 
 
 class DemoSeedRecord(models.Model):
@@ -91,7 +92,38 @@ class ActivityStatus(models.TextChoices):
     CANCELLED = 'cancelled', 'Cancelled'
 
 
-class Activity(models.Model):
+class ParticipationConfigurationMixin:
+    @property
+    def uses_legacy_participation(self):
+        return self.participation_config is None
+
+    @property
+    def participation_pattern_label(self):
+        return configured_pattern_label(self.participation_config)
+
+    @property
+    def offers_external_actions(self):
+        return navigation_allowed(self.participation_config, 'open_external')
+
+    def clean(self):
+        super().clean()
+        try:
+            validate_config(self.participation_config)
+        except ValidationError as error:
+            raise ValidationError({'participation_config': error.messages})
+
+    def save(self, *args, **kwargs):
+        fields = kwargs.get('update_fields')
+        if fields is None or 'participation_config' in fields:
+            validate_config(self.participation_config)
+            if isinstance(self, Activity) and self.pk:
+                old = Activity.objects.filter(pk=self.pk).values_list('participation_config', flat=True).first()
+                if old != self.participation_config:
+                    raise ValidationError('Changing an existing Activity participation configuration requires a reviewed conversion.')
+        return super().save(*args, **kwargs)
+
+
+class Activity(ParticipationConfigurationMixin, models.Model):
     status = models.CharField(max_length=12, choices=ActivityStatus.choices, default=ActivityStatus.ACTIVE, db_default=ActivityStatus.ACTIVE)
     cancellation_reason = models.TextField(max_length=500, blank=True, default='', db_default='')
     cancelled_at = models.DateTimeField(null=True, blank=True)
@@ -178,6 +210,7 @@ class Activity(models.Model):
     action3_label = models.CharField(max_length=80, blank=True)
     action3_url = models.CharField(max_length=255, blank=True, validators=[URLValidator(schemes=["http", "https"])])
     invite_group_members = models.BooleanField(default=False, verbose_name='Invite active group members')
+    participation_config = models.JSONField(null=True, blank=True, default=None, validators=[validate_config])
     available_responses = models.JSONField(default=list, blank=True)
     capacity = models.PositiveIntegerField(null=True, blank=True, validators=[MinValueValidator(1)])
     created_at = models.DateTimeField(auto_now_add=True)
@@ -192,6 +225,10 @@ class Activity(models.Model):
 
     def clean(self):
         super().clean()
+        if self.pk:
+            old = Activity.objects.filter(pk=self.pk).values_list('participation_config', flat=True).first()
+            if old != self.participation_config:
+                raise ValidationError('Existing Activities retain their current participation configuration.')
         if self.cost_type == ActivityCostType.PAID and self.cost_amount == 0:
             raise ValidationError({'cost_type': 'Choose Free for a zero cost.'})
 
@@ -207,6 +244,8 @@ class Activity(models.Model):
         return user.is_authenticated and (self.host_id == user.pk or bool(self.group_id and self.group.can_organize(user)))
 
     def active_responses(self):  # pragma: no cover - helper for templates later
+        if not self.uses_legacy_participation:
+            return []
         if not self.available_responses:
             return [status.value for status in DEFAULT_RESPONSE_CHOICES]
         return current_response_values(self.available_responses)
@@ -295,7 +334,7 @@ class HiddenOrganizer(models.Model):
         constraints = [models.UniqueConstraint(fields=("user", "organizer"), name="unique_hidden_organizer")]
 
 
-class ActivitySeries(models.Model):
+class ActivitySeries(ParticipationConfigurationMixin, models.Model):
     """Reusable activity defaults and cadence; occurrences retain independent values."""
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='activity_series')
     group = models.ForeignKey('groups.Group', on_delete=models.SET_NULL, null=True, blank=True, related_name='series')
@@ -304,6 +343,7 @@ class ActivitySeries(models.Model):
     category = models.ForeignKey(ActivityCategory, on_delete=models.SET_NULL, null=True, blank=True, related_name='series')
     audience = models.CharField(max_length=40, choices=PILOT_AUDIENCE_CHOICES, default=ActivityVisibility.EVERYONE)
     invite_group_members = models.BooleanField(default=False, verbose_name='Invite active group members')
+    participation_config = models.JSONField(null=True, blank=True, default=None, validators=[validate_config])
     available_responses = models.JSONField(default=list, blank=True)
     location_type = models.CharField(max_length=20, choices=ActivityLocationType.choices, default=ActivityLocationType.TBD)
     location_name = models.CharField(max_length=200, blank=True)

@@ -19,6 +19,8 @@ def locked_activity(pk):
 
 def change_response(pk, user, status=None, *, toggle=False, remove=False):
     with locked_activity(pk) as activity:
+        if not activity.uses_legacy_participation:
+            return 'No response is required for this activity.'
         if activity.is_cancelled:
             return 'This activity is cancelled. Responses are retained; participation is closed.'
         from .invitations import is_invited

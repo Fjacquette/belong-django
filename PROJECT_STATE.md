@@ -203,12 +203,18 @@ brand destination; unverified accounts retain Verify email / Logout only.
   while invitations/proofs retain explicit retries. Existing retained
   delivery records are backfilled. Provider webhook integration is still deployment work.
 
-## Participation model review
+## Participation pattern foundation (slice A)
 
 - #74 defines pattern-specific participation and separates user actions from intent,
   admission, capacity and payment. The proposed model is in
-  [docs/PARTICIPATION_MODEL_PROPOSAL.md](docs/PARTICIPATION_MODEL_PROPOSAL.md), pending
-  product-owner review; this is documentation, not an implemented replacement.
+  [docs/PARTICIPATION_MODEL_PROPOSAL.md](docs/PARTICIPATION_MODEL_PROPOSAL.md), reviewed
+  in PR #79. Slice A adds nullable versioned configuration to Activity/Series; null
+  retains legacy behavior and data. All seven patterns are registered, but only
+  navigation capabilities execute. Creators can explicitly choose No response
+  required, including for invitees; no click or forged RSVP creates a response.
+  Other pattern actions remain unavailable. Series copies configuration deeply;
+  existing Activities cannot be silently converted. The default creation path
+  retains current response choices/More during compatibility.
 - Keep #60/#70 behavior and #73 notification eligibility intact until an approved
   incremental slice replaces them. No universal Interested or Willing response.
 - #75 proposes poll → finalize → new confirmation invitation → separate RSVP.

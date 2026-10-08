@@ -1,13 +1,35 @@
 # Activity participation model — proposal for review
 
-**Status:** Design phase of [#74](https://github.com/Fjacquette/belong-django/issues/74),
-2026-10-08. No schema, UX or runtime changes are implemented by this document.
+**Status:** Reviewed design basis (PR #79) for [#74](https://github.com/Fjacquette/belong-django/issues/74),
+2026-10-08. Slice A implementation is bounded below; the remaining capabilities
+and independent state changes remain future slices.
 Assessed Django baseline: master `6128ccb` (includes #60/#70 and notification PR #73).
 [#75](https://github.com/Fjacquette/belong-django/issues/75),
 [#76](https://github.com/Fjacquette/belong-django/issues/76), and
 [#78](https://github.com/Fjacquette/belong-django/issues/78) are dependencies/follow-ups,
-not authorized implementation in this iteration. Product-owner review precedes the
-replacement of current participation behavior.
+not implemented by slice A. Future capability/state replacements remain separately
+scoped; current legacy behavior is preserved.
+
+## Slice A implementation boundary
+
+`participation_config` is nullable JSON on Activity and ActivitySeries. Only null
+selects compatibility; existing raw choices, responses, invitations and notification
+history remain untouched. Configured objects store `{version: 1, pattern, actions}`
+with strict known-key/version/pattern/action validation. All seven patterns are
+registered; version 1 executes only `view_details` and optional `open_external`.
+Planned attendance, Join now, poll, enrollment, registration, payment, contact and
+standing opt-in actions cannot be enabled. Creators are offered the current flow or
+the working No response required option; other presets are registry configuration,
+not selectable claims of working capabilities. Missing pattern on legacy clients
+retains the existing creation flow/default.
+
+Configured navigation never creates/changes/removes ActivityResponse, even through
+forged invited RSVP POSTs. No-response cards/Details and invitation copy reflect
+that behavior; historical evidence remains readable. Series copies configuration
+independently into new occurrences and may change future defaults without modifying
+siblings or rewriting retained choice JSON. Existing Activity configuration cannot
+change via form/admin/model saves in slice A; conversion remains separate work.
+No-response configuration does not subscribe users to email or implement #75/#76/#78.
 
 ## Recommendation
 
@@ -244,8 +266,9 @@ that the future capabilities already exist.
 1. **Preserve baseline:** retain #60/#70 routes, card selection/unmatched-state
    display, creator vocabulary, legacy Interested history, free-event locks and #73
    notifications until an approved path explicitly replaces each. Null/new version
-   means compatibility, not auto-inferred scheduled event. This proposal makes no
-   migrations, source changes or edits to local data.
+   means compatibility, not auto-inferred scheduled event. The proposal phase made
+   no migrations, source changes or edits to local data; the reviewed slice A
+   boundary above adds nullable configuration without converting existing records.
 2. **Add opt-in configuration:** after review, introduce versioned pattern/policy
    configuration and separately scoped semantic actions for explicitly configured
    new Activities. Keep legacy JSON intact. Do not bulk assign patterns to old
@@ -302,5 +325,5 @@ prefer disabling the new flow for review over pretending a destructive downgrade
 
 Each implementation slice updates DESIGN_SYSTEM, PROJECT_STATE and USER_STORIES,
 adds behavior tests, runs Django checks/relevant tests, and presents its exact committed
-browser-test HEAD. This documentation PR requires review of the model first; it does
-not close the implementation phase of #74 or start #75/#76/#78.
+browser-test HEAD. Slice A does not close the remaining implementation phases of #74 or start
+#75/#76/#78.

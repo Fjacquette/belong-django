@@ -630,3 +630,25 @@ checks described above. Browser-test uses console mail; automated tests capture
 email locally. No real external recipient was contacted for validation. Event and
 recipient logic is separate from the email transport for later channels; only email
 exists now, and other channels require their own consent/privacy design.
+
+
+## Participation pattern configuration (issue #74, slice A)
+
+Activity/Series `participation_config = NULL` retains the current response-choice
+flow, default Tell me more, invited RSVP and historical Interested read path.
+The additive migration assigns no pattern and rewrites no previous choice/response,
+invitation, announcement or mail history. Existing Activity configuration is protected
+against silent conversion; Series defaults may change for future occurrences only.
+
+Creators can select **No response required** when publishing an informational/external
+opportunity. Its versioned semantic actions are navigation only: View Details and,
+when a valid link is supplied, Open external opportunity. Invitees also navigate
+without RSVPing. GETs/external navigation and crafted response POSTs create no
+ActivityResponse or notification subscription. Without JavaScript legacy response
+checkboxes remain visible with explanatory help, but are ignored for this choice.
+
+All seven patterns are registered in `activities/participation_config.py`; the
+configuration is strict `{version: 1, pattern, actions}` JSON. Unsupported/unknown
+versions/actions are rejected. Attendance/Join now, actual polls/questions/contact,
+enrollment/registration/payment and standing notification opt-ins are later slices,
+not offered controls. See [the reviewed model](docs/PARTICIPATION_MODEL_PROPOSAL.md).

@@ -18,18 +18,18 @@
   <section class="space-y-3" aria-labelledby="roster-heading">
     <h2 id="roster-heading" class="text-xl font-display">Responses</h2>
     <p class="text-sm">{% for count in counts %}{{ count.label }}: {{ count.count }}{% if not forloop.last %} · {% endif %}{% endfor %}</p>
-    {% if activity.capacity %}<p class="text-sm">{{ committed_count }} / {{ activity.capacity }} committed. Only Count me in uses a place.</p>{% endif %}
+    {% if activity.uses_legacy_participation and activity.capacity %}<p class="text-sm">{{ committed_count }} / {{ activity.capacity }} committed. Only Count me in uses a place.</p>{% endif %}
     {% if responses %}
       <table class="ui-roster">
         <caption class="sr-only">Responses to {{ activity.title }}</caption>
         <thead><tr><th scope="col">Person</th><th scope="col">Response</th></tr></thead>
         <tbody>{% for response in responses %}<tr><td>{{ response.user.profile.identity_label|default:response.user.username }}</td><td>{{ response.get_status_display }}</td></tr>{% endfor %}</tbody>
       </table>
-    {% else %}<p class="text-sm">No responses yet.</p>{% endif %}
+    {% else %}<p class="text-sm">{% if activity.uses_legacy_participation %}No responses yet.{% else %}No response required.{% endif %}</p>{% endif %}
   </section>
   <section class="space-y-3" aria-labelledby="invitation-heading">
     <h2 id="invitation-heading" class="text-xl font-display">Invitations</h2>
-    <p class="text-sm">Invitations ask for an RSVP; they do not change who can see this activity or join anyone to a Group.</p>
+    <p class="text-sm">{% if activity.uses_legacy_participation %}Invitations ask for an RSVP;{% else %}Invitations point people to this opportunity;{% endif %} they do not change who can see this activity or join anyone to a Group.</p>
     {% if activity.group_id %}
       <p class="text-sm">Group invitations: {% if activity.invite_group_members %}active members of {{ activity.group.name }}{% else %}off{% endif %}</p>
       <form method="post" action="{% url 'activities:manage_invitations' activity.pk %}" class="ui-cluster">
@@ -54,7 +54,7 @@
       </form>
     {% empty %}<p class="text-sm">No direct invitees.</p>{% endfor %}
     <h3 class="text-lg font-display">Invite by email</h3>
-    <p class="text-sm">Invite someone to this activity, whether or not they already use Belong. They can RSVP after signing in or creating an account. Activity audience rules still apply.</p>
+    <p class="text-sm">Invite someone to this activity, whether or not they already use Belong. {% if activity.uses_legacy_participation %}They can RSVP after signing in or creating an account.{% else %}They can view Details after signing in or creating an account; no response is required.{% endif %} Activity audience rules still apply.</p>
     {% if can_send_email_invitations %}
       <form method="post" action="{% url 'activities:send_email_invitation' activity.pk %}" class="space-y-3">
         {% csrf_token %}

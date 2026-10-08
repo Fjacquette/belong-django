@@ -15,6 +15,16 @@ class ActivityResponseAdminForm(forms.ModelForm):
         if self.instance.pk and self.instance.status == ActivityResponseStatus.INTERESTED:
             self.fields['status'].choices.append((ActivityResponseStatus.INTERESTED, ActivityResponseStatus.INTERESTED.label))
 
+    def clean(self):
+        data = super().clean()
+        activity = data.get('activity')
+        if activity and not activity.uses_legacy_participation and (
+            not self.instance.pk or activity.pk != self.instance.activity_id
+            or data.get('user') != self.instance.user or data.get('status') != self.instance.status
+        ):
+            raise forms.ValidationError('This activity does not accept response changes.')
+        return data
+
 
 @admin.register(ActivityCategory)
 class ActivityCategoryAdmin(admin.ModelAdmin):
@@ -24,7 +34,7 @@ class ActivityCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Activity)
 class ActivityAdmin(admin.ModelAdmin):
-    readonly_fields = ('status', 'cancelled_at', 'cancelled_by', 'cancellation_reason')
+    readonly_fields = ('status', 'cancelled_at', 'cancelled_by', 'cancellation_reason', 'participation_config')
     def formfield_for_choice_field(self, db_field, request, **kwargs):
         if db_field.name == "audience":
             kwargs["choices"] = PILOT_AUDIENCE_CHOICES
@@ -56,6 +66,7 @@ class ActivityResponseAdmin(admin.ModelAdmin):
 
 @admin.register(ActivitySeries)
 class ActivitySeriesAdmin(admin.ModelAdmin):
+    readonly_fields = ('participation_config',)
     list_display = ('title', 'owner', 'group', 'cadence')
     search_fields = ('title', 'description')
     autocomplete_fields = ('owner', 'group', 'category', 'header_image')

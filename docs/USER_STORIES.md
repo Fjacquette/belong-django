@@ -10,7 +10,7 @@ Belong helps people make and deepen friendships through things they do together.
 
 1. **No group-first dependency:** users may discover, create, respond to and participate in an otherwise visible Activity without joining a Group. Group membership is never itself a participation gate.
 2. **Low social cost:** people can help shape a plan before committing. Bobby’s poll is the initial interaction: no preliminary Interested/Willing button. No global Interested action/status/default; historical records remain readable.
-3. **Meaningful participation:** #74 requires Activity participation presets, separating actions from intent, admission, places and payment. Their replacement design is pending review. Current #60/#70 UX remains: ordinary cards navigate with a saved-state footer, invitees get attendance RSVP, and Details retains five current creator choices with Interested excluded. Inviting someone grants neither visibility nor Group membership.
+3. **Meaningful participation:** #74 requires Activity participation presets, separating actions from intent, admission, places and payment. The model was reviewed in PR #79; slice A adds configuration and a genuine no-response option. Null-configured #60/#70 UX remains: ordinary cards navigate with a saved-state footer, invitees get attendance RSVP, and Details retains five current creator choices with Interested excluded. Inviting someone grants neither visibility nor Group membership.
 4. **Separate relations:** friendship, group membership, Activity visibility, invitation, and ActivityResponse are different facts. None silently implies another. Activity RSVPs must not silently join a Group; where the Group accepts members, offer an optional join action after a nonmember responds.
 5. **Accessible, safe by design:** preserve useful privacy, reporting/blocking, suitability, and trust questions; do not assume every real-world interaction is equally low-risk.
 6. **Lightweight coordination rather than a social-media feed:** announcements, updates and eventual messaging serve shared activities; avoid mandatory discussion boards, status competition or engagement farming.
@@ -61,7 +61,7 @@ Each story states a human outcome, not a preferred form or database schema. “A
 **Acceptance**
 - Creating a one-off Activity does not require a Group or a Series.
 - Time, place and details support “not decided yet” where appropriate.
-- Target #74: the author chooses a meaningful participation pattern and supported actions, including no response required. Pending design approval, the current five-choice configuration remains; Tell me more is the default and Interested is historical only.
+- #74 slice A: the creator chooses the current response-choice flow or No response required. All seven patterns are registered for later slices, but unsupported actions are not offered. Null configuration retains five current choices and the Tell me more default; Interested is historical only. No-response configuration creates no ActivityResponse, including for invitees.
 - Costs, limitations, capacity and access requirements can be conveyed when relevant. Do not make every optional field mandatory.
 - The Activity can later be refined through an explicitly supported editing flow (editing scope is a follow-up where not implemented).
 
@@ -72,7 +72,7 @@ Each story states a human outcome, not a preferred form or database schema. “A
 **Acceptance**
 - Current ordinary card: “See details / RSVP” before responding, then a concise saved-state / Edit response navigation action in Band 5; Band 4 stays description-only.
 - Current Details: organizer-selected committed/declined/question/more/vote choices where offered, never a selectable Interested response. A saved question/vote label is not a delivered question or stored poll answer.
-- Current explicitly invited viewer: attendance RSVP on the card, including an unmatched-state disclosure, using ActivityResponse and capacity/cancellation rules. Target #74: invitations use the Activity’s participation pattern; a planning, inquiry or registration invitation must not universally force attendance RSVP. Replacement awaits model review.
+- Current explicitly invited viewer: attendance RSVP on the card, including an unmatched-state disclosure, using ActivityResponse and capacity/cancellation rules. Target #74: invitations use the Activity’s participation pattern; a planning, inquiry or registration invitation must not universally force attendance RSVP. Replacing the remaining attendance behavior awaits slice B; configured no-response invitees have navigation only.
 - An invitation never bypasses Activity visibility, forces a Group membership, or discards prior response history when revoked.
 - A full Activity prevents new commitments but permits noncommittal responses when allowed; cancellation stops response changes and preserves history.
 
@@ -358,10 +358,11 @@ An existing user must be able to invite a real-world email address to **a partic
 
 Current repository status is not proof that Janine can receive signup, Group invitation and Activity invitation emails from the intended deployment. Validate external email delivery, origin, access restrictions, response flow and account recovery end-to-end before calling the pilot ready.
 
-### 6.11 Participation model — design review first (#74)
+### 6.11 Participation model — reviewed basis and slice A (#74)
 
-Review [the proposed model](PARTICIPATION_MODEL_PROPOSAL.md) before replacing #60/#70
-semantics. Patterns are Activity configuration, not subtypes. Questions/polls/contact/
+Use [the reviewed model](PARTICIPATION_MODEL_PROPOSAL.md) for bounded slices. Slice A
+adds versioned configuration and No response required while keeping existing
+#60/#70 behavior for null-configured Activities. Patterns are Activity configuration, not subtypes. Questions/polls/contact/
 external navigation are capabilities separate from intent, approval, places and payment.
 An informational Activity may require no response and must not write one for a click.
 #75's poll-to-confirmation flow and #76's capacity/admission/payment policies are
@@ -372,7 +373,7 @@ not add an eighth participation preset or authorize implementation in this itera
 
 ## 7. Proposed implementation/validation sequence
 
-**Participation review gate:** approve #74’s model and bounded slices before larger participation changes. Do not start #75 or #76 in this iteration.
+**Participation sequencing:** PR #79 supplies the reviewed model; slice A adds configuration/compatibility only. Further state/capability replacements require their own bounded slices. #75, #76 and #78 are not implemented in this iteration.
 
 **Stage A — Janine's first real walkthrough:** external signup, Group creation, real invitations and acceptance, Series creation, first hike, invitation-based and ordinary RSVP, roster, update, cancellation, next hike. Reuse existing Django functionality; **file issues only for evidenced gaps**. Test with Janine and a few actual hikers before broadening.
 

@@ -1,4 +1,15 @@
 (function () {
+  const participation = document.getElementById('id_participation_pattern');
+  if (participation) {
+    function updateParticipation() {
+      document.querySelectorAll('[data-legacy-response-choices]').forEach(section => {
+        section.hidden = Boolean(participation.value);
+      });
+    }
+    participation.addEventListener('change', updateParticipation);
+    updateParticipation();
+  }
+
   const group = document.getElementById('id_group');
   const defaults = document.getElementById('activity-group-defaults');
   const context = document.getElementById('activity-group-context');
