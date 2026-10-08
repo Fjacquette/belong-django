@@ -1,0 +1,25 @@
+{% if reservation_pool %}
+  <p class="text-sm">10-minute holds · No renewal. A held or offered place is not registration.{% if reservation_pool.waitlist_enabled %} Optional FIFO waitlist · Offers last 24 hours; expiry ends your priority. Rejoining is explicit and goes to the tail.{% endif %}</p>
+  <p class="text-sm">{{ registration_count }} secured · {{ reservation_held_count }} held or offered · {{ reservation_remaining }} available / {{ reservation_pool.capacity }} places.</p>
+  {% if reservation_queued %}<p class="text-sm">Waitlist position {{ reservation_position }} among eligible people awaiting an offer. No place is confirmed.</p>{% endif %}
+  {% if reservation_live %}<p class="font-semibold">{% if reservation_hold.entry_id %}Place offered{% else %}Place held{% endif %} until <time datetime="{{ reservation_hold.expires_at|date:'c' }}">{{ reservation_hold.expires_at|date:'M j, Y, g:i a T' }}</time>. You are not registered yet.</p>
+  {% elif reservation_hold and not reservation_hold.ended_at %}<p class="text-sm">Your hold or offer has expired. It cannot be confirmed. Check availability before continuing.</p>{% endif %}
+  {% if registration_request and not registration_request.closed_at and not activity.is_cancelled %}
+    <div class="ui-cluster">
+      {% if reservation_live %}
+        {% include 'activities/_reservation_form.html' with action='accept' label='Confirm free registration' %}
+        {% include 'activities/_reservation_form.html' with action='release' label='Release held or offered place' %}
+      {% elif reservation_queued %}
+        {% include 'activities/_reservation_form.html' with action='leave_queue' label='Leave waitlist' %}
+      {% else %}
+        {% if reservation_can_hold %}{% include 'activities/_reservation_form.html' with action='hold' label='Reserve free place for 10 minutes' %}{% endif %}
+        {% if reservation_can_queue %}{% include 'activities/_reservation_form.html' with action='join_queue' label='Join waitlist' %}{% endif %}
+      {% endif %}
+      {% if not registration_facts.secured and not reservation_live %}{% include 'activities/_reservation_form.html' with action='refresh' label='Check availability' %}{% endif %}
+    </div>
+  {% endif %}
+  {% if reservation_history or reservation_entries %}<details><summary class="ui-disclosure">Your hold and waitlist history</summary><div class="space-y-2 mt-2">
+    {% for row in reservation_history %}<p class="text-sm">{% if row.hold.entry_id %}Offer{% else %}Hold{% endif %} · {{ row.hold.created_at|date:'M j, g:i a' }} · Deadline {{ row.hold.expires_at|date:'M j, Y, g:i a T' }} · {{ row.state }}{% if row.hold.ended_at %} {{ row.hold.ended_at|date:'M j, g:i a' }}{% endif %}</p>{% endfor %}
+    {% for entry in reservation_entries %}<p class="text-sm">Waitlist joined {{ entry.created_at|date:'M j, g:i a' }} · {% if entry.ended_at %}{{ entry.get_end_reason_display }} {{ entry.ended_at|date:'M j, g:i a' }}{% elif entry.offer %}Offer issued; see deadline above{% else %}Queued{% endif %}</p>{% endfor %}
+  </div></details>{% endif %}
+{% endif %}

@@ -108,3 +108,7 @@ for audit_model in [OngoingOpportunity, EnrollmentRequest, AdmissionDecision, On
 from .models import RegistrationTarget, RegistrationRequest, RegistrationAdmission, FreeRegistration, RegistrationPlace
 for audit_model in [RegistrationTarget, RegistrationRequest, RegistrationAdmission, FreeRegistration, RegistrationPlace]:
     admin.site.register(audit_model, NotificationAuditAdmin)
+
+from .models import FreeReservationPool, FreeWaitlistEntry, FreeReservationHold, FreePoolCapacityChange
+for audit_model in [FreeReservationPool, FreeWaitlistEntry, FreeReservationHold, FreePoolCapacityChange]:
+    admin.site.register(audit_model, NotificationAuditAdmin)

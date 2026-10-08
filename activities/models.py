@@ -542,7 +542,8 @@ class ActivityNotificationEvent(models.Model):
     activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name='notification_events')
     announcement = models.OneToOneField(Announcement, null=True, blank=True, on_delete=models.SET_NULL)
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
-    kind = models.CharField(max_length=12, choices=[('update', 'Update'), ('cancellation', 'Cancellation'), ('confirmation', 'Confirm attendance')])
+    kind = models.CharField(max_length=12, choices=[('update', 'Update'), ('cancellation', 'Cancellation'), ('confirmation', 'Confirm attendance'), ('place_offer', 'Free place offer')])
+    reservation_hold = models.OneToOneField('FreeReservationHold', null=True, blank=True, on_delete=models.PROTECT)
     confirmation_round = models.OneToOneField('ConfirmationRound', null=True, blank=True, on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -780,3 +781,98 @@ class RegistrationPlace(models.Model):
     confirmation = models.OneToOneField(FreeRegistration, on_delete=models.PROTECT, related_name='place')
     created_at = models.DateTimeField(auto_now_add=True)
     released_at = models.DateTimeField(null=True, blank=True)
+
+
+class FreeReservationPool(models.Model):
+    """Explicit D3 variant. Existing registration targets acquire no pool by default."""
+    target = models.OneToOneField(RegistrationTarget, on_delete=models.PROTECT, related_name='reservation_pool')
+    capacity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    revision = models.PositiveIntegerField(default=1, editable=False)
+    waitlist_enabled = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.CheckConstraint(condition=models.Q(capacity__gte=1, revision__gte=1), name='free_pool_positive_capacity')]
+
+    def clean(self):
+        super().clean()
+        self.clean_fields()
+        if self.target.amount != 0 or self.target.allocation != 'claim' or self.target.capacity is None:
+            raise ValidationError('Free reservation holds require a capped, free eligibility-only registration target.')
+        if self.pk:
+            old = type(self).objects.get(pk=self.pk)
+            if (self.target_id, self.waitlist_enabled, self.capacity, self.revision) != (old.target_id, old.waitlist_enabled, old.capacity, old.revision):
+                raise ValidationError('Use serialized capacity management; reservation policy cannot be edited.')
+        elif self.capacity != self.target.capacity or self.revision != 1 or self.target.requests.exists():
+            raise ValidationError('Select reservation policy when creating a new target, before any registration requests.')
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        return super().save(*args, **kwargs)
+
+
+class FreeWaitlistEntry(models.Model):
+    """Explicit opt-in, server-assigned FIFO identity. Closed entries never reopen."""
+    pool = models.ForeignKey(FreeReservationPool, on_delete=models.PROTECT, related_name='entries')
+    request = models.ForeignKey(RegistrationRequest, on_delete=models.PROTECT, related_name='waitlist_entries')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+    ended_at = models.DateTimeField(null=True, blank=True)
+    end_reason = models.CharField(max_length=16, blank=True, choices=[('accepted', 'Accepted'), ('declined', 'Declined'), ('expired', 'Expired'), ('withdrawn', 'Withdrawn'), ('ineligible', 'No longer eligible'), ('cancelled', 'Cancelled')])
+
+    def save(self, *args, **kwargs):
+        if self.request.target_id != self.pool.target_id or self.user_id != self.request.user_id:
+            raise ValidationError('Waitlist identity must match its free pool and registration.')
+        if self.pk:
+            old = type(self).objects.get(pk=self.pk)
+            if (self.pool_id, self.request_id, self.user_id) != (old.pool_id, old.request_id, old.user_id):
+                raise ValidationError('Waitlist identity and priority are immutable.')
+        return super().save(*args, **kwargs)
+
+    class Meta:
+        ordering = ['pk']
+        constraints = [models.UniqueConstraint(fields=['pool', 'user'], condition=models.Q(ended_at__isnull=True), name='one_active_free_queue_entry')]
+
+
+class FreeReservationHold(models.Model):
+    """A deadline consumes capacity but never constitutes secured registration."""
+    pool = models.ForeignKey(FreeReservationPool, on_delete=models.PROTECT, related_name='holds')
+    request = models.ForeignKey(RegistrationRequest, on_delete=models.PROTECT, related_name='reservation_holds')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    entry = models.OneToOneField(FreeWaitlistEntry, null=True, blank=True, on_delete=models.PROTECT, related_name='offer')
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    ended_at = models.DateTimeField(null=True, blank=True)
+    end_reason = models.CharField(max_length=16, blank=True, choices=FreeWaitlistEntry._meta.get_field('end_reason').choices)
+
+    def save(self, *args, **kwargs):
+        if self.request.target_id != self.pool.target_id or self.user_id != self.request.user_id:
+            raise ValidationError('Hold identity must match its free pool and registration.')
+        if self.entry_id and (self.entry.pool_id, self.entry.request_id, self.entry.user_id) != (self.pool_id, self.request_id, self.user_id):
+            raise ValidationError('Offer must match its waitlist entry.')
+        if self.pk:
+            old = type(self).objects.get(pk=self.pk)
+            fields = ['pool_id', 'request_id', 'user_id', 'entry_id', 'expires_at']
+            if any(getattr(self, field) != getattr(old, field) for field in fields):
+                raise ValidationError('Hold identity, purpose and deadline cannot change.')
+        return super().save(*args, **kwargs)
+
+    class Meta:
+        ordering = ['pk']
+        constraints = [
+            models.UniqueConstraint(fields=['pool', 'user'], condition=models.Q(ended_at__isnull=True), name='one_active_free_hold'),
+            models.CheckConstraint(condition=models.Q(expires_at__gt=models.F('created_at')), name='free_hold_positive_duration'),
+        ]
+
+
+class FreePoolCapacityChange(models.Model):
+    pool = models.ForeignKey(FreeReservationPool, on_delete=models.PROTECT, related_name='capacity_changes')
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    revision = models.PositiveIntegerField()
+    previous = models.PositiveIntegerField()
+    capacity = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['pk']
+        constraints = [models.UniqueConstraint(fields=['pool', 'revision'], name='unique_free_pool_revision')]

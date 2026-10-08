@@ -77,6 +77,11 @@ def cancel_activity(pk, organizer, reason):
             activity.cancelled_at = timezone.now()
             activity.cancelled_by = organizer
             activity.save(update_fields=['status', 'cancellation_reason', 'cancelled_at', 'cancelled_by', 'updated_at'])
+            if activity.is_registration:
+                from .reservations import pool_for, cancel_locked
+                pool = pool_for(getattr(activity, 'registration_target', None))
+                if pool:
+                    cancel_locked(pool, activity.cancelled_at)
             from .notifications import queue_event
             queue_event(activity, organizer, 'cancellation')
         return True

@@ -222,7 +222,7 @@ brand destination; unverified accounts retain Verify email / Logout only.
 - Series defaults are copied independently. Existing Activity configuration is
   immutable; no bulk conversion/history rewrite. Default creation remains the
   legacy response-choice flow/More. No universal Interested or Willing response.
-  Registration/payment and inquiry remain unavailable.
+  Payment processing and inquiry remain unavailable.
   #73's response-based notification eligibility/consent/history remains intact.
 - #75 adds explicitly selected version 3, free three-date planning on one-off
   Activities. Yes/Maybe/No availability submissions are append-only history, separate
@@ -375,3 +375,19 @@ That should be enough to resume work without carrying a giant chat forward.
 - Details/roster retain independent facts and history; cancellation freezes mutations.
   Only active free registrations subscribe through existing update/cancellation controls.
   See docs/RESERVATION_POLICY_PROPOSAL.md for the precise implementation boundary.
+
+## Free reservation holds and waitlists (#76 D3)
+
+- New capped/free eligibility-only Registration targets can explicitly add 10-minute
+  holds and an optional FIFO waitlist with protected 24-hour offers. Old targets,
+  ordinary RSVPs, polling and ongoing enrollment stay unchanged; no payment processing.
+- Holds/offers count capacity but never confirm registration/attendance. Explicit
+  acceptance replaces the exact live hold with a secured free place under the Activity
+  lock. Expiry is reclaimed before allocation; retries/GET never extend deadlines.
+- Queue joining/rejoining is explicit and admission-eligible; offers preserve FIFO.
+  Cancellation ends unconfirmed holds/entries while retaining secured/history records.
+  Capacity revisions are audited; reductions cannot evict live holds/secured places.
+- Optional `expire_reservations` command records expiry/promotes proactively; POST
+  cleanup guarantees capacity without a worker. Durable offer notices reuse existing
+  consent/access/mail controls and do not subscribe queue participants to updates.
+  See docs/RESERVATION_POLICY_PROPOSAL.md for exact boundaries.

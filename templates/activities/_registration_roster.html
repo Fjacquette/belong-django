@@ -2,7 +2,7 @@
 <section class="space-y-3" aria-labelledby="registration-roster-heading">
   <h2 id="registration-roster-heading" class="text-xl font-display">Registrations</h2>
   <p class="text-sm">{{ registration_target.get_admission_display }} · {{ registration_target.get_allocation_display }} · {% if registration_target.amount %}{{ registration_target.currency }} {{ registration_target.amount }} required; payments unavailable{% else %}Free{% endif %}.</p>
-  <p>{{ registration_count }}{% if registration_target.capacity %} / {{ registration_target.capacity }}{% endif %} registered{% if registration_full %} · Full{% elif not registration_target.capacity %} · Unlimited{% endif %}. Requests consume no capacity and do not form a waitlist.</p>
+  <p>{{ registration_count }}{% if registration_capacity %} / {{ registration_capacity }}{% endif %} registered{% if registration_full %} · Full{% elif not registration_capacity %} · Unlimited{% endif %}. {% if reservation_pool %}Requests alone consume no capacity; joining the optional waitlist is explicit.{% else %}Requests consume no capacity and do not form a waitlist.{% endif %}</p>
   {% for row in registration_rows %}
     <div class="space-y-2">
       <p class="font-semibold">{{ row.application.user.profile.identity_label }}</p>
@@ -18,3 +18,4 @@
   {% empty %}<p class="text-sm">No registration requests yet.</p>{% endfor %}
 </section>
 {% endif %}
+{% include 'activities/_reservation_roster.html' %}

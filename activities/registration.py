@@ -47,6 +47,10 @@ def occupied(target):
 
 
 def full(target):
+    from .reservations import pool_for, used
+    pool = pool_for(target)
+    if pool:
+        return used(pool) >= pool.capacity
     return target.capacity is not None and occupied(target) >= target.capacity
 
 
@@ -60,7 +64,7 @@ def current_request(target, user):
     return target.requests.filter(user=user).select_related('target', 'user', 'decision', 'confirmation__place').last()
 
 
-def mutate(pk, actor, action, *, version, request_id='', decision=None):
+def mutate(pk, actor, action, *, version, request_id='', decision=None, hold_id='', pool_revision=''):
     with locked_activity(pk) as activity:
         organizer = action == 'decide'
         if organizer:
@@ -75,6 +79,8 @@ def mutate(pk, actor, action, *, version, request_id='', decision=None):
             return 'Cancelled. Registration and admission history are retained; changes are closed.'
         if str(version) != str(target.version):
             return 'Reload the current registration terms before continuing.'
+        from .reservations import maintain_locked, pool_for, withdraw_locked, accept_locked
+        maintain_locked(activity, target)
         if action == 'submit':
             latest = current_request(target, actor)
             if latest and latest.closed_at is None:
@@ -93,6 +99,7 @@ def mutate(pk, actor, action, *, version, request_id='', decision=None):
         if application.closed_at:
             return 'This request is already closed; its history is retained.'
         if action == 'withdraw':
+            withdraw_locked(activity, application)
             now = timezone.now()
             application.closed_at = application.withdrawn_at = now
             application.save(update_fields=['closed_at', 'withdrawn_at'])
@@ -104,6 +111,7 @@ def mutate(pk, actor, action, *, version, request_id='', decision=None):
                 if place:
                     place.released_at = now
                     place.save(update_fields=['released_at'])
+            maintain_locked(activity, target)
             return 'Registration withdrawn. Any free place is released; history is retained.'
         if action == 'decide':
             if target.admission != 'request' or decision not in {'approved', 'denied'}:
@@ -131,6 +139,8 @@ def mutate(pk, actor, action, *, version, request_id='', decision=None):
                 return 'Admission is not currently satisfied. No place secured.'
             if target.amount != 0:
                 return 'Payment required. Payments are unavailable; no place or paid registration can be confirmed.'
+            if pool_for(target):
+                return accept_locked(activity, application, hold_id, pool_revision)
             if target.allocation != 'claim':
                 return 'Organizer approval must secure this place.'
             if full(target):
@@ -172,7 +182,14 @@ def registration_context(request, activity, *, organizer=False):
     rows = target.requests.select_related('target', 'user__profile', 'decision__actor__profile', 'confirmation__place')
     if not organizer:
         rows = rows.filter(user=request.user)
-    return dict(registration_target=target, registration_request=own, registration_facts=own_facts,
+    from .reservations import reservation_context
+    reservation = reservation_context(request, activity, target, own, organizer=organizer)
+    if reservation.get('reservation_state') and own_facts and not own_facts['secured'] and not own.closed_at:
+        own_facts['state'] = reservation['reservation_state']
+    if reservation:
+        if own_facts:
+            own_facts['can_claim'] = False
+    return dict(**reservation, registration_capacity=reservation['reservation_pool'].capacity if reservation else target.capacity, registration_target=target, registration_request=own, registration_facts=own_facts,
         registration_state=own_facts['state'] if own else '', registration_rows=[facts(row, activity) for row in rows],
         registration_count=registrations_for(activity).count(), registration_full=full(target),
         registration_can_submit=target.admission != 'invitation' or is_invited(activity, request.user))
@@ -183,7 +200,7 @@ def registration_context(request, activity, *, organizer=False):
 def registration_action(request, pk, action):
     if action not in {'submit', 'claim', 'withdraw'}:
         raise Http404
-    notice = mutate(pk, request.user, action, version=request.POST.get('policy', ''), request_id=request.POST.get('request', ''))
+    notice = mutate(pk, request.user, action, version=request.POST.get('policy', ''), request_id=request.POST.get('request', ''), hold_id=request.POST.get('hold', ''), pool_revision=request.POST.get('pool_revision', ''))
     activity = get_object_or_404(visible_activities(request.user), pk=pk)
     from .views import _render_join_region, _participation_next_path
     if request.headers.get('HX-Request') != 'true':

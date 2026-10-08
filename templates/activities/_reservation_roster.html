@@ -1,0 +1,18 @@
+{% if reservation_pool %}
+<section class="space-y-3" aria-labelledby="reservation-roster-heading">
+  <h2 id="reservation-roster-heading" class="text-xl font-display">Free holds and waitlist</h2>
+  <p>{{ registration_count }} secured · {{ reservation_held_count }} held or offered · {{ reservation_remaining }} available / {{ reservation_pool.capacity }} places.</p>
+  <p class="text-sm">Holds last 10 minutes; {% if reservation_pool.waitlist_enabled %}FIFO offers last 24 hours{% else %}waitlist is off{% endif %}. Neither is confirmed registration or attendance.</p>
+  {% if not activity.is_cancelled %}
+    <form method="post" action="{% url 'activities:reservation_capacity' activity.pk %}" class="space-y-2">
+      {% csrf_token %}<input type="hidden" name="policy" value="{{ registration_target.version }}"><input type="hidden" name="pool_revision" value="{{ reservation_pool.revision }}">
+      <label for="reservation-capacity" class="block">Free place limit</label><input id="reservation-capacity" name="capacity" type="number" min="1" max="2147483647" value="{{ reservation_pool.capacity }}" class="ui-field">
+      <p class="text-sm">Cannot reduce below secured places plus live holds/offers. Increasing capacity promotes eligible queued people without confirming them.</p>
+      <button class="ui-button ui-button--secondary ui-button--comfortable">Update free place limit</button>
+    </form>
+  {% endif %}
+  {% for row in reservation_history %}<p class="text-sm"><strong>{{ row.hold.user.profile.identity_label }}</strong> · {% if row.hold.entry_id %}Offer{% else %}Hold{% endif %} · {{ row.state }} · Deadline {{ row.hold.expires_at|date:'M j, Y, g:i a T' }}{% if row.hold.ended_at %} · Ended {{ row.hold.ended_at|date:'M j, g:i a' }}{% endif %}</p>{% empty %}<p class="text-sm">No holds or offers yet.</p>{% endfor %}
+  {% for entry in reservation_entries %}<p class="text-sm"><strong>{{ entry.user.profile.identity_label }}</strong> · Waitlist joined {{ entry.created_at|date:'M j, g:i a' }} · {% if entry.ended_at %}{{ entry.get_end_reason_display }}{% elif entry.offer %}Offer issued{% else %}Queued{% endif %}</p>{% endfor %}
+  {% if reservation_pool.capacity_changes.all %}<details><summary class="ui-disclosure">Capacity history</summary><ul class="space-y-2 mt-2">{% for change in reservation_pool.capacity_changes.all %}<li class="text-sm">{{ change.previous }} → {{ change.capacity }} by {{ change.actor.profile.identity_label }} · {{ change.created_at|date:'M j, g:i a' }}</li>{% endfor %}</ul></details>{% endif %}
+</section>
+{% endif %}

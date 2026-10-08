@@ -383,7 +383,10 @@ def create(request: HttpRequest) -> HttpResponse:
                     create_poll(activity,[form.cleaned_data[f'poll_date_{n}'] for n in range(1,4)])
                 if activity.is_registration:
                     from .models import RegistrationTarget
-                    RegistrationTarget.objects.create(activity=activity, **form.cleaned_data['registration_terms'])
+                    target = RegistrationTarget.objects.create(activity=activity, **form.cleaned_data['registration_terms'])
+                    if form.cleaned_data.get('registration_reservations'):
+                        from .models import FreeReservationPool
+                        FreeReservationPool.objects.create(target=target, capacity=target.capacity, waitlist_enabled=form.cleaned_data.get('registration_waitlist', False))
                 if activity.is_free_ongoing:
                     from .models import OngoingOpportunity
                     OngoingOpportunity.objects.create(activity=activity, capacity=form.cleaned_data.get('cohort_capacity'))

@@ -878,3 +878,16 @@ unavailability without a checkout control or confirmation promise. Roster uses w
 rows and explicit Approve eligibility / Approve and secure free place / Deny request.
 Creator admission/allocation selects appear only for Registration with JS; no-JS help
 states their scope and other patterns ignore them. Series has no registration controls.
+
+## Free reservation holds and optional waitlist (#76 D3)
+
+Only capped/free eligibility-only Registration creation offers the explicitly selected
+hold/waitlist variant. Reuse native checkbox, field and comfortable button families;
+non-registration forms ignore these fields. Details distinguishes secured places from
+held/offered counts and shows absolute semantic `time` deadlines and no-renewal terms.
+Reserve free place / Confirm free registration / Release / Join or Leave waitlist /
+Check availability are POST buttons. Reads show Expired without renewing or mutating.
+History uses native disclosure. Roster separates admission, secured places, holds and
+FIFO entries, with a versioned capacity form that cannot evict places. Cards navigate
+with Place held / Place offered / Waitlisted / Offer expired state; no timer, mutation
+or badge in the image/description bands, and no change to fixed card geometry.

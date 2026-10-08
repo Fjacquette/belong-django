@@ -47,6 +47,8 @@ class ActivityDefaultsValidationMixin:
             choices.append(('registration', 'Registration (independent admission)'))
             self.fields['registration_admission'] = forms.ChoiceField(required=False, choices=[('open', 'Open'), ('request', 'Request required'), ('invitation', 'Invitation required')], initial='open', label='Registration admission', help_text='For Registration only; ignored for other patterns.', widget=forms.Select(attrs={'class': 'ui-field'}))
             self.fields['registration_allocation'] = forms.ChoiceField(required=False, choices=[('claim', 'Eligibility only; claim free place separately'), ('approval', 'Approval secures a free place')], initial='claim', label='Registration place policy', widget=forms.Select(attrs={'class': 'ui-field'}), help_text='For Registration only; ignored for other patterns. Paid quotes stop at eligibility; payment is unavailable.')
+            self.fields['registration_reservations'] = forms.BooleanField(required=False, label='Offer 10-minute free reservation holds', help_text='New capped free Registration with separate claims only. A hold is not confirmation; refresh never extends it.', widget=forms.CheckboxInput(attrs={'class':'ui-check'}))
+            self.fields['registration_waitlist'] = forms.BooleanField(required=False, label='Enable optional FIFO waitlist with 24-hour offers', help_text='Registration holds only. People must explicitly join after admission; no automatic signup or attendance.', widget=forms.CheckboxInput(attrs={'class':'ui-check'}))
             for n in range(1, 4):
                 self.fields[f'poll_date_{n}'] = forms.DateTimeField(**_DATETIME_INPUT_KWARGS, label=f'Poll date {n}',
                     help_text='For tentative planning only. Availability does not reserve a place.')
@@ -60,7 +62,7 @@ class ActivityDefaultsValidationMixin:
             widget=forms.Select(attrs={'class': 'ui-field mt-1'}))
         self.initial['participation_pattern'] = pattern
         self.stored_response_choices = deepcopy(self.instance.available_responses)
-        first = ['group', 'participation_pattern'] + [name for name in ('registration_admission', 'registration_allocation') if name in self.fields] + [f'poll_date_{n}' for n in range(1,4) if f'poll_date_{n}' in self.fields]
+        first = ['group', 'participation_pattern'] + [name for name in ('registration_admission', 'registration_allocation', 'registration_reservations', 'registration_waitlist') if name in self.fields] + [f'poll_date_{n}' for n in range(1,4) if f'poll_date_{n}' in self.fields]
         self.order_fields(first + [name for name in self.fields if name not in first])
 
     def clean(self):
@@ -110,6 +112,12 @@ class ActivityDefaultsValidationMixin:
                 self.add_error('cost_amount', 'Registration needs Free or an exact positive USD quote.')
             if allocation == 'approval' and (admission != 'request' or amount != 0):
                 self.add_error('registration_allocation', 'Approval can secure a place only for free, request-required registration.')
+            reservations = data.get('registration_reservations')
+            waitlist = data.get('registration_waitlist')
+            if waitlist and not reservations:
+                self.add_error('registration_waitlist', 'Enable free reservation holds before selecting a waitlist.')
+            if reservations and (amount != 0 or allocation != 'claim' or not data.get('capacity')):
+                self.add_error('registration_reservations', 'Holds require a capped free registration with eligibility-only admission.')
             data['registration_terms'] = dict(admission=admission, allocation=allocation, amount=amount, capacity=data.get('capacity'))
             data['capacity'] = None
         if data.get('invite_group_members') and not data.get('group'):
