@@ -1,6 +1,19 @@
 from django.contrib import admin
+from django import forms
 
-from .models import Activity, ActivitySeries, ActivityCategory, ActivityResponse, PILOT_AUDIENCE_CHOICES
+from .models import Activity, ActivitySeries, ActivityCategory, ActivityResponse, PILOT_AUDIENCE_CHOICES, CURRENT_RESPONSE_CHOICES, ActivityResponseStatus
+
+
+class ActivityResponseAdminForm(forms.ModelForm):
+    class Meta:
+        model = ActivityResponse
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['status'].choices = list(CURRENT_RESPONSE_CHOICES)
+        if self.instance.pk and self.instance.status == ActivityResponseStatus.INTERESTED:
+            self.fields['status'].choices.append((ActivityResponseStatus.INTERESTED, ActivityResponseStatus.INTERESTED.label))
 
 
 @admin.register(ActivityCategory)
@@ -34,6 +47,7 @@ class ActivityAdmin(admin.ModelAdmin):
 
 @admin.register(ActivityResponse)
 class ActivityResponseAdmin(admin.ModelAdmin):
+    form = ActivityResponseAdminForm
     list_display = ("activity", "user", "status", "created_at")
     list_filter = ("status", "created_at")
     search_fields = ("activity__title", "user__username")

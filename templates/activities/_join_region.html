@@ -17,18 +17,21 @@
     {% endif %}
     <p class="text-sm">{% if current_status %}You: {{ current_status_label }}{% else %}No response yet{% endif %}</p>
   {% else %}
-    {% if activity.is_cancelled %}<p class="text-sm text-center text-white font-semibold">Cancelled</p>
+    {% if activity.is_cancelled %}
+      <a href="{% url 'activities:detail' activity.pk %}{% if next_path %}?discover={{ next_path|urlencode }}{% endif %}" class="ui-button ui-button--compact ui-response--card w-full" aria-label="Cancelled.{% if current_status %} Saved response: {{ current_status_label }}.{% endif %} View response in Details.">Cancelled</a>
+    {% elif card_unmatched_response %}
+      <details class="card-context-menu card-response-menu">
+        <summary class="ui-button ui-button--compact ui-response--card card-response-menu__trigger" aria-label="Saved response: {{ current_status_label }}. Response options for {{ activity.title }}">{{ card_current_status_label }} <span aria-hidden="true">▾</span></summary>
+        <div class="card-context-menu__panel card-response-menu__panel ui-menu-panel space-y-3">
+          <p class="text-sm text-belong-slate">Saved response: {{ current_status_label }}</p>
+          {% include 'activities/_card_rsvp.html' %}
+          <a href="{% url 'activities:detail' activity.pk %}{% if next_path %}?discover={{ next_path|urlencode }}{% endif %}" class="ui-link text-sm">Edit response in Details</a>
+        </div>
+      </details>
     {% elif card_response_options %}
-      <form method="post" action="{% url 'activities:respond' activity.pk %}" hx-post="{% url 'activities:respond' activity.pk %}" hx-target="#participation-{{ activity.pk }}" hx-swap="outerHTML" class="participation__response card-response">
-        {% csrf_token %}
-        <input type="hidden" name="variant" value="card">
-        <input type="hidden" name="next" value="{{ next_path }}">
-        {% for option in card_response_options %}
-          <button type="submit" name="status" value="{{ option.value }}" aria-pressed="{% if current_status == option.value %}true{% else %}false{% endif %}" title="{{ option.label }}{% if option.disabled %} — Full{% endif %}{% if current_status == option.value %} — select again to clear{% endif %}"{% if option.disabled %} disabled{% endif %} class="ui-button ui-button--compact ui-response ui-response--card">{{ option.label }}</button>
-        {% endfor %}
-      </form>
+      {% include 'activities/_card_rsvp.html' %}
     {% else %}
-      <a href="{% url 'activities:detail' activity.pk %}{% if next_path %}?discover={{ next_path|urlencode }}{% endif %}" class="ui-button ui-button--compact ui-response--card w-full">See details / RSVP</a>
+      <a href="{% url 'activities:detail' activity.pk %}{% if next_path %}?discover={{ next_path|urlencode }}{% endif %}" class="ui-button ui-button--compact ui-response--card w-full"{% if current_status %} aria-label="Saved response: {{ current_status_label }}. Edit response for {{ activity.title }}"{% endif %}>{% if current_status %}{{ card_current_status_label }} / Edit response{% else %}See details / RSVP{% endif %}</a>
     {% endif %}
   {% endif %}
   {% if variant == 'detail' %}

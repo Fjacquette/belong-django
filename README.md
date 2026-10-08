@@ -225,14 +225,22 @@ for legacy rows with incorrect metadata. Invalid legacy assets return 404 withou
 rewriting stored data. BinaryField storage is unchanged.
 
 Action URL fields accept only HTTP/HTTPS links (or blank values). Legacy unsafe
-links render as `#`. New activities default only to Interested, a low-friction
-expression of proto-intent.
+links render as `#`. New Activities/Series default to Tell me more, a noncommittal
+request for information. Interested is retired from current creator choices and
+participant mutations. Historical rows and authored JSON are preserved; read paths
+label old Interested as historical, never as a commitment. Editing a legacy-only
+configuration or copying it into a new occurrence offers the current default.
 Creators explicitly opt into stronger or context-specific choices such as Count me in,
 Tell me more, I have a question, Vote on details, or Cannot make it when appropriate.
 Existing creator-selected choices remain intact. The legacy join shortcut uses the
 first creator-selected choice and remains idempotent; it does not impose an RSVP pair.
-Cards offer the first two creator-selected response buttons; activity
-details show all allowed response buttons.
+Ordinary cards navigate to Details: See details / RSVP before a response, then a
+concise saved-state / Edit response label. Invited cards retain their two direct
+RSVP buttons; an unmatched saved response uses a compact footer disclosure containing
+both RSVP choices and Edit response in Details. Band 4 contains only description;
+cancelled footers link to saved history on Details. Details shows the Activity’s
+current organizer-selected options, plus coming/not-coming only for invitees, and
+allows changing/removing responses while active. Navigation never changes a response.
 Responses update in place with HTMX, can be changed or removed, and keep
 interest separate from commitment. Custom action links remain secondary.
 
@@ -308,10 +316,10 @@ on valid latitude/longitude. These are pilot filters, not a geospatial service.
 
 Hide is a unique private user/activity preference. It never changes a response or
 informs the organizer. Normal discovery excludes hidden activities; the separate
-Show hidden control permits recovery with Unhide. Creators choose from six response
-types: Interested, Count me in, I have a question, Cannot make it, Tell me more, and
-Vote on details. One or two whole labels appear directly when they fit; Details
-exposes all. Repeating a selected response clears it.
+Show hidden control permits recovery with Unhide. Creators choose from five current
+response types: Count me in, I have a question, Cannot make it, Tell me more, and
+Vote on details. Details exposes the saved current vocabulary. Repeating a selected
+response clears it; explicit Remove response also handles historical values.
 
 Presence records authenticated HTTP requests, throttled to at most one update per
 minute: **Active** within 5 minutes, **Idle** within 30, **Offline** after 30 minutes

@@ -113,7 +113,7 @@ class OccurrenceLifecycleTests(TestCase):
         self.assertNotContains(detail, 'Manage responses and occurrence')
         card = self.client.get(reverse('activities:index'), {'q': 'Saturday hike'})
         self.assertContains(card, 'Cancelled: Saturday hike')
-        self.assertContains(card, 'You: Count me in')
+        self.assertContains(card, 'Saved response: Count me in')
         self.assertNotContains(card, 'name="status"')
         for route, data in [('respond', {'status': 'question'}), ('join', {}), ('leave', {})]:
             with self.subTest(route=route):
@@ -130,9 +130,9 @@ class OccurrenceLifecycleTests(TestCase):
                                     {'status': 'committed', 'variant': 'detail'}, HTTP_HX_REQUEST='true')
         self.assertContains(response, 'This activity is full. Your response has not changed.')
         self.assertEqual(ActivityResponse.objects.get(activity=self.activity, user=self.other).status, 'question')
-        self.activity.available_responses = ['committed', 'interested', 'question']; self.activity.save()
-        self.post('respond', status='interested')
-        self.assertEqual(ActivityResponse.objects.get(activity=self.activity, user=self.other).status, 'interested')
+        self.activity.available_responses = ['committed', 'more', 'question']; self.activity.save()
+        self.post('respond', status='more')
+        self.assertEqual(ActivityResponse.objects.get(activity=self.activity, user=self.other).status, 'more')
         self.post('respond', self.viewer, status='committed')  # Selected commitment toggles off.
         self.post('respond', self.other, status='committed')
         self.assertEqual(ActivityResponse.objects.filter(activity=self.activity, status='committed').count(), 1)

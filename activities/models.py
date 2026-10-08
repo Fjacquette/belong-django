@@ -64,7 +64,7 @@ class ActivityCostType(models.TextChoices):
 
 
 class ActivityResponseStatus(models.TextChoices):
-    INTERESTED = "interested", "Interested"
+    INTERESTED = "interested", "Interested (historical)"
     COMMITTED = "committed", "Count me in"
     QUESTION = "question", "I have a question"
     DECLINED = "declined", "Cannot make it"
@@ -73,8 +73,17 @@ class ActivityResponseStatus(models.TextChoices):
 
 
 DEFAULT_RESPONSE_CHOICES = [
-    ActivityResponseStatus.INTERESTED,
+    ActivityResponseStatus.MORE,
 ]
+
+CURRENT_RESPONSE_CHOICES = [choice for choice in ActivityResponseStatus.choices if choice[0] != ActivityResponseStatus.INTERESTED]
+
+
+def current_response_values(values):
+    if not isinstance(values, list):
+        return []
+    allowed = {value for value, label in CURRENT_RESPONSE_CHOICES}
+    return list(dict.fromkeys(value for value in values if isinstance(value, str) and value in allowed))
 
 
 class ActivityStatus(models.TextChoices):
@@ -200,9 +209,7 @@ class Activity(models.Model):
     def active_responses(self):  # pragma: no cover - helper for templates later
         if not self.available_responses:
             return [status.value for status in DEFAULT_RESPONSE_CHOICES]
-        if not isinstance(self.available_responses, list):
-            return []
-        return [status for status in self.available_responses if status in ActivityResponseStatus.values]
+        return current_response_values(self.available_responses)
 
     def _action_href(self, value):
         try:
@@ -255,7 +262,7 @@ class ActivityResponse(models.Model):
     status = models.CharField(
         max_length=20,
         choices=ActivityResponseStatus.choices,
-        default=ActivityResponseStatus.INTERESTED,
+        default=ActivityResponseStatus.MORE,
     )
     note = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

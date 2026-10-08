@@ -100,7 +100,7 @@ class FacetTests(TestCase):
         self.assertEqual(len(self.page({**params, 'page': 2}).context['activities']), 3)
         activity = page.context['activities'][0]
         destination = '/?' + query
-        response = self.client.post(reverse('activities:respond', args=[activity.pk]), {'status': 'interested', 'variant': 'card', 'next': destination})
+        response = self.client.post(reverse('activities:respond', args=[activity.pk]), {'status': 'more', 'variant': 'card', 'next': destination})
         self.assertEqual(response.headers['Location'], destination)
         self.assertTrue(ActivityResponse.objects.filter(user=self.viewer, activity=activity).exists())
 

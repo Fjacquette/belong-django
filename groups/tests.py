@@ -239,7 +239,7 @@ class GroupTests(TestCase):
         self.action(self.owner, self.membership, "block")
         activity = Activity.objects.create(title="Public hike", description="Walk", host=self.owner, group=self.group)
         self.client.force_login(self.member)
-        self.client.post(reverse("activities:respond", args=[activity.pk]), {"status": "interested"})
+        self.client.post(reverse("activities:respond", args=[activity.pk]), {"status": "more"})
         self.assertTrue(ActivityResponse.objects.filter(activity=activity, user=self.member).exists())
 
     def test_activity_group_optional_and_participation_not_gated(self):
@@ -249,7 +249,7 @@ class GroupTests(TestCase):
         self.client.force_login(self.outsider)
         for activity in [ordinary, linked]:
             self.assertEqual(self.client.get(reverse("activities:detail", args=[activity.pk])).status_code, 200)
-            self.client.post(reverse("activities:respond", args=[activity.pk]), {"status": "interested"})
+            self.client.post(reverse("activities:respond", args=[activity.pk]), {"status": "more"})
             self.assertTrue(ActivityResponse.objects.filter(activity=activity, user=self.outsider).exists())
         self.assertFalse(self.group.memberships.filter(user=self.outsider).exists())
 

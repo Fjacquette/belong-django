@@ -212,8 +212,11 @@
   .card-response > button { flex: 1 1 auto; white-space: nowrap; }
   .card-response__optional[hidden] { display: none; }
   .activity-card__subtitle, .activity-card__meta { overflow-wrap: anywhere; }
-  .card-current-response { line-height: 16px; }
-  .activity-card__band-4:has(.card-current-response) .activity-card__description { -webkit-line-clamp: 5; }
+  .card-response-menu { position: relative; top: auto; right: auto; width: 100%; }
+  .card-response-menu__trigger { display: flex; width: 100%; list-style: none; cursor: pointer; }
+  .card-response-menu__trigger::-webkit-details-marker { display: none; }
+  .card-response-menu__panel { top: auto; bottom: 44px; width: 100%; }
+  .activity-card > .activity-card__band-5:has(.card-response-menu[open]) { overflow: visible; }
   html { scroll-padding-bottom: 5rem; }
   .activity-card button, .activity-card a { scroll-margin-bottom: 5rem; }
   .account-menu summary::-webkit-details-marker { display: none; }

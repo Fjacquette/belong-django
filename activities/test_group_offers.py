@@ -18,13 +18,13 @@ class PostResponseGroupOfferTests(TestCase):
         cls.group = Group.objects.create(owner=cls.host, name='Walking together', access='open')
         cls.activity = Activity.objects.create(host=cls.host, group=cls.group, title='Walk at the park',
                                                starts_at=timezone.now(), cost_type='free',
-                                               available_responses=['interested', 'committed', 'question'])
+                                               available_responses=['more', 'committed', 'question'])
         cls.next = '/?q=park&when=today&when=tomorrow&cost=free&hidden=include&page=2'
 
     def setUp(self):
         self.client.force_login(self.user)
 
-    def respond(self, status='interested', *, htmx=True, variant='detail', activity=None):
+    def respond(self, status='more', *, htmx=True, variant='detail', activity=None):
         activity = activity or self.activity
         headers = {'HTTP_HX_REQUEST': 'true'} if htmx else {}
         return self.client.post(reverse('activities:respond', args=[activity.pk]),
@@ -71,7 +71,7 @@ class PostResponseGroupOfferTests(TestCase):
 
     def test_every_supported_response_is_independent_of_optional_join(self):
         ActivityInvitation.objects.create(activity=self.activity, user=self.user, invited_by=self.host)
-        for status in ['interested', 'question', 'committed', 'declined']:
+        for status in ['more', 'question', 'committed', 'declined']:
             self.respond(status)
             self.assertEqual(ActivityResponse.objects.get(user=self.user).status, status)
             self.assertFalse(GroupMembership.objects.filter(user=self.user).exists())
@@ -168,7 +168,7 @@ class PostResponseGroupOfferTests(TestCase):
         self.assertFalse(GroupJoinOffer.objects.exists())
         self.activity.status = 'active'; self.activity.group = None; self.activity.save()
         self.assertNotContains(self.respond(), 'Also join this Group?')
-        self.assertEqual(ActivityResponse.objects.get(user=self.user).status, 'interested')
+        self.assertEqual(ActivityResponse.objects.get(user=self.user).status, 'more')
         self.assertFalse(GroupJoinOffer.objects.exists())
 
     def test_toggle_off_and_remove_hide_offer_without_join_or_response_recreation(self):
@@ -176,7 +176,7 @@ class PostResponseGroupOfferTests(TestCase):
         self.assertNotContains(self.respond('question'), 'Also join this Group?')
         self.assertFalse(ActivityResponse.objects.exists())
         self.assertEqual(self.answer('join').status_code, 404)
-        self.respond('interested')
+        self.respond('more')
         result = self.client.post(reverse('activities:leave', args=[self.activity.pk]),
             {'variant': 'detail'}, HTTP_HX_REQUEST='true')
         self.assertNotContains(result, 'Also join this Group?')
@@ -302,5 +302,5 @@ class PostResponseGroupOfferTests(TestCase):
         result = self.client.post(reverse('activities:join', args=[self.activity.pk]),
             {'variant': 'detail'}, HTTP_HX_REQUEST='true')
         self.assertContains(result, 'Also join this Group?')
-        self.assertEqual(ActivityResponse.objects.get(user=self.user).status, 'interested')
+        self.assertEqual(ActivityResponse.objects.get(user=self.user).status, 'more')
         self.assertFalse(GroupMembership.objects.filter(user=self.user).exists())

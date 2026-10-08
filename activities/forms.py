@@ -10,6 +10,8 @@ from .models import (
     ActivityVisibility,
     DEFAULT_RESPONSE_CHOICES,
     PILOT_AUDIENCE_CHOICES,
+    CURRENT_RESPONSE_CHOICES,
+    current_response_values,
 )
 
 from .series import SERIES_DEFAULT_FIELDS
@@ -68,7 +70,7 @@ class ActivityForm(ActivityDefaultsValidationMixin, forms.ModelForm):
     ends_at = forms.DateTimeField(**_DATETIME_INPUT_KWARGS)
     post_until = forms.DateTimeField(**_DATETIME_INPUT_KWARGS)
     available_responses = forms.MultipleChoiceField(
-        choices=ActivityResponseStatus.choices,
+        choices=CURRENT_RESPONSE_CHOICES,
         required=False,
         initial=list(DEFAULT_RESPONSE_CHOICES),
         widget=ResponseChoicesWidget,
@@ -168,7 +170,9 @@ class ActivityForm(ActivityDefaultsValidationMixin, forms.ModelForm):
                 widget.attrs["class"] = "ui-check"
 
         if self.instance and self.instance.pk and self.instance.available_responses:
-            self.fields["available_responses"].initial = self.instance.available_responses
+            self.initial['available_responses'] = current_response_values(self.instance.available_responses) or list(DEFAULT_RESPONSE_CHOICES)
+        if 'available_responses' in self.initial:
+            self.initial['available_responses'] = current_response_values(self.initial['available_responses']) or list(DEFAULT_RESPONSE_CHOICES)
         self.fields["header_image"].queryset = ImageAsset.objects.filter(
             purpose=ImageAssetPurpose.ACTIVITY_HEADER
         )
@@ -195,7 +199,7 @@ class ActivityForm(ActivityDefaultsValidationMixin, forms.ModelForm):
 class ActivitySeriesForm(ActivityDefaultsValidationMixin, forms.ModelForm):
     title = forms.CharField(max_length=48, help_text='A short name for this series, such as Weekend Hikes.')
     location_name = forms.CharField(max_length=40, required=False, label='Usual venue / short location label')
-    available_responses = forms.MultipleChoiceField(choices=ActivityResponseStatus.choices, required=False,
+    available_responses = forms.MultipleChoiceField(choices=CURRENT_RESPONSE_CHOICES, required=False,
                                                    initial=list(DEFAULT_RESPONSE_CHOICES), widget=ResponseChoicesWidget,
                                                    help_text='Initial response choices for new occurrences.')
 
@@ -220,7 +224,7 @@ class ActivitySeriesForm(ActivityDefaultsValidationMixin, forms.ModelForm):
         for name, field in self.fields.items():
             field.widget.attrs['class'] = 'ui-choice-list' if isinstance(field.widget, forms.CheckboxSelectMultiple) else 'ui-check' if isinstance(field.widget, forms.CheckboxInput) else 'ui-field mt-1'
         if self.instance.pk:
-            self.initial['available_responses'] = self.instance.available_responses
+            self.initial['available_responses'] = current_response_values(self.instance.available_responses) or list(DEFAULT_RESPONSE_CHOICES)
 
     def save(self, commit=True):
         instance = super().save(commit=False)

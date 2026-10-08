@@ -23,7 +23,7 @@ class ActivityLoopTests(TestCase):
             host=cls.host,
             title="Walk together",
             description="Find a time for a walk in the park.",
-            available_responses=["interested", "committed", "question"],
+            available_responses=["more", "committed", "question"],
         )
 
     def setUp(self):
@@ -111,13 +111,13 @@ class ActivityLoopTests(TestCase):
         self.assertEqual(created.description, "Choose a game and a time together.")
         self.assertIsNone(created.starts_at)
         self.assertIsNone(created.ends_at)
-        self.assertEqual(created.available_responses, ["interested"])
-        self.assertEqual(created.active_responses(), ["interested"])
+        self.assertEqual(created.available_responses, ["more"])
+        self.assertEqual(created.active_responses(), ["more"])
         self.assertRedirects(response, reverse("activities:detail", args=[created.pk]))
 
     def test_allowed_response_statuses_are_stored(self):
         for status in (
-            ActivityResponseStatus.INTERESTED,
+            ActivityResponseStatus.MORE,
             ActivityResponseStatus.COMMITTED,
             ActivityResponseStatus.QUESTION,
         ):
@@ -150,7 +150,7 @@ class ActivityLoopTests(TestCase):
 
     def test_responding_again_updates_existing_response(self):
         url = reverse("activities:respond", args=[self.activity.pk])
-        self.client.post(url, {"status": ActivityResponseStatus.INTERESTED})
+        self.client.post(url, {"status": ActivityResponseStatus.MORE})
         original = ActivityResponse.objects.get(user=self.participant, activity=self.activity)
 
         response = self.client.post(url, {"status": ActivityResponseStatus.COMMITTED})
@@ -162,7 +162,7 @@ class ActivityLoopTests(TestCase):
         self.assertEqual(response.context["current_status"], ActivityResponseStatus.COMMITTED)
 
     def test_invalid_or_disallowed_status_does_not_create_response(self):
-        self.activity.available_responses = [ActivityResponseStatus.INTERESTED]
+        self.activity.available_responses = [ActivityResponseStatus.MORE]
         self.activity.save(update_fields=["available_responses"])
         for data in (
             {}, {"status": ""}, {"status": "invalid"},
@@ -178,12 +178,12 @@ class ActivityLoopTests(TestCase):
                 self.assertFalse(response.context["joined"])
 
     def test_invalid_or_disallowed_status_preserves_existing_response(self):
-        self.activity.available_responses = [ActivityResponseStatus.INTERESTED]
+        self.activity.available_responses = [ActivityResponseStatus.MORE]
         self.activity.save(update_fields=["available_responses"])
         existing = ActivityResponse.objects.create(
             user=self.participant,
             activity=self.activity,
-            status=ActivityResponseStatus.INTERESTED,
+            status=ActivityResponseStatus.MORE,
         )
         for data in (
             {}, {"status": ""}, {"status": "invalid"},
@@ -197,7 +197,7 @@ class ActivityLoopTests(TestCase):
                 self.assertEqual(response.status_code, 200)
                 self.assertEqual(ActivityResponse.objects.count(), 1)
                 existing.refresh_from_db()
-                self.assertEqual(existing.status, ActivityResponseStatus.INTERESTED)
+                self.assertEqual(existing.status, ActivityResponseStatus.MORE)
 
     def test_default_responses_do_not_allow_declined(self):
         self.activity.available_responses = []
@@ -218,7 +218,7 @@ class ActivityLoopTests(TestCase):
             note="Can we bring a dog?",
         )
         url = reverse("activities:respond", args=[self.activity.pk])
-        for status in (ActivityResponseStatus.INTERESTED, ActivityResponseStatus.COMMITTED):
+        for status in (ActivityResponseStatus.MORE, ActivityResponseStatus.COMMITTED):
             with self.subTest(status=status):
                 response = self.client.post(url, {"status": status, "user": self.other_user.pk})
 
@@ -255,7 +255,7 @@ class ActivityLoopTests(TestCase):
 
     def test_join_uses_first_creator_choice_without_duplicating_response(self):
         self.activity.available_responses = [
-            ActivityResponseStatus.COMMITTED, ActivityResponseStatus.INTERESTED,
+            ActivityResponseStatus.COMMITTED, ActivityResponseStatus.MORE,
         ]
         self.activity.save(update_fields=["available_responses"])
         url = reverse("activities:join", args=[self.activity.pk])

@@ -402,15 +402,19 @@ Band 4 should have enough height for several useful lines of description.
 ### Band 5 — take action
 
 Band 5 reflects this viewer's relationship to the Activity:
-- ordinary discovery: exactly one navigation link, **See details / RSVP**;
+- ordinary discovery: one navigation link, **See details / RSVP** before responding,
+  then **<concise saved response> / Edit response**;
 - directly invited or explicitly invited active Group member: **I'm coming** and
   **Can't make it** RSVP buttons, using committed/declined ActivityResponse states;
-- cancelled: Cancelled, with no response controls.
+- cancelled: **Cancelled** navigation to Details, with accessible saved state and
+  no response mutation controls.
 
 Invitations never expand visibility or gate ordinary participation. Title navigation
 still opens Details. Creator-selected questions, votes, interest and external actions
-belong on Details. Both invited labels remain visible without JavaScript or a hidden
-second choice, including at 320px. A full activity disables a new commitment; its
+belong on Details. Both invited labels remain visible for no response or selected
+RSVP states, including without JavaScript at 320px. An unmatched creator/historical
+state uses the footer disclosure described below; both RSVP choices are available
+inside it, alongside a Details/edit link. A full activity disables a new commitment; its
 accessible title explains Full while retaining the complete compact label.
 
 Use one geometry: compact controls, 1px border on both peers in both states, no
@@ -418,7 +422,7 @@ checkmark, underline or inset/double border. Unselected is white with card-local
 accent text/border; selected is that accent fill with white text and aria-pressed.
 Use the existing contrast-safe --card-accent and neutral fallback; focus is a white
 2px outline/2px offset against the shared accessible Band 1/5 gradient. Preserve
-current response text in the body when it is not exposed by a selected direct choice.
+saved state in Band 5; description is never displaced by response text.
 
 Platform utilities are secondary to the activity itself:
 - Details is available through the title/card navigation pattern
@@ -466,7 +470,7 @@ remain secondary and must not re-enter that band.
 - current selected response must be visible
 - clicking a selected direct response may clear it
 - if a historical/current response is no longer directly offered, show that state
-  in the compact card body, with richer controls on Details
+  in Band 5, with richer controls on Details
 - use the single Band 1 contextual menu for repeated Discover-room operations
 - richer/infrequent interaction that does not support repeated card scanning belongs
   on Details
@@ -605,11 +609,21 @@ cards. Only matching tracked, owner-preserved authored demo prices are populated
   counts, badges or platform overlays appear in the image band.
 - Details navigation uses the title link. Response counts, removal and richer
   participation live on Details; activity/organizer hiding also lives in the Band 1 menu.
-- Current response: invited RSVPs expose pressed state. A `card-current-response`
-  line identifies ordinary and historical responses not shown by a selected direct
-  choice. Removal is available on Details.
+- Band 5 owns saved response state: ordinary cards navigate using See details / RSVP
+  before response, then Going / Edit response, Have a question / Edit response,
+  or the corresponding concise label. Full saved state is accessible on the link.
+  Historical Interested uses Past response / Edit response; Details explicitly
+  labels its history without treating it as a commitment or a selectable response.
+  Invited RSVPs expose pressed state. An unmatched response uses a native
+  `card-response-menu` disclosure with the concise state and chevron in the footer;
+  its upward panel contains full saved state, both RSVP buttons and Edit response in
+  Details. The panel uses existing menu/response/link families, supports Escape and
+  outside-click dismissal, and works without JS. The standard 48px footer/440px card
+  remains fixed. Cancelled is a footer link to Details, with saved state in its
+  accessible label. Removal stays on active Details only.
 - The 128px top-aligned description band uses the same 13px body size as Band 2,
-  with relaxed 18px leading and up to six lines; a current response reserves a line. External CTAs and the generic headline stay on Details.
+  with relaxed 18px leading and up to six lines. It contains only description, never
+  saved response state or a reserved status line. External CTAs and the generic headline stay on Details.
 
 ### Truncated card text
 
@@ -731,7 +745,7 @@ people without a commitment, labels it Full, and keeps interest/questions availa
 Existing commitments can be withdrawn while active. The server serializes response
 changes and cancellation on the occurrence before checking remaining places.
 Cancelled cards prefix the title with Cancelled in Band 1 and replace Band 5's
-response controls with Cancelled; the body retains any current response. Details
+response controls with a Cancelled link; its accessible label identifies saved state. Details
 and management show the optional reason. No controls appear in the image band.
 Cancellation freezes responses, retaining their identities/states/timestamps, and
 does not alter sibling occurrences, Group or Series. No waitlist, reactivation or
@@ -755,8 +769,11 @@ and add/remove direct invitees from their friends or that Group's active members
 These POST/CSRF forms reuse standard fields, checkbox, and comfortable action families.
 Group-context creation defaults the explicit group-invite choice on; Series copies
 that choice into occurrences. Loss/removal changes affordances, never response history.
-Ordinary creator-selected vocabulary and its existing Interested default remain
-unchanged; historical Interested records stay valid.
+Organizer-selected current vocabulary remains Activity-specific. Interested is
+retired from creator choices, participant mutations and new Activity/Series defaults.
+Tell me more is the noncommittal creation default; organizers may choose the other
+current options instead. Historical Interested rows and authored JSON remain stored;
+Details/rosters identify the historical state, while active choices exclude it.
 
 Occurrence management has a separate single-address **Invite by email** form using
 the same `ui-field`, comfortable button and inline error families. It lists address
