@@ -73,6 +73,7 @@
       {% if active_context %}<div class="ui-cluster" aria-label="Discovery context">
         {% for context in active_context %}<a class="ui-button ui-button--quiet" href="{{ context.clear_url }}" aria-label="Clear {{ context.label }}">{{ context.label }} ×</a>{% endfor %}
       </div>{% endif %}
+      {% include 'activities/_group_join_offer.html' %}
       <script src="{% static 'js/discovery.js' %}?v=context-3" defer></script>
       <script src="{% static 'js/discovery-layout.js' %}?v=panes-40" defer></script>
       <script src="{% static 'js/card-view.js' %}?v=panes-40" defer></script>

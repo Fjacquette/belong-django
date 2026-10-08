@@ -28,7 +28,7 @@
         {% endfor %}
       </form>
     {% else %}
-      <a href="{% url 'activities:detail' activity.pk %}" class="ui-button ui-button--compact ui-response--card w-full">See details / RSVP</a>
+      <a href="{% url 'activities:detail' activity.pk %}{% if next_path %}?discover={{ next_path|urlencode }}{% endif %}" class="ui-button ui-button--compact ui-response--card w-full">See details / RSVP</a>
     {% endif %}
   {% endif %}
   {% if variant == 'detail' %}

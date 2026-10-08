@@ -72,6 +72,13 @@ Default posture: **do it now**. If product behavior needs backend/model work, bu
   underlines or inset borders. Details retains ordinary vocabulary plus invited RSVP.
 - Ordinary creator-selected vocabulary and the existing Interested default remain
   unchanged; historical records are preserved.
+- After saving a valid response (including early interest or a declined RSVP), a
+  nonmember may receive a separate optional Group join offer. Open/Unlisted joins
+  are active; Closed requests await normal organizer approval. Private Groups,
+  owners and active/pending/blocked memberships receive no offer. Dismissal or
+  acceptance is durable per person/Group; neither changes the ActivityResponse.
+  Inline offers live outside cards, with shared HTMX/non-JS admission and safe
+  return URLs retaining Discover context. Activity participation remains independent.
 
 ## Organizer announcements
 

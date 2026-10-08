@@ -3,7 +3,7 @@
      style="--card-primary: {{ primary }}; --card-secondary: {{ secondary }}; --card-accent: {{ activity.card_accent }}; --card-header-left: {{ activity.card_header_left }}; --card-header-right: {{ activity.card_header_right }};">
   <div class="activity-card__band-1 text-center text-white font-body">
     <div class="activity-card__title-zone">
-    <h2 class="activity-card__headline font-body font-medium"><a href="{% url 'activities:detail' activity.pk %}" data-full-text="{{ activity.display_title }}" class="activity-card__title-link">{{ activity.display_title }}</a></h2>
+    <h2 class="activity-card__headline font-body font-medium"><a href="{% url 'activities:detail' activity.pk %}{% if next_path %}?discover={{ next_path|urlencode }}{% endif %}" data-full-text="{{ activity.display_title }}" class="activity-card__title-link">{{ activity.display_title }}</a></h2>
     </div>
     <details class="card-context-menu">
       <summary class="card-context-menu__trigger" aria-label="Discover options for {{ activity.title }}"><span aria-hidden="true">⋮</span></summary>

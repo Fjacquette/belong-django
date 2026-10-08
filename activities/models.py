@@ -398,3 +398,18 @@ class ActivityEmailInvitation(models.Model):
         if self.status == 'pending' and self.expires_at <= timezone.now():
             return 'Expired'
         return self.get_status_display()
+
+
+class GroupJoinOffer(models.Model):
+    """One optional post-response offer per person/Group, including durable dismissal."""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='activity_group_offers')
+    group = models.ForeignKey('groups.Group', on_delete=models.CASCADE, related_name='activity_join_offers')
+    activity = models.ForeignKey(Activity, on_delete=models.SET_NULL, null=True, related_name='group_join_offers')
+    status = models.CharField(max_length=12, choices=[('pending', 'Pending'), ('dismissed', 'Dismissed'), ('accepted', 'Accepted')], default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'group'], name='unique_activity_group_join_offer'),
+            models.CheckConstraint(condition=models.Q(status__in=['pending', 'dismissed', 'accepted']), name='activity_group_offer_valid_status'),
+        ]

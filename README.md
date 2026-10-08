@@ -345,6 +345,26 @@ invitation links there are private bearer credentials and must not be committed.
 configuration. No production mail service is configured by this slice. Tokens
 are generated with 32 bytes of randomness; only SHA-256 digests are stored.
 
+## Optional Group join after an Activity response
+
+After a valid response to a Group-associated Activity, eligible nonmembers see an
+optional **Also join this Group?** offer. It appears after participation on Details
+or between Discover filters and results; HTMX updates it independently of the card.
+Without JavaScript, response and offer forms return to the same page, retaining
+search, repeated facets and pagination. Any supported response (including early
+interest or declining an RSVP) remains independent of this optional membership.
+Cards carry a validated Discover return through Details and its
+response/offer forms, so ordinary responders can return to the same filtered results.
+
+**Join Group** uses normal Open/Unlisted admission. **Request to join** a Closed
+Group creates only a pending request, subject to ordinary organizer approval.
+Private Groups, owners, and active/pending/blocked members receive no offer; current
+policy and eligibility are rechecked on acceptance. No forbidden Group details or
+membership lists are disclosed. **Not now** preserves the response and remembers
+dismissal across sessions and later occurrences of that Group. Acceptance likewise
+prevents repeat offers, including after leaving. Group Details remains available
+for a later voluntary join; neither choice makes Group membership an Activity gate.
+
 ## Group-context creation
 
 Group creation/editing uses descriptive access radios and supports separate group
