@@ -263,6 +263,29 @@ brand destination; unverified accounts retain Verify email / Logout only.
 
 ## Current implementation sequence
 
+### Janine-first priority reset (#87)
+
+[#87](https://github.com/Fjacquette/belong-django/issues/87) prioritizes real
+J-01–J-12 walkthrough blockers and #68 Activity reuse over further architecture.
+Provider sandbox experiments, payment implementation and D5 are deferred, not the
+next task. Existing D1–D3 remain functional. External signup/inbox reception and
+human usability must be recorded separately from local tests; beta #77 supports
+pilot timing, with broader follow-ups afterward.
+
+### Past Activities and private reuse drafts (#68)
+
+- Account menu → Past activities & drafts lists accessible past/cancelled outings
+  the user organizes. Details/list POST copying creates a private creator-owned
+  ActivityDraft snapshot; no published Activity exists until explicit publication.
+- Copy occurrence logistics/current defaults and manageable Group/Series associations;
+  clear schedule and all invitation/response/update/cancellation/participation history.
+  Group invitation opt-in starts off; current Series defaults are never reapplied.
+- Native disclosed editing saves privately or validates/publishes a fresh Activity.
+  Revision checks and serialized publication prevent stale overwrites/duplicate outings.
+  Existing free capacity, poll/enrollment/registration authorities and data stay intact.
+- Published logistics editing is outside this slice. See docs/ACTIVITY_REUSE.md for
+  exact exclusions and pilot evidence gaps; payment infrastructure remains deferred.
+
 ### Discovery iteration
 
 **#19 is complete and merged.**

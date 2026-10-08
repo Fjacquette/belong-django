@@ -26,6 +26,7 @@
                 <span class="ui-identity-name">{{ user.profile.identity_label }}</span><span class="shrink-0" aria-hidden="true">▾</span>
               </summary>
               <div class="ui-account-menu">
+                {% if user.profile.can_use_belong %}<a href="{% url 'activities:history' %}" class="ui-account-menu__item">Past activities &amp; drafts</a>{% endif %}
                 {% if user.profile.can_use_belong %}<a href="{% url 'account_settings' %}" class="ui-account-menu__item">Account settings</a>{% else %}<a href="{% url 'verification_status' %}" class="ui-account-menu__item">Verify email</a>{% endif %}
                 <form action="{% url 'logout' %}" method="post">
                   {% csrf_token %}

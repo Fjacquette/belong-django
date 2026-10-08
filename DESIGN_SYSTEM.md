@@ -816,6 +816,22 @@ notification workflow is introduced.
 
 ## Organizer updates
 
+### Reusing an outing (#68)
+
+The account menu adds **Past activities & drafts** using its existing navigation-row
+family. The private list uses wrapping Details links, semantic dates, a native search
+form and comfortable **Copy to a new draft** POST buttons. Organizer Details offers
+the same copy action outside the card bands.
+
+The focused draft editor suppresses Create. Title/description, new schedule,
+trailhead/instructions, capacity and audience are directly visible. Group/Series and
+invitation choices, participation, extra logistics/cost and artwork use native
+`ui-disclosure` sections and existing field families; erroneous sections open.
+Private state and cleared invitations are explicit. **Save draft** is a secondary
+comfortable action; **Publish new activity** is primary. No JavaScript is required;
+optional existing participation enhancement hides irrelevant pattern fields.
+No new CSS/control family or card geometry is introduced.
+
 Updates live on Activity Details/management or Group Details, never on Discover
 cards. Reuse section headings, `ui-link` navigation to a focused compose form,
 `ui-field` plain-text textarea and comfortable primary Post update button. Each
