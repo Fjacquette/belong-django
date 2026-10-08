@@ -1,0 +1,4 @@
+<form method="post" action="{% url 'activities:registration_action' activity.pk action %}" hx-post="{% url 'activities:registration_action' activity.pk action %}" hx-target="#participation-{{ activity.pk }}" hx-swap="outerHTML">
+  {% csrf_token %}<input type="hidden" name="variant" value="detail"><input type="hidden" name="next" value="{{ next_path }}"><input type="hidden" name="policy" value="{{ registration_target.version }}"><input type="hidden" name="request" value="{{ registration_request.pk|default:'' }}">
+  <button class="ui-button ui-button--secondary ui-button--comfortable">{{ label }}</button>
+</form>

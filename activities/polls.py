@@ -47,6 +47,8 @@ def latest_rows(rows):
 
 
 def responses_for(activity):
+    if activity.is_registration:
+        return []
     if activity.is_free_ongoing:
         return []  # Enrollment is not an occurrence response.
     if not activity.is_date_planning:
@@ -60,6 +62,9 @@ def has_response(activity, user, *, affirmative=False):
 
 
 def recipient_ids(activity):
+    if activity.is_registration:
+        from .registration import registrations_for
+        return set(registrations_for(activity).values_list('request__user_id', flat=True))
     if activity.is_free_ongoing:
         from .enrollment import enrollment_recipients
         return enrollment_recipients(activity)

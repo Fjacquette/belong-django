@@ -1,7 +1,7 @@
 from copy import deepcopy
 from django import forms
 from django.core.validators import MinValueValidator
-from .participation_config import CREATOR_PATTERN_CHOICES, make_config, INTENT_VERSION, POLL_VERSION, ENROLLMENT_VERSION
+from .participation_config import CREATOR_PATTERN_CHOICES, make_config, INTENT_VERSION, POLL_VERSION, ENROLLMENT_VERSION, REGISTRATION_VERSION
 
 from media_assets.models import ImageAsset, ImageAssetPurpose
 
@@ -44,6 +44,9 @@ class ActivityDefaultsValidationMixin:
         if self._meta.model is Activity:
             choices.append(('planning', 'Tentative planning (three-date poll)'))
             choices.append(('ongoing', 'Ongoing activity (free, approval secures a place)'))
+            choices.append(('registration', 'Registration (independent admission)'))
+            self.fields['registration_admission'] = forms.ChoiceField(required=False, choices=[('open', 'Open'), ('request', 'Request required'), ('invitation', 'Invitation required')], initial='open', label='Registration admission', help_text='For Registration only; ignored for other patterns.', widget=forms.Select(attrs={'class': 'ui-field'}))
+            self.fields['registration_allocation'] = forms.ChoiceField(required=False, choices=[('claim', 'Eligibility only; claim free place separately'), ('approval', 'Approval secures a free place')], initial='claim', label='Registration place policy', widget=forms.Select(attrs={'class': 'ui-field'}), help_text='For Registration only; ignored for other patterns. Paid quotes stop at eligibility; payment is unavailable.')
             for n in range(1, 4):
                 self.fields[f'poll_date_{n}'] = forms.DateTimeField(**_DATETIME_INPUT_KWARGS, label=f'Poll date {n}',
                     help_text='For tentative planning only. Availability does not reserve a place.')
@@ -57,7 +60,7 @@ class ActivityDefaultsValidationMixin:
             widget=forms.Select(attrs={'class': 'ui-field mt-1'}))
         self.initial['participation_pattern'] = pattern
         self.stored_response_choices = deepcopy(self.instance.available_responses)
-        first = ['group', 'participation_pattern'] + [f'poll_date_{n}' for n in range(1,4) if f'poll_date_{n}' in self.fields]
+        first = ['group', 'participation_pattern'] + [name for name in ('registration_admission', 'registration_allocation') if name in self.fields] + [f'poll_date_{n}' for n in range(1,4) if f'poll_date_{n}' in self.fields]
         self.order_fields(first + [name for name in self.fields if name not in first])
 
     def clean(self):
@@ -67,7 +70,7 @@ class ActivityDefaultsValidationMixin:
             config = self.instance.participation_config
         elif pattern:
             original = self.initial.get('participation_config') or self.instance.participation_config
-            version = original['version'] if original and original['pattern'] == pattern else INTENT_VERSION if pattern in {'scheduled', 'immediate'} else POLL_VERSION if pattern == 'planning' else ENROLLMENT_VERSION if pattern == 'ongoing' else 1
+            version = original['version'] if original and original['pattern'] == pattern else INTENT_VERSION if pattern in {'scheduled', 'immediate'} else POLL_VERSION if pattern == 'planning' else ENROLLMENT_VERSION if pattern == 'ongoing' else REGISTRATION_VERSION if pattern == 'registration' else 1
             actions = deepcopy(original['actions']) if original and original['pattern'] == pattern else make_config(pattern, version=version)['actions']
             if 'open_external' not in actions and any(data.get(f'action{n}_url') for n in range(1, 4)):
                 actions.append('open_external')
@@ -94,6 +97,20 @@ class ActivityDefaultsValidationMixin:
             if getattr(self, 'context_opportunity', None):
                 self.add_error('participation_pattern', 'Choose a separate meeting pattern, not another ongoing player pool.')
             data['cohort_capacity'] = data.get('capacity')
+            data['capacity'] = None
+        if config and config['version'] == REGISTRATION_VERSION and self._meta.model is Activity:
+            if getattr(self, 'context_opportunity', None):
+                self.add_error('participation_pattern', 'Choose a free meeting pattern for this ongoing opportunity.')
+            admission = data.get('registration_admission') or 'open'
+            allocation = data.get('registration_allocation') or 'claim'
+            amount = data.get('cost_amount')
+            if data.get('cost_type') == 'free' and amount in (None, 0):
+                amount = 0
+            elif data.get('cost_type') != 'paid' or amount is None or amount <= 0:
+                self.add_error('cost_amount', 'Registration needs Free or an exact positive USD quote.')
+            if allocation == 'approval' and (admission != 'request' or amount != 0):
+                self.add_error('registration_allocation', 'Approval can secure a place only for free, request-required registration.')
+            data['registration_terms'] = dict(admission=admission, allocation=allocation, amount=amount, capacity=data.get('capacity'))
             data['capacity'] = None
         if data.get('invite_group_members') and not data.get('group'):
             self.add_error('invite_group_members', 'Choose a Group to invite its members.')

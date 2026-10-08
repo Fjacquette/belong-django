@@ -22,7 +22,8 @@ The native **How will people take part?** select also offers Scheduled event
 (free/open attendance) and Immediate activity (free/Join now), using version 2.
 One-off Activities also offer Tentative planning (three-date poll), version 3.
 One-off Activities additionally offer Ongoing activity (free, approval secures a place),
-version 4. Registration/contact/payment actions are not offered.
+version 4. Version 5 offers one-off Registration with independent admission;
+contact/payment actions are not offered.
 Legacy response checkboxes are hidden for configured patterns as progressive
 enhancement; their help explains that they are ignored without JavaScript.
 Series defaults are copied per occurrence; existing Activity configuration stays
@@ -864,3 +865,16 @@ and explain approval for Closed Groups. **Join Group** / **Request to join** and
 No member list appears. Dismissal persists per person/Group across sessions and
 occurrences, so later response changes do not repeatedly ask. Joining/dismissing
 does not change the response or close Activity participation.
+
+## Registration eligibility (#76 D2)
+
+Registration cards navigate with View registration or concise saved state / View;
+full current state remains in the accessible link label. Band 3/4 and fixed card
+geometry remain unchanged. Details uses existing heading/field/button/disclosure
+families: immutable quote and admission/allocation terms, separate admission/place/
+payment facts, Agree to terms and submit registration, Claim free place when eligible,
+and Withdraw registration. History uses native disclosure. Paid quotes explain payment
+unavailability without a checkout control or confirmation promise. Roster uses wrapping
+rows and explicit Approve eligibility / Approve and secure free place / Deny request.
+Creator admission/allocation selects appear only for Registration with JS; no-JS help
+states their scope and other patterns ignore them. Series has no registration controls.

@@ -104,3 +104,7 @@ for audit_model in [DatePoll, DatePollOption, DatePollSubmission, ConfirmationRo
 from .models import OngoingOpportunity, EnrollmentRequest, AdmissionDecision, OngoingEnrollment, CohortPlace
 for audit_model in [OngoingOpportunity, EnrollmentRequest, AdmissionDecision, OngoingEnrollment, CohortPlace]:
     admin.site.register(audit_model, NotificationAuditAdmin)
+
+from .models import RegistrationTarget, RegistrationRequest, RegistrationAdmission, FreeRegistration, RegistrationPlace
+for audit_model in [RegistrationTarget, RegistrationRequest, RegistrationAdmission, FreeRegistration, RegistrationPlace]:
+    admin.site.register(audit_model, NotificationAuditAdmin)

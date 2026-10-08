@@ -1,0 +1,20 @@
+{% if registration_target %}
+<section class="space-y-3" aria-labelledby="registration-roster-heading">
+  <h2 id="registration-roster-heading" class="text-xl font-display">Registrations</h2>
+  <p class="text-sm">{{ registration_target.get_admission_display }} · {{ registration_target.get_allocation_display }} · {% if registration_target.amount %}{{ registration_target.currency }} {{ registration_target.amount }} required; payments unavailable{% else %}Free{% endif %}.</p>
+  <p>{{ registration_count }}{% if registration_target.capacity %} / {{ registration_target.capacity }}{% endif %} registered{% if registration_full %} · Full{% elif not registration_target.capacity %} · Unlimited{% endif %}. Requests consume no capacity and do not form a waitlist.</p>
+  {% for row in registration_rows %}
+    <div class="space-y-2">
+      <p class="font-semibold">{{ row.application.user.profile.identity_label }}</p>
+      {% include 'activities/_registration_facts.html' %}
+      {% if registration_target.admission == 'request' and not row.application.closed_at and not row.application.decision and not activity.is_cancelled %}
+        <form method="post" action="{% url 'activities:decide_registration' activity.pk row.application.pk %}" class="ui-cluster">
+          {% csrf_token %}<input type="hidden" name="policy" value="{{ registration_target.version }}">
+          <button name="decision" value="approved" class="ui-button ui-button--secondary ui-button--comfortable">{% if registration_target.allocation == 'approval' %}Approve and secure free place{% else %}Approve eligibility{% endif %}</button>
+          <button name="decision" value="denied" class="ui-button ui-button--quiet ui-button--comfortable">Deny request</button>
+        </form>
+      {% endif %}
+    </div>
+  {% empty %}<p class="text-sm">No registration requests yet.</p>{% endfor %}
+</section>
+{% endif %}
