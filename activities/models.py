@@ -8,7 +8,7 @@ from django.db import models
 from django.utils import timezone
 
 from media_assets.models import ImageAssetPurpose
-from .participation_config import validate_config, configured_pattern_label, navigation_allowed, intent_options, is_date_planning, is_free_ongoing, make_config
+from .participation_config import validate_config, configured_pattern_label, navigation_allowed, intent_options, is_date_planning, is_free_ongoing, is_registration, make_config
 
 
 class DemoSeedRecord(models.Model):
@@ -113,6 +113,10 @@ class ParticipationConfigurationMixin:
         return is_free_ongoing(self.participation_config)
 
     @property
+    def is_registration(self):
+        return is_registration(self.participation_config)
+
+    @property
     def accepts_responses(self):
         return self.uses_legacy_participation or bool(self.participation_options())
 
@@ -128,6 +132,8 @@ class ParticipationConfigurationMixin:
 
     @property
     def participation_invitation_prompt(self):
+        if self.is_registration:
+            return "Review the registration terms; invitation alone secures no place"
         if self.is_free_ongoing:
             return 'Request an ongoing player place; approval secures enrollment, not meeting attendance'
         if self.is_date_planning:
@@ -139,10 +145,12 @@ class ParticipationConfigurationMixin:
         return 'View this opportunity; no response is required'
 
     def validate_participation_policy(self):
+        if self.is_registration and isinstance(self, ActivitySeries):
+            raise ValidationError({"participation_config": "Registration is one-off only in D2."})
         if self.is_free_ongoing and isinstance(self, ActivitySeries):
             raise ValidationError({'participation_config': 'Ongoing enrollment is available only for one-off opportunities in D1.'})
         if (intent_options(self.participation_config) or self.is_date_planning or self.is_free_ongoing) and (self.cost_type != ActivityCostType.FREE or self.cost_amount not in (None, 0)):
-            raise ValidationError({'cost_type': 'Scheduled attendance, Join now, date polls and ongoing enrollment require Free with no nonzero cost. Registration/payment policies are not available.'})
+            raise ValidationError({'cost_type': 'Scheduled attendance, Join now, date polls and ongoing enrollment require Free with no nonzero cost. Choose Registration for independent admission and quoted terms; payments are unavailable.'})
 
     @property
     def uses_legacy_participation(self):
@@ -683,5 +691,92 @@ class OngoingEnrollment(models.Model):
 class CohortPlace(models.Model):
     """Only limited ongoing pools need a place record; no holds or payment states."""
     enrollment = models.OneToOneField(OngoingEnrollment, on_delete=models.CASCADE, related_name='place')
+    created_at = models.DateTimeField(auto_now_add=True)
+    released_at = models.DateTimeField(null=True, blank=True)
+
+
+class RegistrationTarget(models.Model):
+    """Immutable, explicitly authored admission, allocation and USD quote snapshot."""
+    activity = models.OneToOneField(Activity, on_delete=models.PROTECT, related_name='registration_target')
+    version = models.PositiveSmallIntegerField(default=1, editable=False)
+    admission = models.CharField(max_length=10, choices=[('open', 'Open'), ('request', 'Request required'), ('invitation', 'Invitation required')])
+    allocation = models.CharField(max_length=10, choices=[('claim', 'Eligibility only; place confirmation is separate'), ('approval', 'Approval secures a free place')])
+    capacity = models.PositiveIntegerField(null=True, blank=True, validators=[MinValueValidator(1)])
+    amount = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(0)])
+    currency = models.CharField(max_length=3, default='USD', editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=models.Q(version=1, currency='USD', amount__gte=0), name='registration_quote_valid'),
+            models.CheckConstraint(condition=models.Q(admission__in=['open', 'request', 'invitation']), name='registration_admission_valid'),
+            models.CheckConstraint(condition=models.Q(allocation='claim') | models.Q(allocation='approval', admission='request', amount=0), name='registration_allocation_valid'),
+        ]
+
+    def clean(self):
+        super().clean()
+        self.clean_fields()
+        if not self.activity.is_registration or self.version != 1 or self.currency != 'USD':
+            raise ValidationError('Choose an explicit supported registration target.')
+        if self.allocation == 'approval' and (self.admission != 'request' or self.amount != 0):
+            raise ValidationError('Only free request-required admission can secure a place on approval.')
+        if self.pk:
+            old = type(self).objects.get(pk=self.pk)
+            fields = ['activity_id', 'version', 'admission', 'allocation', 'capacity', 'amount', 'currency']
+            if any(getattr(self, f) != getattr(old, f) for f in fields):
+                raise ValidationError('Registration terms and quote are immutable in D2.')
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        return super().save(*args, **kwargs)
+
+
+class RegistrationRequest(models.Model):
+    target = models.ForeignKey(RegistrationTarget, on_delete=models.PROTECT, related_name='requests')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+    closed_at = models.DateTimeField(null=True, blank=True)
+    withdrawn_at = models.DateTimeField(null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            old = type(self).objects.get(pk=self.pk)
+            if (self.target_id, self.user_id) != (old.target_id, old.user_id):
+                raise ValidationError('Agreed quote/target and registration identity are immutable.')
+        return super().save(*args, **kwargs)
+
+    class Meta:
+        ordering = ['pk']
+        constraints = [models.UniqueConstraint(fields=['target', 'user'], condition=models.Q(closed_at__isnull=True), name='unique_open_registration')]
+
+
+class RegistrationAdmission(models.Model):
+    request = models.OneToOneField(RegistrationRequest, on_delete=models.PROTECT, related_name='decision')
+    result = models.CharField(max_length=8, choices=[('approved', 'Approved'), ('denied', 'Denied')])
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.CheckConstraint(condition=models.Q(result__in=['approved', 'denied']), name='registration_decision_valid')]
+
+
+class FreeRegistration(models.Model):
+    """Explicit free confirmation, independent from admission and attendance."""
+    request = models.OneToOneField(RegistrationRequest, on_delete=models.PROTECT, related_name='confirmation')
+    created_at = models.DateTimeField(auto_now_add=True)
+    ended_at = models.DateTimeField(null=True, blank=True)
+
+
+    def save(self, *args, **kwargs):
+        if self.request.target.amount != 0:
+            raise ValidationError('Paid registration cannot be confirmed in D2.')
+        if self.pk and type(self).objects.get(pk=self.pk).request_id != self.request_id:
+            raise ValidationError('Free confirmation identity is immutable.')
+        return super().save(*args, **kwargs)
+
+
+class RegistrationPlace(models.Model):
+    """Secured places only, for limited free targets; no holds or payment state."""
+    confirmation = models.OneToOneField(FreeRegistration, on_delete=models.PROTECT, related_name='place')
     created_at = models.DateTimeField(auto_now_add=True)
     released_at = models.DateTimeField(null=True, blank=True)

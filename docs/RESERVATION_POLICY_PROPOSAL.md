@@ -1,12 +1,11 @@
 # Capacity, admission, registration and payment policies — proposal for review
 
-**Status: D1 free ongoing approval/enrollment authorized and implemented; remaining policies proposed.** Design basis for
+**Status: D1 ongoing enrollment and D2 registration eligibility implemented; financial policies remain proposed.** Design basis for
 [#76](https://github.com/Fjacquette/belong-django/issues/76), using the reviewed
 [#74 participation model](PARTICIPATION_MODEL_PROPOSAL.md). Assessed baseline:
 original design master `b2fd166`, including #75 / PR #82; D1 builds from master
-`63aefd9` (merged proposal PR #83). Authorization is limited to free ongoing D1.
-No payments, holds, waitlists, registration infrastructure or existing-data conversion
-is implemented by D1; the financial/expiry/queue terms below remain proposals.
+`63aefd9` (merged proposal PR #83). D2 builds from merged D1 master `9a3fbd0`.
+No payments, holds, waitlists or existing-data conversion are implemented; the financial/expiry/queue terms below remain proposals.
 
 ## D1 implementation boundary
 
@@ -43,6 +42,52 @@ updates/cancellation via the existing consent/verified-email/access/sender contr
 pending requests/invitation alone do not subscribe. Approval/denial are in-app
 outcomes, with no new decision-email event or delivery promise. Existing free-event
 and poll notification authorities/history remain unchanged.
+
+## D2 implementation boundary
+
+New one-off Activities may explicitly select version 5 Registration. RegistrationTarget
+is an immutable occurrence-scoped snapshot: USD quote (exact amount, free = zero),
+version, admission, allocation trigger and optional independent capacity. Creator
+cost fields initialize that quote; later display-cost changes and participant POST
+amount/currency fields cannot change agreed terms. No existing Activity, Series,
+poll or D1 opportunity is converted. D1 policies stay unchanged.
+
+Open admission needs no decision. Request-required admission needs an authorized
+organizer decision. Invitation-required admission explicitly accepts the Activity's
+current direct invitation or its enabled invitation to active associated Group members;
+unrelated invitations never count. Audience access remains independently required.
+Invitation acceptance/submission creates no attendance, confirmation or allocation.
+Group membership is never generally required. Lost invitation/access blocks new claims;
+it does not silently revoke an already secured entitlement or remove history.
+
+RegistrationRequest references its immutable quote/target and retains its identity,
+submission and withdrawal. RegistrationAdmission separately records actor/result/time.
+**Eligibility only** approval consumes nothing, even if the pool is full. For free
+quotes a separate **Claim free place** POST rechecks admission/lifecycle under the
+occurrence lock and creates FreeRegistration plus RegistrationPlace only when limited.
+**Approval secures a free place** is selectable only with request-required admission
+and a zero quote; decision, free confirmation and limited allocation are atomic.
+Full approval leaves the request pending; full claim leaves the person eligible.
+Unlimited free confirmation creates no artificial allocation row. No automatic
+allocation on submission and no queue/promotion exist.
+
+Positive quotes are eligibility-only. Details/roster show Payment required — unavailable,
+no secured place and no paid/confirmed registration. There is no checkout, payment
+record, capture claim, provider simulation, hold or receipt promise. Declining/denying
+and withdrawing retain history; withdrawing a free confirmation ends it and releases
+its limited place. Reapplying requires a new request identity; stale forms cannot
+change the newer request. Cancellation closes all mutations and qualifies retained
+confirmation as before cancellation, without erasing any evidence.
+
+Details shows only the viewer's registration history; the authorized roster separates
+admission, place, payment requirement and derived readiness. Cards navigate to Details
+and expose concise current state without mutations. Native and HTMX submissions retain
+safe Discover query state. Only actual active free registrations enter the existing
+update/cancellation recipient adapters, still subject to consent, verified email,
+access and sender controls. Pending, approved eligibility-only, invitation and paid
+requests alone do not subscribe. Admission decisions do not create new email events.
+Organizer revocation, policy editing, Series registration and financial/queue/expiry
+infrastructure remain later milestones. All D2 audit models are read-only in admin.
 
 ## Recommendation and decisions to review
 

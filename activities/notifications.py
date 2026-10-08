@@ -160,9 +160,13 @@ def email_transport(event, attempt, email):
     if event.activity.is_free_ongoing:
         text = ('An ongoing opportunity you enrolled in has been cancelled. Check Details for retained enrollment history. Separate meetings are unchanged.'
                 if event.kind == 'cancellation' else 'The organizer posted an update to an ongoing opportunity you enrolled in. Check Details for the latest information.')
+    if event.activity.is_registration:
+        text = ('An Activity you registered for has been cancelled. Check Details for retained free registration history.' if event.kind == 'cancellation' else 'The organizer posted an update to an Activity you registered for. Check Details for the latest information.')
     ending = 'This confirmation invitation does not subscribe you to routine updates.' if event.kind == 'confirmation' else 'Declining or removing your response stops future notices for this Activity.'
     if event.activity.is_free_ongoing:
         ending = 'Leaving ongoing enrollment stops future notices for this opportunity.'
+    if event.activity.is_registration:
+        ending = 'Withdrawing registration stops future notices for this Activity.'
     return dispatch(attempt, subject, f'{text}\n\nDetails (sign-in required): {link}\n\n'
                     f'You opted in to Activity emails. Change your preference: {preferences}\n' + ending, email)
 

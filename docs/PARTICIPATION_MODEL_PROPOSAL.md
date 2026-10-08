@@ -1,7 +1,7 @@
 # Activity participation model — proposal for review
 
 **Status:** Reviewed design basis (PR #79) for [#74](https://github.com/Fjacquette/belong-django/issues/74),
-2026-10-08. Implementation of slices A/B, #75 and #76 D1 is bounded below; the remaining capabilities
+2026-10-08. Implementation of slices A/B, #75 and #76 D1/D2 is bounded below; the remaining capabilities
 and independent state changes remain future slices.
 Assessed Django baseline: master `6128ccb` (includes #60/#70 and notification PR #73).
 [#75](https://github.com/Fjacquette/belong-django/issues/75),
@@ -404,3 +404,11 @@ Each implementation slice updates DESIGN_SYSTEM, PROJECT_STATE and USER_STORIES,
 adds behavior tests, runs Django checks/relevant tests, and presents its exact committed
 browser-test HEAD. Slices A/B do not close the remaining implementation phases of #74 or start
 #75/#76/#78.
+
+## Slice D2 (#76) implementation boundary
+
+See the [reservation-policy D2 boundary](RESERVATION_POLICY_PROPOSAL.md). Version 5
+is an explicit one-off Registration capability, retaining independent admission,
+immutable quote, free confirmation and limited place facts. It never writes attendance,
+poll or ongoing enrollment records. Paid eligibility never promises confirmation;
+payment infrastructure and Series registration remain unavailable.

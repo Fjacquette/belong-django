@@ -664,7 +664,7 @@ confirmation/decline controls; immediate invitees receive only Join now. Invitat
 acceptance creates neither response nor Group membership. Historical/null/version 1
 records are not converted. Series copies are independent; response-based notification
 consent/eligibility and past delivery snapshots remain unchanged. Questions/
-contact, registration/payment and standing notification opt-ins remain
+contact, payment and standing notification opt-ins remain
 later slices, not offered controls. See [the reviewed model](docs/PARTICIPATION_MODEL_PROPOSAL.md).
 
 
@@ -722,3 +722,16 @@ qualify for ongoing updates/cancellation notices under existing email consent/ac
 controls; requests and approval produce no new email. Existing free/poll recipient
 rules are unchanged. No payment, holds, waitlists, Series enrollment defaults or
 historical conversion is included. See [the D1 boundary](docs/RESERVATION_POLICY_PROPOSAL.md).
+
+### Registration eligibility (#76 D2)
+
+New one-off Registration (version 5) uses an immutable occurrence target/quote,
+open/request/invitation admission and independent free-place policy. Submit agrees
+to the server-owned USD terms but secures nothing. Free eligibility-only participants
+explicitly claim a place; approval secures one only under the selected free request
+policy. Unlimited confirmation needs no allocation row. Paid quotes stop at eligibility
+with payments unavailable; no payment, hold, waitlist or paid confirmation is implemented.
+Details/roster retain admission/confirmation/place history, native/HTMX safe returns,
+and existing consent/access notification controls for confirmed free registrations only.
+Migration 0027 is additive; it does not backfill or reinterpret existing data.
+See [the D2 boundary](docs/RESERVATION_POLICY_PROPOSAL.md).

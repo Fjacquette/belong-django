@@ -27,6 +27,7 @@ from .invitations import is_invited, with_invitation_state, RSVP_LABELS
 from .group_offers import current_offer
 from .polls import responses_for, poll_context, create_poll
 from .enrollment import enrollment_context
+from .registration import registration_context
 from .models import (
     Activity,
     ActivityCostType,
@@ -171,10 +172,13 @@ def _build_join_context(request: HttpRequest, activity: Activity) -> Dict[str, o
 
     enrollment = enrollment_context(request, activity)
     activity.j_enrollment_state = enrollment.get('enrollment_state', '')
+    registration = registration_context(request, activity)
+    activity.j_registration_state = registration.get('registration_state', '')
     return {
         "activity": activity,
         **poll_context(request,activity),
         **enrollment,
+        **registration,
         "invited": invited,
         "attendee_count": attendee_count,
         "response_count": len(responses),
@@ -322,6 +326,7 @@ def detail(request: HttpRequest, pk: int) -> HttpResponse:
     context.update(update_context(request, activity, organizer=activity.can_organize(request.user)))
     context.update(poll_context(request,activity))
     context.update(enrollment_context(request,activity))
+    context.update(registration_context(request,activity))
     origin = activity.ongoing_opportunity
     context['meeting_origin'] = origin if origin and visible_activities(request.user).filter(pk=origin.activity_id).exists() else None
     return render(request, "activities/detail.html", context)
@@ -376,6 +381,9 @@ def create(request: HttpRequest) -> HttpResponse:
                 activity.save()
                 if activity.is_date_planning:
                     create_poll(activity,[form.cleaned_data[f'poll_date_{n}'] for n in range(1,4)])
+                if activity.is_registration:
+                    from .models import RegistrationTarget
+                    RegistrationTarget.objects.create(activity=activity, **form.cleaned_data['registration_terms'])
                 if activity.is_free_ongoing:
                     from .models import OngoingOpportunity
                     OngoingOpportunity.objects.create(activity=activity, capacity=form.cleaned_data.get('cohort_capacity'))
@@ -633,6 +641,7 @@ def _render_roster(request, activity, cancel_form=None, invite_form=None, group_
         **update_context(request, activity, organizer=True),
         **poll_context(request,activity,organizer=True),
         **enrollment_context(request,activity,organizer=True),
+        **registration_context(request,activity,organizer=True),
         'activity': activity, 'responses': responses, 'counts': counts,
         'committed_count': sum(r.status == ActivityResponseStatus.COMMITTED for r in responses),
         'cancel_form': cancel_form if cancel_form is not None else CancelActivityForm(), 'suppress_create': True,

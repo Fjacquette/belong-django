@@ -1,0 +1,6 @@
+<div class="space-y-1">
+  <p class="text-sm">Submitted {{ row.application.created_at|date:'M j, Y, g:i a' }} · {{ row.state }}</p>
+  <p class="text-sm">Admission: {{ row.admission }}{% if row.application.decision %} by {{ row.application.decision.actor.profile.identity_label }} · {{ row.application.decision.created_at|date:'M j, g:i a' }}{% endif %} · Place: {{ row.place }} · Payment: {{ row.payment }}.</p>
+  {% if row.application.confirmation %}<p class="text-sm">Free registration {{ row.application.confirmation.created_at|date:'M j, g:i a' }}{% if row.application.confirmation.ended_at %} · Ended {{ row.application.confirmation.ended_at|date:'M j, g:i a' }}{% endif %}{% if row.application.confirmation.place.released_at %} · Place released {{ row.application.confirmation.place.released_at|date:'M j, g:i a' }}{% endif %}</p>{% endif %}
+  {% if row.application.withdrawn_at %}<p class="text-sm">Withdrawn {{ row.application.withdrawn_at|date:'M j, g:i a' }}</p>{% endif %}
+</div>

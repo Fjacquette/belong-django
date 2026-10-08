@@ -253,7 +253,7 @@ brand destination; unverified accounts retain Verify email / Logout only.
   qualify for ongoing updates/cancellation under existing email consent/access rules;
   requests and approval alone send no new mail. No Series enrollment defaults exist.
 - The [#76 policy proposal](docs/RESERVATION_POLICY_PROPOSAL.md) remains the boundary
-  for later registration/payment, holds/waitlists and provider recovery. Financial
+  for independent registration, payments, holds/waitlists and provider recovery. Financial
   terms/priority and later milestones need separate review/authorization; none of
   those capabilities is implemented by D1.
 - #78’s spontaneous sandcastle scenario adds revocable standing permission for
@@ -361,3 +361,17 @@ A new conversation in the Belong Project can start with:
 > Continue the Belong project. Read the Project source "Belong — Canonical Project Context", then the repository's AGENTS.md, UI_PRINCIPLES.md, and PROJECT_STATE.md, and inspect current GitHub PRs/issues. Act as technical lead and continue from the current state. Reconstruct context from those durable sources rather than asking me to repeat prior decisions.
 
 That should be enough to resume work without carrying a giant chat forward.
+
+## Registration eligibility (#76 D2)
+
+- Explicit version 5 one-off Registration targets snapshot immutable USD quote,
+  independent admission (open/request/invitation), allocation trigger and capacity.
+  Existing attendance, poll and D1 ongoing authorities/data remain unchanged.
+- Submission alone secures nothing. Eligibility-only approval allocates nothing;
+  free participants separately claim under the occurrence lock. An explicit free
+  request policy can secure a place atomically on approval; full keeps it pending.
+- Paid quotes stop at eligibility: payment unavailable, no confirmed place, payment
+  record, hold or waitlist. Series registration and policy editing are unavailable.
+- Details/roster retain independent facts and history; cancellation freezes mutations.
+  Only active free registrations subscribe through existing update/cancellation controls.
+  See docs/RESERVATION_POLICY_PROPOSAL.md for the precise implementation boundary.
