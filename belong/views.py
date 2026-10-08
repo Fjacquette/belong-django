@@ -47,9 +47,10 @@ class BrandLoginView(LoginView):
 @require_http_methods(['GET', 'POST'])
 def signup(request):
     from groups.invitations import pending_invitation, usable
+    from activities.email_invitations import pending_invitation as pending_activity_invitation
     if request.user.is_authenticated:
         return redirect('activities:index' if request.user.profile.can_use_belong else 'verification_status')
-    invitation = pending_invitation(request)
+    invitation = pending_activity_invitation(request) or pending_invitation(request)
     form = SignupEmailForm(request.POST if request.method == 'POST' else None,
                            invited_email=invitation.email if usable(invitation) else None)
     if request.method == 'POST' and form.is_valid():
@@ -139,7 +140,9 @@ class BrandPasswordChangeDoneView(PasswordChangeDoneView):
 
 def after_verification(request, fallback='account_settings'):
     from groups.invitations import finish_pending
-    destination = finish_pending(request)
+    from activities.email_invitations import finish_pending as finish_activity_invitation
+    destination = (finish_activity_invitation(request) if 'pending_activity_invitation' in request.session
+                   else finish_pending(request))
     if request.user.profile.interests_prompt_pending:
         if destination:
             # Only a server-generated invitation destination is stored, never a supplied URL.
@@ -196,11 +199,15 @@ def signup_completion(request, token):
             # Password replacement invalidates any provisional-account sessions.
             from groups.invitations import pending_invitation, usable
             invitation = pending_invitation(request)
+            from activities.email_invitations import pending_invitation as pending_activity_invitation
+            activity_invitation = pending_activity_invitation(request)
             login(request, user, backend='belong.authentication.EmailBackend')
             # Reclaiming a provisional account changes its password, which flushes
             # the old session. Retain only previously consented, matching invite context.
             if usable(invitation) and invitation.email == user.email.strip().lower():
                 request.session['pending_group_invitation'] = invitation.pk
+            if usable(activity_invitation) and activity_invitation.email == user.email.strip().lower():
+                request.session['pending_activity_invitation'] = activity_invitation.pk
             return redirect(after_verification(request))
     response = render(request, 'registration/account_setup.html', {'form': form, 'error': error,
         'email': proof.email if proof else None, 'suppress_create': True})
@@ -232,10 +239,11 @@ def recovery_completion(request, token):
             error = exc.messages[0]
         else:
             from django.contrib.auth import logout
-            pending = request.session.get('pending_group_invitation')
+            pending = {key: request.session.get(key) for key in ['pending_group_invitation', 'pending_activity_invitation']}
             logout(request)
-            if pending is not None:
-                request.session['pending_group_invitation'] = pending
+            for key, reference in pending.items():
+                if isinstance(reference, int) and not isinstance(reference, bool):
+                    request.session[key] = reference
             messages.success(request, 'Password updated. Sign in with your new password.')
             return redirect('login')
     response = render(request, 'registration/recovery_confirm.html', {'form': form, 'error': error, 'suppress_create': True})

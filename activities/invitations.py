@@ -61,3 +61,8 @@ class GroupInviteForm(forms.Form):
         if value and not self.activity.group_id:
             raise forms.ValidationError('This occurrence has no associated Group.')
         return value
+
+
+class EmailInviteForm(forms.Form):
+    email = forms.EmailField(max_length=254, label='Email address',
+                             widget=forms.EmailInput(attrs={'class': 'ui-field', 'autocomplete': 'email'}))

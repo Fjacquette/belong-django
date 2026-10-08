@@ -57,7 +57,14 @@ Default posture: **do it now**. If product behavior needs backend/model work, bu
   nor gates ordinary participation. Legacy is_personal_invitation is not used as proof.
 - Group-context creation defaults group invitations on; the explicit editable choice
   is copied from Series to occurrences. Management adds/removes friends or associated
-  active Group members as direct in-app invitees. No outbound activity email.
+  active Group members as direct in-app invitees.
+  Verified organizers can also email a single existing/new recipient for a specific
+  occurrence. Seven-day digest-only tokens, revocation, durable per-occurrence
+  cooldowns and shared Group/Activity sender quotas use the existing mail controls.
+  Matching recipient consent survives signup, login and recovery through signed
+  session IDs. Audience checks precede Activity disclosure/acceptance; accepting
+  adds only the direct invitation, never a response or Group membership. External
+  inbox/provider delivery remains an operational pilot gate, documented in README.
 - Ordinary cards have one See details / RSVP link. Invitees have I'm coming / Can't
   make it mutations on the existing response, including beyond creator vocabulary.
   Capacity/cancellation serialization still applies. Removal/membership loss retains
@@ -170,7 +177,7 @@ brand destination; unverified accounts retain Verify email / Logout only.
 - Durable hashed attempt journal + serialized reservations enforce configured signup,
   creation, self-address/IP and invitation quotas/cooldowns across retries/restarts.
   Invitations cap both 50 unique recipients and 50 attempts per rolling day, 20/action;
-  seven-day group/address cooldown survives revoke/recreate. Failed sends retain quota.
+  seven-day Group/Activity-address cooldown survives revoke/recreate. Failed sends retain quota.
 - SMTP runs after commit; bounded explicit retries, no automatic loop. Existing retained
   delivery records are backfilled. Provider webhook integration is still deployment work.
 
