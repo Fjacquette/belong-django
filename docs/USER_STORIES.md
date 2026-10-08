@@ -2,15 +2,15 @@
 
 **Status:** Proposed product design basis, October 2026. The external Activity invitation, optional Group-join prompt, participant email notification, and reuse/clone requirements below are explicit current product-owner decisions; open design details remain marked as such.
 
-**Source lineage:** *Friendship Engine User Stories.docx* (older, group/event-centric); *Belong user stories.docx* (concrete named people and activity-card use cases); *Belong — Canonical Project Context*; current Django product decisions, especially issues #20 and #60. Historical examples are preserved as tests of the product model, **not** promises to implement every capability.
+**Source lineage:** *Friendship Engine User Stories.docx* (older, group/event-centric); *Belong user stories.docx* (concrete named people and activity-card use cases); *Belong — Canonical Project Context*; current Django product decisions, especially issues #20, #60, #70 and #74–#76. The pending participation-model proposal is [PARTICIPATION_MODEL_PROPOSAL.md](PARTICIPATION_MODEL_PROPOSAL.md); it does not implement the follow-ups. Historical examples are preserved as tests of the product model, **not** promises to implement every capability.
 
 ## 1. Purpose and governing rules
 
 Belong helps people make and deepen friendships through things they do together. The primary discovery object is an **Activity**, understood broadly as an opportunity or proto-intent rather than only a formal scheduled event. A **Group** is optional persistent social context, a **Series** is reusable activity-pattern information, and an **Activity** is a specific opportunity/occurrence with its own audience, responses and lifecycle. An **Invitation** is a person-specific (or explicitly group-derived) relationship to an Activity, not a special Activity type.
 
 1. **No group-first dependency:** users may discover, create, respond to and participate in an otherwise visible Activity without joining a Group. Group membership is never itself a participation gate.
-2. **Low social cost:** a person may express interest before choosing date, venue, companions or precise plan. Do not force an RSVP when tentative interest is the actual question.
-3. **Different degrees of commitment:** ordinary Discover cards navigate to Details/RSVP; invited viewers get direct Coming/Can't make it responses, subject to capacity/cancellation. Details retains organizer-selected response vocabulary, including Interested. Inviting someone does not grant visibility.
+2. **Low social cost:** people can help shape a plan before committing. Bobby’s poll is the initial interaction: no preliminary Interested/Willing button. No global Interested action/status/default; historical records remain readable.
+3. **Meaningful participation:** #74 requires Activity participation presets, separating actions from intent, admission, places and payment. Their replacement design is pending review. Current #60/#70 UX remains: ordinary cards navigate with a saved-state footer, invitees get attendance RSVP, and Details retains five current creator choices with Interested excluded. Inviting someone grants neither visibility nor Group membership.
 4. **Separate relations:** friendship, group membership, Activity visibility, invitation, and ActivityResponse are different facts. None silently implies another. Activity RSVPs must not silently join a Group; where the Group accepts members, offer an optional join action after a nonmember responds.
 5. **Accessible, safe by design:** preserve useful privacy, reporting/blocking, suitability, and trust questions; do not assume every real-world interaction is equally low-risk.
 6. **Lightweight coordination rather than a social-media feed:** announcements, updates and eventual messaging serve shared activities; avoid mandatory discussion boards, status competition or engagement farming.
@@ -22,7 +22,7 @@ Belong helps people make and deepen friendships through things they do together.
 - **Activity / activity card:** an opportunity to do something; may be now, later, recurring in concept, or unspecified until interest develops.
 - **Group:** optional durable collection of people with shared context, organizers and membership/access rules; useful for repeat coordination, not required to act.
 - **Series:** reusable description/defaults for repeated Activities; each occurrence has independent date, response, capacity and cancellation.
-- **ActivityResponse:** one viewer's current participation response to an Activity; interest is distinct from commitment.
+- **ActivityResponse (current implementation):** one viewer’s current enum response; historical Interested is not commitment. The #74 proposal separates future intent from polls, questions, admission, capacity and payment instead of adding more combined statuses.
 - **Invitation:** explicit direct Activity→User relationship, or a Group-derived invitation when the Activity explicitly invites active group members. It requests a response but does not change audience or membership.
 - **Audience/visibility:** who may discover and access an Activity. Independent from invitations and Group membership.
 - **Friendship:** personal relationship used for relevant social context and some invitee choices; not equivalent to Group membership or private-message permission.
@@ -61,7 +61,7 @@ Each story states a human outcome, not a preferred form or database schema. “A
 **Acceptance**
 - Creating a one-off Activity does not require a Group or a Series.
 - Time, place and details support “not decided yet” where appropriate.
-- The author chooses the ordinary response vocabulary; the default remains **Interested**, not a universal commitment.
+- Target #74: the author chooses a meaningful participation pattern and supported actions, including no response required. Pending design approval, the current five-choice configuration remains; Tell me more is the default and Interested is historical only.
 - Costs, limitations, capacity and access requirements can be conveyed when relevant. Do not make every optional field mandatory.
 - The Activity can later be refined through an explicitly supported editing flow (editing scope is a follow-up where not implemented).
 
@@ -70,9 +70,9 @@ Each story states a human outcome, not a preferred form or database schema. “A
 **As a viewer,** I want to understand the opportunity before committing, and respond in terms meaningful to the organizer.
 
 **Acceptance**
-- Ordinary card: exactly one “See details / RSVP” navigation action.
-- Details: organizer-selected responses, including tentative interest/questions when offered.
-- Explicitly invited viewer: “I'm coming” / “Can't make it” direct RSVP on the card, using the existing ActivityResponse and current capacity/cancellation rules.
+- Current ordinary card: “See details / RSVP” before responding, then a concise saved-state / Edit response navigation action in Band 5; Band 4 stays description-only.
+- Current Details: organizer-selected committed/declined/question/more/vote choices where offered, never a selectable Interested response. A saved question/vote label is not a delivered question or stored poll answer.
+- Current explicitly invited viewer: attendance RSVP on the card, including an unmatched-state disclosure, using ActivityResponse and capacity/cancellation rules. Target #74: invitations use the Activity’s participation pattern; a planning, inquiry or registration invitation must not universally force attendance RSVP. Replacement awaits model review.
 - An invitation never bypasses Activity visibility, forces a Group membership, or discards prior response history when revoked.
 - A full Activity prevents new commitments but permits noncommittal responses when allowed; cancellation stops response changes and preserves history.
 
@@ -247,7 +247,7 @@ These preserve the original *Belong user stories* personas and distinct design p
 | --- | --- | --- | --- |
 | **Peter** | Join an online game immediately; up to a few others | “Now,” online joining instructions, finite capacity | Next |
 | **Greg** | Bored now, flexible about what to do | Proto-intent may lack a fixed activity or location | Next |
-| **Bobby** | Theme-park trip in several weeks, date TBD | Indicate interest before voting on dates/cost | Next |
+| **Bobby** | Theme-park trip in several weeks, date TBD | Poll first → finalize → invite every poll participant to confirm → separate RSVP; votes never reserve a place (#75) | Next, after #74 review |
 | **Cindy** | Find someone for a concert with unsettled plans | Shared outing, possible dates, ticket implications | Next |
 | **Jan (D&D)** | Weekly game with a fixed time and player count | Reusable Series, recurring social context, specific attendance | Next |
 | **Jonas** | Seasonal weekend sailing companions | Repeated opportunities with variable weather and guest capacity | Next |
@@ -289,7 +289,7 @@ The older model prioritizes browsing Groups, joining them, then attending Events
 
 ### 6.2 Direct/group invitations versus discovery — resolved by issue #60
 
-Invitation means “the organizer is asking *you* for an attendance answer”; it does not mean an Activity is an invitation-only subtype. A public Activity can simultaneously invite particular users. Neither direct nor Group-derived invitations confer visibility. General ActivityResponse choices and Interested defaults remain unchanged.
+An invitation is a person-specific request, not an invitation-only Activity subtype or an audience grant. Current #60/#70 code asks invitees for attendance RSVP. Product direction in #74 makes the requested interaction pattern-specific; this replacement remains subject to design review. #70 retired Interested from current choices/defaults, preserving old records without conversion. #75 adds a new confirmation invitation after a poll, without treating votes as attendance.
 
 ### 6.3 Circles, boards and messaging — deferred
 
@@ -311,7 +311,7 @@ A Group association does not itself decide who may see or answer the Activity. T
 
 Organizers need to **view past Activities, clone one into an editable draft, modify it, and publish a new Activity**. Preserve useful logistics and defaults but create an independent Activity identity, fresh response/attendance history, and explicit invitation choices. The existing Series flow remains useful but is not a substitute for cloning a real past hike.
 
-Organizer updates and cancellation must **push email notifications** to affected Activity participants, beyond merely displaying an announcement on Details. Provide room for later text/SMS, Discord and mobile-app push channels; only email is in the initial delivery scope. Delivery consent, preferences, non-delivery, and safe retry/deduplication are implementation decisions to resolve.
+Organizer updates and cancellation must **push email notifications** to affected Activity participants, beyond merely displaying an announcement on Details. Provide room for later text/SMS, Discord and mobile-app push channels; only email is in the initial delivery scope. The #67/#73 baseline implements verified-email/default-off opt-in, snapshot recipients, fixed canonical notices and bounded audited delivery. External SMTP remains a pilot validation gate. #74/#75 must explicitly adapt recipients for actual polls and new confirmation invitations without fabricating ActivityResponse rows.
 
 ### 6.8 Open-ended activity lifecycle — open, issue #48
 
@@ -327,7 +327,19 @@ An existing user must be able to invite a real-world email address to **a partic
 
 Current repository status is not proof that Janine can receive signup, Group invitation and Activity invitation emails from the intended deployment. Validate external email delivery, origin, access restrictions, response flow and account recovery end-to-end before calling the pilot ready.
 
+### 6.11 Participation model — design review first (#74)
+
+Review [the proposed model](PARTICIPATION_MODEL_PROPOSAL.md) before replacing #60/#70
+semantics. Patterns are Activity configuration, not subtypes. Questions/polls/contact/
+external navigation are capabilities separate from intent, approval, places and payment.
+An informational Activity may require no response and must not write one for a click.
+#75's poll-to-confirmation flow and #76's capacity/admission/payment policies are
+referenced follow-ups, not implemented in this documentation iteration. #76 authorizes
+no payment integration; the existing serialized free-event flow remains usable.
+
 ## 7. Proposed implementation/validation sequence
+
+**Participation review gate:** approve #74’s model and bounded slices before larger participation changes. Do not start #75 or #76 in this iteration.
 
 **Stage A — Janine's first real walkthrough:** external signup, Group creation, real invitations and acceptance, Series creation, first hike, invitation-based and ordinary RSVP, roster, update, cancellation, next hike. Reuse existing Django functionality; **file issues only for evidenced gaps**. Test with Janine and a few actual hikers before broadening.
 

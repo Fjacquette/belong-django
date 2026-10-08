@@ -13,6 +13,18 @@ The system is anchored in:
 - Belong's existing purple/teal/slate palette, Rockwell display type, Inter/system
   body type, rounded shapes, warm/lightweight tone, and dense activity-card model.
 
+## Pending participation-pattern design (#74)
+
+[The participation model proposal](docs/PARTICIPATION_MODEL_PROPOSAL.md) is awaiting
+product-owner review. It proposes pattern-specific actions/invitations, independent
+intent/admission/place/payment state, and separate poll/question/contact capabilities.
+#75 and #76 are referenced follow-ups; neither is implemented here. Existing
+#60/#70 Band 5 controls and five current creator choices remain the runtime baseline.
+The proposed replacement keeps Band 4 description-only, compact Band 5 state/action,
+Details for richer controls, and explicit pending labels that never promise an
+unsecured place. Future slices must validate keyboard/no-JS and 320/375px geometry
+before replacing these rules; the proposal does not activate new controls.
+
 ## 1. Core geometry
 
 Use a 4px baseline grid. Prefer Tailwind spacing values rather than arbitrary pixels.

@@ -203,6 +203,18 @@ brand destination; unverified accounts retain Verify email / Logout only.
   while invitations/proofs retain explicit retries. Existing retained
   delivery records are backfilled. Provider webhook integration is still deployment work.
 
+## Participation model review
+
+- #74 defines pattern-specific participation and separates user actions from intent,
+  admission, capacity and payment. The proposed model is in
+  [docs/PARTICIPATION_MODEL_PROPOSAL.md](docs/PARTICIPATION_MODEL_PROPOSAL.md), pending
+  product-owner review; this is documentation, not an implemented replacement.
+- Keep #60/#70 behavior and #73 notification eligibility intact until an approved
+  incremental slice replaces them. No universal Interested or Willing response.
+- #75 proposes poll → finalize → new confirmation invitation → separate RSVP.
+  #76 designs free capacity, ongoing admission and payment/place policies; no payment
+  integration is authorized. Neither follow-up is started in this iteration.
+
 ## Current implementation sequence
 
 ### Discovery iteration
