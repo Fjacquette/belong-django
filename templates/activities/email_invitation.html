@@ -7,12 +7,12 @@
     <h2 class="text-xl font-display">{{ invitation.activity.title }}</h2>
     <p class="whitespace-pre-line">{{ invitation.activity.description }}</p>
     <p>{{ invitation.inviter.profile.identity_label }} invited you.</p>
-    <p>You can RSVP after accepting. Accepting does not join a Group.</p>
+    <p>{% if invitation.activity.uses_legacy_participation %}You can RSVP after accepting.{% else %}You can view Details after accepting; no response is required.{% endif %} Accepting does not join a Group.</p>
     <form method="post">{% csrf_token %}<button class="ui-button ui-button--primary ui-button--comfortable">Accept invitation</button></form>
   {% elif available %}
     {% if not user.is_authenticated %}
       <p>You’ve been invited to an activity on Belong. Sign in or create an account using the invited email address.</p>
-      <p>You can RSVP after accepting. Group membership is optional.</p>
+      <p>You can review this opportunity after accepting. Group membership is optional.</p>
       <form method="post" class="ui-cluster">{% csrf_token %}
         <button name="auth" value="login" class="ui-button ui-button--primary ui-button--comfortable">Sign in and accept</button>
         <button name="auth" value="signup" class="ui-button ui-button--secondary ui-button--comfortable">Create account and accept</button>

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}{% if series %}Edit series{% else %}Create series{% endif %} · Belong{% endblock %}
 {% block content %}
 <section class="max-w-2xl mx-auto space-y-4">
@@ -7,7 +8,7 @@
   <p>Save the pattern once, then create each activity with its own date and details. Schedule choices describe the pattern; they don’t publish activities automatically.</p>
   <form method="post" class="space-y-4">{% csrf_token %}
     {{ form.non_field_errors }}
-    {% for field in form %}<div>{{ field.label_tag }}{{ field }}
+    {% for field in form %}<div{% if field.name == 'available_responses' %} data-legacy-response-choices{% endif %}>{{ field.label_tag }}{{ field }}
       {% if field.help_text %}<p id="{{ field.auto_id }}_helptext" class="text-sm">{{ field.help_text }}</p>{% endif %}
       {{ field.errors }}
     </div>{% endfor %}
@@ -15,4 +16,5 @@
     <a href="{% if series %}{{ series.get_absolute_url }}{% elif context_group %}{{ context_group.get_absolute_url }}{% else %}{% url 'activities:create' %}{% endif %}" class="ui-link">Cancel</a>
   </form>
 </section>
+<script src="{% static 'js/activity-form.js' %}?v=participation-config-1" defer></script>
 {% endblock %}

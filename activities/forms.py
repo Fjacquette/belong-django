@@ -1,4 +1,6 @@
+from copy import deepcopy
 from django import forms
+from .participation_config import CREATOR_PATTERN_CHOICES, make_config
 
 from media_assets.models import ImageAsset, ImageAssetPurpose
 
@@ -34,8 +36,39 @@ class ResponseChoicesWidget(forms.CheckboxSelectMultiple):
 
 
 class ActivityDefaultsValidationMixin:
+    def configure_participation_field(self):
+        config = self.instance.participation_config or self.initial.get('participation_config')
+        pattern = config['pattern'] if config else ''
+        choices = list(CREATOR_PATTERN_CHOICES)
+        disabled = bool(self.instance.pk and pattern not in dict(choices))
+        if disabled:
+            choices.append((pattern, self.instance.participation_pattern_label))
+        self.fields['participation_pattern'] = forms.ChoiceField(choices=choices, required=False,
+            disabled=disabled, label='How will people take part?',
+            help_text='Use response choices, or publish information with no response required. No response required also applies to invitees; opening an external link does not record participation.',
+            widget=forms.Select(attrs={'class': 'ui-field mt-1'}))
+        self.initial['participation_pattern'] = pattern
+        self.stored_response_choices = deepcopy(self.instance.available_responses)
+        self.order_fields(['group', 'participation_pattern'] + [name for name in self.fields if name not in {'group', 'participation_pattern'}])
+
     def clean(self):
         data = super().clean()
+        pattern = data.get('participation_pattern', '')
+        if self.fields['participation_pattern'].disabled:
+            config = self.instance.participation_config
+        elif pattern:
+            original = self.initial.get('participation_config') or self.instance.participation_config
+            actions = deepcopy(original['actions']) if original and original['pattern'] == pattern else ['view_details']
+            if 'open_external' not in actions and any(data.get(f'action{n}_url') for n in range(1, 4)):
+                actions.append('open_external')
+            config = make_config(pattern, actions=actions)
+        else:
+            config = None
+        self.instance.participation_config = config
+        if config is not None:
+            # Retain authored legacy JSON on Series edits; configuration owns the
+            # new behavior without pretending those choices are current actions.
+            data['available_responses'] = self.stored_response_choices if self.instance.pk else []
         if data.get('invite_group_members') and not data.get('group'):
             self.add_error('invite_group_members', 'Choose a Group to invite its members.')
         amount = data.get('cost_amount')
@@ -74,7 +107,7 @@ class ActivityForm(ActivityDefaultsValidationMixin, forms.ModelForm):
         required=False,
         initial=list(DEFAULT_RESPONSE_CHOICES),
         widget=ResponseChoicesWidget,
-        help_text="Choose what intent is useful for this activity. Choices appear in Details. Invited viewers can always RSVP coming or not coming.",
+        help_text="Choose what intent is useful for this activity. Choices appear in Details for the response-choice flow. No response required ignores these choices, including for invitees.",
     )
 
     class Meta:
@@ -144,7 +177,7 @@ class ActivityForm(ActivityDefaultsValidationMixin, forms.ModelForm):
         ).distinct() if user and user.is_authenticated else Group.objects.none()
         self.fields['group'].label = 'For a group?'
         self.context_group = context_group
-        self.fields['invite_group_members'].help_text = 'Ask active members of the associated Group to RSVP; this does not change the activity audience.'
+        self.fields['invite_group_members'].help_text = 'Invite active members of the associated Group; this does not change the activity audience.'
         self.context_series = context_series
         if context_group:
             self.initial.setdefault('invite_group_members', True)
@@ -179,6 +212,7 @@ class ActivityForm(ActivityDefaultsValidationMixin, forms.ModelForm):
         self.fields["organizer_image"].queryset = ImageAsset.objects.filter(
             purpose=ImageAssetPurpose.ORGANIZER
         )
+        self.configure_participation_field()
 
     def save(self, commit=True):
         instance: Activity = super().save(commit=False)
@@ -188,7 +222,7 @@ class ActivityForm(ActivityDefaultsValidationMixin, forms.ModelForm):
                 instance.header_image = self.context_series.header_image
         if not instance.pk and not instance.header_image_id and instance.group_id:
             instance.header_image = instance.group.default_activity_image
-        if not instance.available_responses:
+        if instance.uses_legacy_participation and not instance.available_responses:
             instance.available_responses = list(DEFAULT_RESPONSE_CHOICES)
         if commit:
             instance.save()
@@ -205,7 +239,7 @@ class ActivitySeriesForm(ActivityDefaultsValidationMixin, forms.ModelForm):
 
     class Meta:
         model = ActivitySeries
-        fields = ['title', 'group', 'cadence', 'weekday', 'usual_start_time', 'cadence_description'] + [f for f in SERIES_DEFAULT_FIELDS if f != 'title']
+        fields = ['title', 'group', 'cadence', 'weekday', 'usual_start_time', 'cadence_description'] + [f for f in SERIES_DEFAULT_FIELDS if f not in {'title', 'participation_config'}]
         widgets = {'description': forms.Textarea(attrs={'rows': 3}), 'location_instructions': forms.Textarea(attrs={'rows': 2}),
                    'usual_start_time': forms.TimeInput(attrs={'type': 'time'})}
         labels = {'group': 'For a group?', 'cadence': 'How often?', 'weekday': 'Usual day', 'usual_start_time': 'Usual start time', 'cadence_description': 'Schedule details'}
@@ -225,10 +259,11 @@ class ActivitySeriesForm(ActivityDefaultsValidationMixin, forms.ModelForm):
             field.widget.attrs['class'] = 'ui-choice-list' if isinstance(field.widget, forms.CheckboxSelectMultiple) else 'ui-check' if isinstance(field.widget, forms.CheckboxInput) else 'ui-field mt-1'
         if self.instance.pk:
             self.initial['available_responses'] = current_response_values(self.instance.available_responses) or list(DEFAULT_RESPONSE_CHOICES)
+        self.configure_participation_field()
 
     def save(self, commit=True):
         instance = super().save(commit=False)
-        if not instance.available_responses:
+        if instance.uses_legacy_participation and not instance.available_responses:
             instance.available_responses = list(DEFAULT_RESPONSE_CHOICES)
         if commit:
             instance.save()

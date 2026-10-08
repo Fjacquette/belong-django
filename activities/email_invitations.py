@@ -113,7 +113,8 @@ def finish_pending(request):
         messages.error(request, error.messages[0])
         return reverse('activities:pending_email_invitation')
     request.session.pop('pending_activity_invitation', None)
-    messages.success(request, 'Activity invitation accepted. You can now RSVP.' if activity else 'This invitation was already used.')
+    notice = ('Activity invitation accepted. You can now RSVP.' if activity.uses_legacy_participation else 'Activity invitation accepted. You can view the opportunity.') if activity else 'This invitation was already used.'
+    messages.success(request, notice)
     return activity.get_absolute_url() if activity else reverse('activities:index')
 
 
