@@ -53,7 +53,7 @@ def issue_invitation(activity, inviter, email, request):
     if not dispatch(attempt, 'Your Belong activity invitation',
                     f'You have been invited to an activity on Belong.\n\nReview and accept: {url}\n\n'
                     'This invitation expires in seven days. Use this email address to sign in or create an account. '
-                    'Accepting does not RSVP or join a Group. Activity audience rules still apply.', email):
+                    'Accepting does not record participation or join a Group. Activity audience rules still apply.', email):
         raise ValidationError('Invitation email could not be sent. Please retry later.')
     return True
 
@@ -113,7 +113,7 @@ def finish_pending(request):
         messages.error(request, error.messages[0])
         return reverse('activities:pending_email_invitation')
     request.session.pop('pending_activity_invitation', None)
-    notice = ('Activity invitation accepted. You can now RSVP.' if activity.uses_legacy_participation else 'Activity invitation accepted. You can view the opportunity.') if activity else 'This invitation was already used.'
+    notice = ('Activity invitation accepted. ' + activity.participation_invitation_prompt + '.') if activity else 'This invitation was already used.'
     messages.success(request, notice)
     return activity.get_absolute_url() if activity else reverse('activities:index')
 

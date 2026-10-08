@@ -1,13 +1,13 @@
 # Activity participation model — proposal for review
 
 **Status:** Reviewed design basis (PR #79) for [#74](https://github.com/Fjacquette/belong-django/issues/74),
-2026-10-08. Slice A implementation is bounded below; the remaining capabilities
+2026-10-08. Implementation of slices A/B is bounded below; the remaining capabilities
 and independent state changes remain future slices.
 Assessed Django baseline: master `6128ccb` (includes #60/#70 and notification PR #73).
 [#75](https://github.com/Fjacquette/belong-django/issues/75),
 [#76](https://github.com/Fjacquette/belong-django/issues/76), and
 [#78](https://github.com/Fjacquette/belong-django/issues/78) are dependencies/follow-ups,
-not implemented by slice A. Future capability/state replacements remain separately
+not implemented by slices A/B. Future capability/state replacements remain separately
 scoped; current legacy behavior is preserved.
 
 ## Slice A implementation boundary
@@ -30,6 +30,38 @@ independently into new occurrences and may change future defaults without modify
 siblings or rewriting retained choice JSON. Existing Activity configuration cannot
 change via form/admin/model saves in slice A; conversion remains separate work.
 No-response configuration does not subscribe users to email or implement #75/#76/#78.
+
+## Slice B implementation boundary
+
+New version 2 configurations enable Scheduled/free open attendance and Immediate
+join intent. Only these patterns accept version 2: `confirm_attendance` /
+`decline_attendance` or `join_now`, respectively, plus Details and optional external
+navigation. Version 1 retains its exact navigation-only meaning even when its
+registry pattern is scheduled/immediate. Null remains the unchanged legacy path.
+Free (`cost_type=free`, amount absent/zero) is required in form/model validation
+and runtime action eligibility; paid/unknown costs need the later #76 policies.
+
+This thin free/open slice uses the existing ActivityResponse as its **single intent
+and serialized capacity authority**, not a second competing state. Explicit
+scheduled confirmation maps to committed (Going), decline to declined, and immediate
+Join now to committed (Joining). The action ID is distinct from stored intent and
+from navigation; no link/view creates a response. A limited free place is secured
+atomically with affirmative intent, without artificial seat rows for unlimited
+activities. Labels describe intended participation, never observed presence.
+Separate admission, paid allocations/holds, payment, polls and confirmation rounds
+remain later slices; no empty speculative models or conversion are introduced.
+
+Ordinary users act on Details. Invitees get the same meaningful actions directly
+on compact cards: scheduled confirmation/decline; immediate Join now only, not a
+universal attendance RSVP. Email invitation acceptance records only invitation
+identity. Audience access and Group membership remain independent. Capacity remains
+under the existing occurrence lock, including toggle/decline/removal and cancellation
+races. A full attempt retains the saved response; cancellation freezes it.
+Existing note/history/choice JSON is untouched unless the person explicitly changes
+or removes their response through the existing behavior. Series defaults copy
+version/actions independently; existing Activity configuration stays immutable.
+Notification consent/eligibility and old snapshots/delivery IDs remain on the same
+response authority, without replaying mail or subscribing invited nonresponders.
 
 ## Recommendation
 
@@ -325,5 +357,5 @@ prefer disabling the new flow for review over pretending a destructive downgrade
 
 Each implementation slice updates DESIGN_SYSTEM, PROJECT_STATE and USER_STORIES,
 adds behavior tests, runs Django checks/relevant tests, and presents its exact committed
-browser-test HEAD. Slice A does not close the remaining implementation phases of #74 or start
+browser-test HEAD. Slices A/B do not close the remaining implementation phases of #74 or start
 #75/#76/#78.

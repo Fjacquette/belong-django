@@ -8,7 +8,7 @@ from django.db import models
 from django.utils import timezone
 
 from media_assets.models import ImageAssetPurpose
-from .participation_config import validate_config, configured_pattern_label, navigation_allowed
+from .participation_config import validate_config, configured_pattern_label, navigation_allowed, intent_options
 
 
 class DemoSeedRecord(models.Model):
@@ -93,6 +93,38 @@ class ActivityStatus(models.TextChoices):
 
 
 class ParticipationConfigurationMixin:
+    def participation_options(self):
+        # Version 2's policy is free/open. Paid/unknown costs need later policy work.
+        if self.cost_type != ActivityCostType.FREE or self.cost_amount not in (None, 0):
+            return []
+        return intent_options(self.participation_config)
+
+    @property
+    def accepts_responses(self):
+        return self.uses_legacy_participation or bool(self.participation_options())
+
+    def response_label(self, status, *, invited=False):
+        for option in self.participation_options():
+            if option['status'] == status:
+                return option['state_label']
+        if self.uses_legacy_participation and invited:
+            from .invitations import RSVP_LABELS
+            if status in RSVP_LABELS:
+                return RSVP_LABELS[status]
+        return dict(ActivityResponseStatus.choices).get(status, 'Previous response')
+
+    @property
+    def participation_invitation_prompt(self):
+        if self.uses_legacy_participation:
+            return 'RSVP below'
+        if self.participation_options():
+            return 'Confirm attendance below' if self.participation_config['pattern'] == 'scheduled' else 'Join now below'
+        return 'View this opportunity; no response is required'
+
+    def validate_participation_policy(self):
+        if intent_options(self.participation_config) and not self.participation_options():
+            raise ValidationError({'cost_type': 'Scheduled attendance and Join now require Free with no nonzero cost. Registration/payment policies are not available.'})
+
     @property
     def uses_legacy_participation(self):
         return self.participation_config is None
@@ -111,8 +143,10 @@ class ParticipationConfigurationMixin:
             validate_config(self.participation_config)
         except ValidationError as error:
             raise ValidationError({'participation_config': error.messages})
+        self.validate_participation_policy()
 
     def save(self, *args, **kwargs):
+        self.validate_participation_policy()
         fields = kwargs.get('update_fields')
         if fields is None or 'participation_config' in fields:
             validate_config(self.participation_config)
@@ -245,7 +279,7 @@ class Activity(ParticipationConfigurationMixin, models.Model):
 
     def active_responses(self):  # pragma: no cover - helper for templates later
         if not self.uses_legacy_participation:
-            return []
+            return [option['status'] for option in self.participation_options()]
         if not self.available_responses:
             return [status.value for status in DEFAULT_RESPONSE_CHOICES]
         return current_response_values(self.available_responses)

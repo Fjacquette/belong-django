@@ -1,9 +1,9 @@
 <div {% if variant == 'detail' %}id="participation-{{ activity.pk }}" aria-live="polite"{% endif %} class="w-full {% if variant == 'detail' %}space-y-3{% endif %}" aria-label="Participation in {{ activity.title }}">
   {% if variant == 'detail' %}
-    {% if invited %}<p class="text-sm font-semibold">{% if activity.uses_legacy_participation %}You’re invited · RSVP below{% else %}You’re invited to view this opportunity{% endif %}</p>{% endif %}
+    {% if invited %}<p class="text-sm font-semibold">You’re invited · {{ activity.participation_invitation_prompt }}</p>{% endif %}
     {% if activity.is_cancelled %}
       <p class="text-sm font-semibold">Cancelled · Participation is closed; responses are retained.</p>
-    {% elif not activity.uses_legacy_participation %}
+    {% elif not activity.accepts_responses %}
       <p class="text-sm">No response required.</p>
     {% elif response_options %}
       <form method="post" action="{% url 'activities:respond' activity.pk %}" hx-post="{% url 'activities:respond' activity.pk %}" hx-target="#participation-{{ activity.pk }}" hx-swap="outerHTML" class="participation__response ui-cluster">
@@ -11,13 +11,13 @@
         <input type="hidden" name="variant" value="detail">
         <input type="hidden" name="next" value="{{ next_path }}">
         {% for option in response_options %}
-          <button type="submit" name="status" value="{{ option.value }}" aria-pressed="{% if current_status == option.value %}true{% else %}false{% endif %}"{% if option.disabled %} disabled{% endif %} class="ui-button ui-button--comfortable ui-response{% if current_status == option.value and option.value == 'committed' and not invited %} ui-response--confirmed{% endif %}">{{ option.label }}{% if option.disabled %} · Full{% endif %}</button>
+          <button type="submit" name="{{ option.field }}" value="{{ option.value }}" aria-pressed="{% if current_status == option.status %}true{% else %}false{% endif %}"{% if option.disabled %} disabled{% endif %} class="ui-button ui-button--comfortable ui-response{% if current_status == option.status and option.status == 'committed' and not invited %} ui-response--confirmed{% endif %}">{% if current_status == option.status and option.value == 'join_now' %}Joining{% else %}{{ option.label }}{% endif %}{% if option.disabled %} · Full{% endif %}</button>
         {% endfor %}
       </form>
     {% else %}
       <p class="text-sm">No response choices available.</p>
     {% endif %}
-    {% if activity.uses_legacy_participation or current_status %}<p class="text-sm">{% if current_status %}You: {{ current_status_label }}{% else %}No response yet{% endif %}</p>{% endif %}
+    {% if activity.accepts_responses or current_status %}<p class="text-sm">{% if current_status %}You: {{ current_status_label }}{% else %}No response yet{% endif %}</p>{% endif %}
   {% else %}
     {% if activity.is_cancelled %}
       <a href="{% url 'activities:detail' activity.pk %}{% if next_path %}?discover={{ next_path|urlencode }}{% endif %}" class="ui-button ui-button--compact ui-response--card w-full" aria-label="Cancelled.{% if current_status %} Saved response: {{ current_status_label }}.{% endif %} View response in Details.">Cancelled</a>
@@ -33,13 +33,14 @@
     {% elif card_response_options %}
       {% include 'activities/_card_rsvp.html' %}
     {% else %}
-      <a href="{% url 'activities:detail' activity.pk %}{% if next_path %}?discover={{ next_path|urlencode }}{% endif %}" class="ui-button ui-button--compact ui-response--card w-full"{% if current_status %} aria-label="Saved response: {{ current_status_label }}. {% if activity.uses_legacy_participation %}Edit{% else %}View{% endif %} response for {{ activity.title }}"{% endif %}>{% if current_status %}{{ card_current_status_label }} / {% if activity.uses_legacy_participation %}Edit response{% else %}See details{% endif %}{% elif not activity.uses_legacy_participation %}See details{% else %}See details / RSVP{% endif %}</a>
+      <a href="{% url 'activities:detail' activity.pk %}{% if next_path %}?discover={{ next_path|urlencode }}{% endif %}" class="ui-button ui-button--compact ui-response--card w-full"{% if current_status %} aria-label="Saved response: {{ current_status_label }}. {% if activity.accepts_responses %}Edit{% else %}View{% endif %} response for {{ activity.title }}"{% endif %}>{% if current_status %}{{ card_current_status_label }} / {% if activity.accepts_responses %}Edit response{% else %}See details{% endif %}{% elif not activity.uses_legacy_participation %}See details{% else %}See details / RSVP{% endif %}</a>
     {% endif %}
   {% endif %}
   {% if variant == 'detail' %}
+    {% if activity.participation_options %}<p class="text-sm">{% if activity.participation_config.pattern == 'immediate' %}Join now records your intent to join. Opening an external link does not join you or verify attendance.{% else %}Going records your intended attendance.{% endif %}</p>{% endif %}
     {% if participation_notice %}<p class="text-sm" role="status">{{ participation_notice }}</p>{% endif %}
-    {% if activity.uses_legacy_participation and activity.capacity %}<p class="text-sm">{{ committed_count }} / {{ activity.capacity }} committed{% if capacity_reached %} · Full{% endif %}. Only Count me in uses a place.</p>{% endif %}
-    {% if activity.uses_legacy_participation or current_status %}<p class="text-sm" title="{{ response_counts_label }}">{{ response_count|default:0 }} response{{ response_count|pluralize }} · {{ response_counts_label }}</p>{% endif %}
+    {% if activity.uses_legacy_participation and activity.capacity %}<p class="text-sm">{{ committed_count }} / {{ activity.capacity }} committed{% if capacity_reached %} · Full{% endif %}. Only Count me in uses a place.</p>{% elif activity.accepts_responses and activity.capacity %}<p class="text-sm">{{ committed_count }} / {{ activity.capacity }} places secured{% if capacity_reached %} · Full{% endif %}.</p>{% endif %}
+    {% if activity.accepts_responses or current_status %}<p class="text-sm" title="{{ response_counts_label }}">{{ response_count|default:0 }} response{{ response_count|pluralize }} · {{ response_counts_label }}</p>{% endif %}
   {% endif %}
   {% if variant == 'detail' %}{% include 'activities/_participation_actions.html' %}{% endif %}
   {% if variant == 'detail' and activity.offers_external_actions %}
