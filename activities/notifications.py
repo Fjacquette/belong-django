@@ -14,7 +14,9 @@ from django.utils import timezone
 
 from belong.email_controls import address_hash, dispatch, lock_controls, owned_url
 from social.models import OutboundEmailAttempt
-from .models import ActivityNotificationDelivery, ActivityNotificationEvent, ActivityResponseStatus
+from .models import ActivityNotificationDelivery, ActivityNotificationEvent
+from .polls import recipient_ids, has_response
+from django.contrib.auth import get_user_model
 from .visibility import visible_activities
 
 
@@ -34,7 +36,14 @@ def eligibility(event, user, *, expected_hash=None):
         return 'recipient_address_changed'
     if not visible_activities(user).filter(pk=event.activity_id).exists():
         return 'recipient_no_access'
-    if not event.activity.responses.filter(user=user).exclude(status=ActivityResponseStatus.DECLINED).exists():
+    if event.kind == 'confirmation':
+        if event.activity.is_cancelled:
+            return 'superseded_by_cancellation'
+        if not event.confirmation_round or not event.confirmation_round.invitations.filter(user=user).exists():
+            return 'recipient_no_invitation'
+        if has_response(event.activity,user):
+            return 'confirmation_already_answered'
+    elif user.pk not in recipient_ids(event.activity):
         return 'recipient_no_response'
     return ''
 
@@ -50,17 +59,19 @@ def sender_reason(event):
     return ''
 
 
-def queue_event(activity, actor, kind, *, announcement=None):
+def queue_event(activity, actor, kind, *, announcement=None, confirmation_round=None):
     """Caller holds the occurrence lock. Snapshot consent and addresses at event time."""
     event, created = ActivityNotificationEvent.objects.get_or_create(
-        **({'announcement': announcement} if announcement else {'activity': activity, 'kind': kind}),
+        **({'confirmation_round':confirmation_round} if confirmation_round else {'announcement': announcement} if announcement else {'activity': activity, 'kind': kind}),
         defaults={'activity': activity, 'actor': actor, 'kind': kind})
     if not created:
         return event
-    recipients = activity.responses.exclude(status=ActivityResponseStatus.DECLINED).exclude(user=actor).select_related('user__profile')
+    ids = set(confirmation_round.invitations.values_list('user_id',flat=True)) if confirmation_round else recipient_ids(activity)
+    recipients = get_user_model().objects.filter(pk__in=ids).select_related('profile')
+    if kind != 'confirmation':
+        recipients = recipients.exclude(pk=actor.pk)
     reason = sender_reason(event)
-    for response in recipients:
-        user = response.user
+    for user in recipients:
         blocked = reason or eligibility(event, user)
         ActivityNotificationDelivery.objects.create(event=event, recipient=user, recipient_hash=address_hash(user.email),
             status='skipped' if blocked else 'pending', reason=blocked)
@@ -137,15 +148,18 @@ def deliver_one(pk):
 def email_transport(event, attempt, email):
     link = owned_url('activities:detail', event.activity_id)
     preferences = owned_url('account_settings')
-    if event.kind == 'cancellation':
+    if event.kind == 'confirmation':
+        subject = 'Please confirm attendance — Belong'
+        text = 'A date poll you answered has been finalized. Please check the selected date and confirm or decline attendance. Your poll answers have not reserved a place.'
+    elif event.kind == 'cancellation':
         subject = 'Activity cancelled — Belong'
         text = 'An Activity you responded to has been cancelled. Please check Details before travelling.'
     else:
         subject = 'Activity update — Belong'
         text = 'The organizer posted an update to an Activity you responded to. Please check Details for the latest information.'
+    ending = 'This confirmation invitation does not subscribe you to routine updates.' if event.kind == 'confirmation' else 'Declining or removing your response stops future notices for this Activity.'
     return dispatch(attempt, subject, f'{text}\n\nDetails (sign-in required): {link}\n\n'
-                    f'You opted in to Activity emails. Change your preference: {preferences}\n'
-                    'Declining or removing your response stops future notices for this Activity.', email)
+                    f'You opted in to Activity emails. Change your preference: {preferences}\n' + ending, email)
 
 
 # Only one transport is implemented; events and audience logic are transport independent.

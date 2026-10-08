@@ -1,0 +1,18 @@
+{% if date_poll %}
+<section class="space-y-3" aria-labelledby="poll-heading-{{ activity.pk }}">
+  <h2 id="poll-heading-{{ activity.pk }}" class="text-xl font-display">{% if confirmation_round %}Selected date{% else %}Which date works for you?{% endif %}</h2>
+  {% if poll_closed %}
+    <p class="text-sm">The poll is closed. Availability is retained separately from attendance.</p>
+    <ul class="space-y-2">{% for row in poll_rows %}<li>{% if row.selected %}<strong>Selected: {% endif %}{{ row.option.starts_at|date:'D M j, Y, g:i A' }}{% if row.selected %}</strong>{% endif %}{% if row.own_answer %} · You: {{ row.own_answer }}{% endif %}</li>{% endfor %}</ul>
+    {% if confirmation_round %}<p class="text-sm">Poll participants have a fresh invitation to confirm this date. No poll answer reserved a place.</p>{% endif %}
+  {% else %}
+    <p class="text-sm">Yes, Maybe and No describe availability. None confirms attendance or reserves a place.</p>
+    <form method="post" action="{% url 'activities:poll_vote' activity.pk %}" hx-post="{% url 'activities:poll_vote' activity.pk %}" hx-target="#participation-{{ activity.pk }}" hx-swap="outerHTML" class="space-y-3">
+      {% csrf_token %}<input type="hidden" name="variant" value="detail"><input type="hidden" name="next" value="{{ next_path }}">
+      {% for field in poll_form %}<fieldset class="space-y-2"><legend class="text-sm font-semibold">{{ field.label }}</legend><div class="ui-cluster">{% for radio in field %}<label class="ui-cluster min-h-11">{{ radio.tag }} {{ radio.choice_label }}</label>{% endfor %}</div>{% for error in field.errors %}<p role="alert" class="text-sm">{{ error }}</p>{% endfor %}</fieldset>{% endfor %}
+      <button class="ui-button ui-button--secondary ui-button--comfortable">{% if poll_answered %}Save availability changes{% else %}Save availability{% endif %}</button>
+    </form>
+  {% endif %}
+  {% if poll_history %}<details><summary class="ui-disclosure">Your availability history</summary><ul class="space-y-2 mt-2">{% for submission in poll_history %}<li class="text-sm">{{ submission.created_at|date:'M j, Y, g:i a' }}{% for date, answer in submission.answers %}<p>{{ date|date:'D M j, g:i A' }}: {{ answer }}</p>{% endfor %}</li>{% endfor %}</ul></details>{% endif %}
+</section>
+{% endif %}

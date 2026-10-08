@@ -16,7 +16,7 @@
       {% csrf_token %}
       {{ form.non_field_errors }}
       {% for field in form %}
-        <div{% if field.name == 'available_responses' %} data-legacy-response-choices{% endif %}>
+        <div{% if field.name == 'available_responses' %} data-legacy-response-choices{% endif %}{% if field.name|slice:':10' == 'poll_date_' %} data-poll-date{% endif %}>
           <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-slate-700">{{ field.label }}</label>
           {{ field }}
           {% if field.help_text %}
@@ -35,5 +35,5 @@
       </div>
     </form>
   </div>
-<script src="{% static 'js/activity-form.js' %}?v=participation-config-1" defer></script>
+<script src="{% static 'js/activity-form.js' %}?v=date-poll-1" defer></script>
 {% endblock %}

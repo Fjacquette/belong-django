@@ -1,7 +1,7 @@
 # Activity participation model — proposal for review
 
 **Status:** Reviewed design basis (PR #79) for [#74](https://github.com/Fjacquette/belong-django/issues/74),
-2026-10-08. Implementation of slices A/B is bounded below; the remaining capabilities
+2026-10-08. Implementation of slices A/B and #75 is bounded below; the remaining capabilities
 and independent state changes remain future slices.
 Assessed Django baseline: master `6128ccb` (includes #60/#70 and notification PR #73).
 [#75](https://github.com/Fjacquette/belong-django/issues/75),
@@ -62,6 +62,40 @@ or removes their response through the existing behavior. Series defaults copy
 version/actions independently; existing Activity configuration stays immutable.
 Notification consent/eligibility and old snapshots/delivery IDs remain on the same
 response authority, without replaying mail or subscribing invited nonresponders.
+
+## Slice C (#75) implementation boundary
+
+New one-off Activities may explicitly select free three-date planning (version 3).
+Existing null/version 1/version 2 Activities and Series defaults are not converted.
+A DatePoll retains three options and append-only complete Yes/Maybe/No submissions;
+editing appends changed answers while organizer counts use each person's latest set.
+No availability answer creates ActivityResponse, attendance, a place, Group membership
+or a routine-update subscription.
+
+Finalization serializes with voting, cancellation and attendance on the same Activity.
+It retains identity/configuration/options/submissions/prior schedule and response
+history, closes voting, sets the selected date, and creates one explicit versioned
+ConfirmationRound. Every unique poll participant receives a new ConfirmationInvitation,
+including all-No/Maybe people and existing direct invitees. Invitations survive lost
+visibility but disclose nothing until audience access permits it. Repeat finalization
+is idempotent. Date changes/reopening require a separately reviewed new-round flow;
+this slice cannot silently change a finalized date. Existing secured legacy responses
+block finalization, preserving their places until the open reconfirmation policy is
+settled. Other legacy responses remain separately visible prior evidence.
+
+Only explicit answers to the current round create append-only AttendanceAnswer history.
+Latest committed answers own limited free capacity under the occurrence lock; decline,
+toggle/removal (withdrawn history), ordinary nonpoll-participant RSVP and cancellation
+retain the existing free-event behavior. No old response or poll answer is inferred as
+current attendance. No payment, approval, Series enrollment or #78 permission is added.
+
+A durable confirmation event snapshots all round invitees, with verified address,
+explicit email consent, current visibility, authorized verified sender, fixed content,
+shared sending budgets and bounded retries rechecked at dispatch. Already-answered and
+cancelled notices are suppressed. Mail failure never loses in-app invitations/history.
+For these planning Activities, routine updates/cancellation use only explicit current
+affirmative round attendance, not poll-only people. Whether poll-only people should
+later subscribe remains a product decision; legacy events/eligibility are unchanged.
 
 ## Recommendation
 
@@ -350,7 +384,7 @@ prefer disabling the new flow for review over pretending a destructive downgrade
 | --- | --- | --- |
 | A — pattern configuration/compatibility | Explicit pattern/version + validated actions; legacy Activities untouched; unsupported capabilities unavailable | All seven configs including genuine no-response; Series copy isolation; creator defaults; no response on GET/external click; migration preservation |
 | B — scheduled/free and immediate intent | Separate explicit intent from navigation; pattern-specific invitations; free open capacity stays serialized | Ordinary/invited controls, last free seat, cancellation races, selected-state/card geometry, no-JS and filter retention; no external attendance inference |
-| C — approved #75 implementation (not started) | Thin three-date poll → same-Activity finalization → new confirmation round → separate RSVP | Edits/history, every poll participant including No answers, nonresponders, visibility, concurrent finalize/cancel, eligible email/failure state, mobile/no-JS |
+| C — #75 implementation | Thin three-date poll → same-Activity finalization → new confirmation round → separate RSVP | Edits/history, every poll participant including No answers, nonresponders, visibility, concurrent finalize/cancel, eligible email/failure state, mobile/no-JS |
 | D — #76 design then separately authorized milestones (not started) | Free capped hike vs approval-based ongoing enrollment vs first-payment-priority 12-seat class | Separate roster dimensions; serialized allocation and last-seat race; design hold expiry/idempotency/refund/webhook failures before any real provider integration |
 | Separate #78 slice (not started; sequencing requires review) | Standing opt-in → fresh outing from defaults → selected independent invitations → per-outing RSVP | Alice/Bob/Carol scenario; revocation/send races, selection omissions, consent/visibility/delivery, no automatic enrollment/RSVP and unchanged occurrence history |
 | E — inquiry/other capability work only when approved | A real question/contact capability with consent and delivery, plus further supported pattern actions | Coexisting actions/intent, recipient privacy, accessibility, no fabricated participation |

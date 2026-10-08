@@ -1,5 +1,6 @@
 <form method="post" action="{% url 'activities:respond' activity.pk %}" hx-post="{% url 'activities:respond' activity.pk %}" hx-target="#participation-{{ activity.pk }}" hx-swap="outerHTML" class="participation__response card-response">
   {% csrf_token %}
+        {% if activity.attendance_round %}<input type="hidden" name="confirmation_round" value="{{ activity.attendance_round.pk }}">{% endif %}
   <input type="hidden" name="variant" value="card">
   <input type="hidden" name="next" value="{{ next_path }}">
   {% for option in card_response_options %}

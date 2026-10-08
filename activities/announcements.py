@@ -11,9 +11,10 @@ from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
 from groups.models import Group, MemberStatus
-from .models import Activity, ActivityResponseStatus, Announcement
+from .models import Activity, Announcement
 from .participation import locked_activity
 from .visibility import visible_activities
+from .polls import recipient_ids
 
 
 class AnnouncementForm(forms.Form):
@@ -51,7 +52,7 @@ def updates_for(context, user, *, organizer):
         allowed = context.memberships.filter(user=user, status=MemberStatus.ACTIVE).exists()
     else:
         allowed = (visible_activities(user).filter(pk=context.pk).exists()
-                   and context.responses.filter(user=user).exclude(status=ActivityResponseStatus.DECLINED).exists())
+                   and user.pk in recipient_ids(context))
     return updates.filter(recipients=user) if allowed else updates.none()
 
 
@@ -83,7 +84,7 @@ def _publish(request, context, form):
         recipients.add(context.owner_id)
         scope = {'group': context}
     else:
-        recipients = set(context.responses.exclude(status=ActivityResponseStatus.DECLINED).values_list('user_id', flat=True))
+        recipients = recipient_ids(context)
         scope = {'activity': context}
     key = form.cleaned_data.get('submission_token') if isinstance(context, Activity) else None
     if key and Announcement.objects.filter(submission_key=key).exists():

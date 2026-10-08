@@ -8,7 +8,7 @@ from django.db import models
 from django.utils import timezone
 
 from media_assets.models import ImageAssetPurpose
-from .participation_config import validate_config, configured_pattern_label, navigation_allowed, intent_options
+from .participation_config import validate_config, configured_pattern_label, navigation_allowed, intent_options, is_date_planning, make_config
 
 
 class DemoSeedRecord(models.Model):
@@ -94,10 +94,19 @@ class ActivityStatus(models.TextChoices):
 
 class ParticipationConfigurationMixin:
     def participation_options(self):
-        # Version 2's policy is free/open. Paid/unknown costs need later policy work.
+        # Supported attendance and date-poll policies are free/open.
         if self.cost_type != ActivityCostType.FREE or self.cost_amount not in (None, 0):
             return []
+        if self.is_date_planning:
+            from .polls import confirmation_for
+            if isinstance(self, Activity) and confirmation_for(self):
+                return intent_options(make_config('scheduled', version=2))
+            return []
         return intent_options(self.participation_config)
+
+    @property
+    def is_date_planning(self):
+        return is_date_planning(self.participation_config)
 
     @property
     def accepts_responses(self):
@@ -115,6 +124,8 @@ class ParticipationConfigurationMixin:
 
     @property
     def participation_invitation_prompt(self):
+        if self.is_date_planning:
+            return 'Confirm the selected date below' if self.participation_options() else 'Answer the date poll'
         if self.uses_legacy_participation:
             return 'RSVP below'
         if self.participation_options():
@@ -122,8 +133,8 @@ class ParticipationConfigurationMixin:
         return 'View this opportunity; no response is required'
 
     def validate_participation_policy(self):
-        if intent_options(self.participation_config) and not self.participation_options():
-            raise ValidationError({'cost_type': 'Scheduled attendance and Join now require Free with no nonzero cost. Registration/payment policies are not available.'})
+        if (intent_options(self.participation_config) or self.is_date_planning) and (self.cost_type != ActivityCostType.FREE or self.cost_amount not in (None, 0)):
+            raise ValidationError({'cost_type': 'Scheduled attendance, Join now and date polls require Free with no nonzero cost. Registration/payment policies are not available.'})
 
     @property
     def uses_legacy_participation(self):
@@ -148,6 +159,10 @@ class ParticipationConfigurationMixin:
     def save(self, *args, **kwargs):
         self.validate_participation_policy()
         fields = kwargs.get('update_fields')
+        if isinstance(self, Activity) and self.pk and self.is_date_planning and (fields is None or {'starts_at','ends_at'}.intersection(fields)):
+            round = self.attendance_round
+            if round and (self.starts_at != round.selected_option.starts_at or self.ends_at is not None):
+                raise ValidationError('A finalized poll date cannot be changed without a new reviewed confirmation round.')
         if fields is None or 'participation_config' in fields:
             validate_config(self.participation_config)
             if isinstance(self, Activity) and self.pk:
@@ -283,6 +298,11 @@ class Activity(ParticipationConfigurationMixin, models.Model):
         if not self.available_responses:
             return [status.value for status in DEFAULT_RESPONSE_CHOICES]
         return current_response_values(self.available_responses)
+
+    @property
+    def attendance_round(self):
+        from .polls import confirmation_for
+        return confirmation_for(self)
 
     def _action_href(self, value):
         try:
@@ -502,7 +522,8 @@ class ActivityNotificationEvent(models.Model):
     activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name='notification_events')
     announcement = models.OneToOneField(Announcement, null=True, blank=True, on_delete=models.SET_NULL)
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
-    kind = models.CharField(max_length=12, choices=[('update', 'Update'), ('cancellation', 'Cancellation')])
+    kind = models.CharField(max_length=12, choices=[('update', 'Update'), ('cancellation', 'Cancellation'), ('confirmation', 'Confirm attendance')])
+    confirmation_round = models.OneToOneField('ConfirmationRound', null=True, blank=True, on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -525,3 +546,65 @@ class ActivityNotificationDelivery(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=['event', 'recipient', 'channel'], name='unique_activity_notification_delivery')]
+
+
+class DatePoll(models.Model):
+    """A date-planning capability, independent of attendance."""
+    activity = models.OneToOneField(Activity, on_delete=models.CASCADE, related_name='date_poll')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class DatePollOption(models.Model):
+    poll = models.ForeignKey(DatePoll, on_delete=models.CASCADE, related_name='options')
+    position = models.PositiveSmallIntegerField()
+    starts_at = models.DateTimeField()
+
+    class Meta:
+        ordering = ['position']
+        constraints = [models.UniqueConstraint(fields=['poll', 'position'], name='unique_date_poll_position'),
+                       models.UniqueConstraint(fields=['poll', 'starts_at'], name='unique_date_poll_date'),
+                       models.CheckConstraint(condition=models.Q(position__gte=1, position__lte=3), name='date_poll_three_positions')]
+
+
+class DatePollSubmission(models.Model):
+    """Append-only complete answers; latest submission is current availability."""
+    poll = models.ForeignKey(DatePoll, on_delete=models.CASCADE, related_name='submissions')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    answers = models.JSONField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['pk']
+        indexes = [models.Index(fields=['poll', 'user', 'id'], name='poll_user_submission')]
+
+
+class ConfirmationRound(models.Model):
+    """One immutable date decision and fresh attendance question."""
+    poll = models.OneToOneField(DatePoll, on_delete=models.CASCADE, related_name='confirmation')
+    selected_option = models.ForeignKey(DatePollOption, on_delete=models.PROTECT)
+    version = models.PositiveSmallIntegerField(default=1, editable=False)
+    finalized_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+    prior_schedule = models.JSONField(default=dict)
+
+
+class ConfirmationInvitation(models.Model):
+    round = models.ForeignKey(ConfirmationRound, on_delete=models.CASCADE, related_name='invitations')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['round', 'user'], name='unique_round_confirmation_invitation')]
+
+
+class AttendanceAnswer(models.Model):
+    """Append-only round-specific intent; withdrawal remains history."""
+    round = models.ForeignKey(ConfirmationRound, on_delete=models.CASCADE, related_name='answers')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    status = models.CharField(max_length=12, choices=[('committed', 'Going'), ('declined', "Can't make it"), ('withdrawn', 'Withdrawn')])
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['pk']
+        indexes = [models.Index(fields=['round', 'user', 'id'], name='round_user_attendance')]
+        constraints = [models.CheckConstraint(condition=models.Q(status__in=['committed', 'declined', 'withdrawn']), name='round_attendance_valid_status')]

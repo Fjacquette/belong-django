@@ -8,9 +8,10 @@ from django.views.decorators.http import require_POST
 
 from groups.models import Group, GroupAccess, GroupMembership, MemberStatus
 from groups.membership import join_group
-from .models import ActivityResponse, GroupJoinOffer
+from .models import GroupJoinOffer
 from .participation import locked_activity
 from .visibility import visible_activities
+from .polls import has_response
 
 
 def eligible(group, user):
@@ -33,17 +34,16 @@ def offer_after_response(activity, user):
 
 def current_offer(user, activity=None):
     membership = GroupMembership.objects.filter(group_id=OuterRef('group_id'), user=user)
-    response = ActivityResponse.objects.filter(activity_id=OuterRef('activity_id'), user=user)
     # Compare the current occurrence association to the recorded Group; edits cannot
     # silently turn consent for one Group into consent for a different Group.
     offers = GroupJoinOffer.objects.filter(user=user, status='pending',
         group__access__in=[GroupAccess.OPEN, GroupAccess.CLOSED, GroupAccess.UNLISTED],
         activity__in=visible_activities(user), activity__group_id=F('group_id'))
-    offers = offers.exclude(group__owner=user).annotate(has_membership=Exists(membership),
-        has_response=Exists(response)).filter(has_membership=False, has_response=True)
+    offers = offers.exclude(group__owner=user).annotate(has_membership=Exists(membership)).filter(has_membership=False)
     if activity is not None:
         offers = offers.filter(activity=activity)
-    return offers.select_related('group', 'activity').order_by('-created_at', '-pk').first()
+    return next((offer for offer in offers.select_related('group', 'activity').order_by('-created_at', '-pk')
+                 if has_response(offer.activity,user)),None)
 
 
 @login_required
@@ -62,7 +62,7 @@ def answer(request, pk):
         group = get_object_or_404(Group.objects.select_for_update(), pk=reference.group_id)
         offer = get_object_or_404(GroupJoinOffer.objects.select_for_update(),
                                   user=request.user, activity=activity, group=group)
-        if not ActivityResponse.objects.filter(activity=activity, user=request.user).exists():
+        if not has_response(activity,request.user):
             raise Http404
         result = 'Group invitation dismissed. Your activity response is unchanged.'
         result_group = None

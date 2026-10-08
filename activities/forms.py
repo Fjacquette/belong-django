@@ -1,6 +1,6 @@
 from copy import deepcopy
 from django import forms
-from .participation_config import CREATOR_PATTERN_CHOICES, make_config, INTENT_VERSION
+from .participation_config import CREATOR_PATTERN_CHOICES, make_config, INTENT_VERSION, POLL_VERSION
 
 from media_assets.models import ImageAsset, ImageAssetPurpose
 
@@ -40,16 +40,23 @@ class ActivityDefaultsValidationMixin:
         config = self.instance.participation_config or self.initial.get('participation_config')
         pattern = config['pattern'] if config else ''
         choices = list(CREATOR_PATTERN_CHOICES)
+        if self._meta.model is Activity:
+            choices.append(('planning', 'Tentative planning (three-date poll)'))
+            for n in range(1, 4):
+                self.fields[f'poll_date_{n}'] = forms.DateTimeField(**_DATETIME_INPUT_KWARGS, label=f'Poll date {n}',
+                    help_text='For tentative planning only. Availability does not reserve a place.')
+                self.fields[f'poll_date_{n}'].widget.attrs['class'] = 'ui-field mt-1'
         disabled = bool(self.instance.pk and pattern not in dict(choices))
         if disabled:
             choices.append((pattern, self.instance.participation_pattern_label))
         self.fields['participation_pattern'] = forms.ChoiceField(choices=choices, required=False,
             disabled=disabled, label='How will people take part?',
-            help_text='Scheduled attendance and Join now are free, open participation. Invitees use the same pattern. External links never record attendance. Response choices apply only to the current flow.',
+            help_text='Scheduled attendance, Join now and date polls require Free. Planning asks for availability before attendance. Invitees use the same pattern. External links never record attendance. Response choices apply only to the current flow.',
             widget=forms.Select(attrs={'class': 'ui-field mt-1'}))
         self.initial['participation_pattern'] = pattern
         self.stored_response_choices = deepcopy(self.instance.available_responses)
-        self.order_fields(['group', 'participation_pattern'] + [name for name in self.fields if name not in {'group', 'participation_pattern'}])
+        first = ['group', 'participation_pattern'] + [f'poll_date_{n}' for n in range(1,4) if f'poll_date_{n}' in self.fields]
+        self.order_fields(first + [name for name in self.fields if name not in first])
 
     def clean(self):
         data = super().clean()
@@ -58,7 +65,7 @@ class ActivityDefaultsValidationMixin:
             config = self.instance.participation_config
         elif pattern:
             original = self.initial.get('participation_config') or self.instance.participation_config
-            version = original['version'] if original and original['pattern'] == pattern else INTENT_VERSION if pattern in {'scheduled', 'immediate'} else 1
+            version = original['version'] if original and original['pattern'] == pattern else INTENT_VERSION if pattern in {'scheduled', 'immediate'} else POLL_VERSION if pattern == 'planning' else 1
             actions = deepcopy(original['actions']) if original and original['pattern'] == pattern else make_config(pattern, version=version)['actions']
             if 'open_external' not in actions and any(data.get(f'action{n}_url') for n in range(1, 4)):
                 actions.append('open_external')
@@ -70,6 +77,16 @@ class ActivityDefaultsValidationMixin:
             # Retain authored legacy JSON on Series edits; configuration owns the
             # new behavior without pretending those choices are current actions.
             data['available_responses'] = self.stored_response_choices if self.instance.pk else []
+        if config and config['version'] == POLL_VERSION and self._meta.model is Activity:
+            from django.utils import timezone
+            dates = [data.get(f'poll_date_{n}') for n in range(1,4)]
+            for n, date in enumerate(dates, 1):
+                if date is None or date <= timezone.now():
+                    self.add_error(f'poll_date_{n}', 'Choose a future date and time.')
+            if len(set(dates)) != 3:
+                self.add_error('poll_date_1', 'Choose three different dates and times.')
+            if data.get('starts_at') or data.get('ends_at'):
+                self.add_error('starts_at', 'Leave the schedule undecided until you finalize a poll date.')
         if data.get('invite_group_members') and not data.get('group'):
             self.add_error('invite_group_members', 'Choose a Group to invite its members.')
         amount = data.get('cost_amount')
