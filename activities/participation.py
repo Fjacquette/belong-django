@@ -21,9 +21,12 @@ def change_response(pk, user, status=None, *, toggle=False, remove=False):
     with locked_activity(pk) as activity:
         if activity.is_cancelled:
             return 'This activity is cancelled. Responses are retained; participation is closed.'
+        from .invitations import is_invited
+        invited = is_invited(activity, user)
+        allowed = activity.active_responses() + (['committed', 'declined'] if invited else [])
         if status is None and not remove:
-            status = next(iter(activity.active_responses()), None)
-        if not remove and status not in activity.active_responses():
+            status = 'committed' if invited else next(iter(activity.active_responses()), None)
+        if not remove and status not in allowed:
             return ''
         existing = ActivityResponse.objects.filter(activity=activity, user=user).first()
         if remove or (toggle and existing and existing.status == status):

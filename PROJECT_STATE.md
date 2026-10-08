@@ -50,6 +50,22 @@ Default posture: **do it now**. If product behavior needs backend/model work, bu
   commitments when full; interest/questions remain possible while active. No
   waitlist, automatic notifications or reactivation in this slice.
 
+## Activity invitations and card RSVP
+
+- One published Activity can invite particular existing users directly and/or explicitly
+  invite current active members of its associated Group. Neither expands its audience
+  nor gates ordinary participation. Legacy is_personal_invitation is not used as proof.
+- Group-context creation defaults group invitations on; the explicit editable choice
+  is copied from Series to occurrences. Management adds/removes friends or associated
+  active Group members as direct in-app invitees. No outbound activity email.
+- Ordinary cards have one See details / RSVP link. Invitees have I'm coming / Can't
+  make it mutations on the existing response, including beyond creator vocabulary.
+  Capacity/cancellation serialization still applies. Removal/membership loss retains
+  responses. Both controls stay visible; selected accent fill/white text, no checks,
+  underlines or inset borders. Details retains ordinary vocabulary plus invited RSVP.
+- Ordinary creator-selected vocabulary and the existing Interested default remain
+  unchanged; historical records are preserved.
+
 ## Organizer announcements
 
 - Plain-text updates belong to exactly one Activity occurrence or Group. Activity
@@ -112,7 +128,7 @@ Already established:
 - UI simplification principles;
 - automatic browser-test presentation tooling;
 - cumulative discovery filters, explicit cost/GPS semantics, private Hide/Unhide;
-- creator-selected direct intent controls, compact cards, and floating Create;
+- invitation-aware card actions, creator-selected Details responses, and floating Create;
 - authenticated HTTP presence with Active / Idle / Offline thresholds.
 
 The browser-test review environment is:
@@ -170,7 +186,7 @@ Advanced filters and permanent Category controls are removed; Show hidden is a
 separate private recovery control. Repeated facet values survive pagination and
 participation redirects. Existing data is preserved; only authored matching
 seed-owned demo prices are populated. Cards retain organizer avatars and readable
-metadata. One/two complete direct responses fit the card; Details exposes all.
+metadata. Ordinary cards link to Details; invited cards show two complete RSVPs.
 Presence reflects authenticated HTTP activity: Active within 5 minutes, Idle within
 30, Offline thereafter or without a timestamp, with writes throttled to one minute.
 Discover uses one Friends list in responsive panes (#40): independent scroll and a
@@ -196,8 +212,8 @@ are enabled only for text actually clipped after layout, with no native tooltip 
 body text, with 16px/18px leading respectively; the description band is 128px.
 Band 2 centers a fixed circular avatar against the full metadata block. Card responses
 use white surfaces with accessible card-local accents against a footer matching
-the title gradient. An inset border and underline indicate selection without color
-alone; checkmarks indicate only an actual committed response. Activity forms guide
+the title gradient. Invited RSVPs use accent fill/white text with unchanged borders and no checkmarks
+or underlines; aria-pressed exposes selection. Activity forms guide
 48-character titles and 40-character venue labels; legacy model storage is retained. Search, facets and
 view/recovery controls share one compact wrapping toolbar. Context survives query
 changes and can be cleared independently; organizer suppression is reversible and

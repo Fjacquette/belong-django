@@ -49,7 +49,7 @@
   </div>
   <div class="activity-card__band-4 flex flex-col justify-start gap-1 bg-white/70 text-black font-body activity-card__body" style="padding: 4px 12px;">
     <p data-full-text="{{ activity.description }}" aria-label="{{ activity.description }}" class="activity-card__description">{{ activity.description }}</p>
-    {% if current_status %}{% if activity.is_cancelled or current_status != card_response_options.0.value %}<p class="card-current-response text-xs" aria-label="You: {{ current_status_label }}">You: {{ current_status_label }}</p>{% endif %}{% endif %}
+    {% if card_current_status_label %}<p class="card-current-response text-xs" aria-label="You: {{ card_current_status_label }}">You: {{ card_current_status_label }}</p>{% endif %}
   </div>
   <div class="activity-card__band-5 flex items-center justify-center activity-card__cta" style="padding: 4px 12px;">
     {% include 'activities/_join_region.html' with activity=activity variant='card' %}

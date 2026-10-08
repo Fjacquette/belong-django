@@ -200,7 +200,7 @@ from django.db import connections
 from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
-from activities.models import Activity, ActivityResponse
+from activities.models import Activity, ActivityResponse, ActivityInvitation
 call_command('migrate', verbosity=0)
 users = [get_user_model().objects.create_user(f'person-{i}') for i in range(5)]
 clients = []
@@ -208,7 +208,9 @@ for user in users:
     user.profile.email_verified_at = timezone.now(); user.profile.save()
     client = Client(); client.force_login(user); clients.append(client)
 for iteration in range(3):
-    activity = Activity.objects.create(host=users[0], title='Race', description='Together', capacity=1, available_responses=['committed','interested'])
+    activity = Activity.objects.create(host=users[0], title='Race', description='Together', capacity=1, available_responses=['question'])
+    for invitee in users[1:]:
+        ActivityInvitation.objects.create(activity=activity, user=invitee, invited_by=users[0])
     barrier = Barrier(4)
     def commit(i):
         barrier.wait(timeout=10)
@@ -223,7 +225,8 @@ for iteration in range(3):
     assert ActivityResponse.objects.filter(activity=activity, status='committed').count() == 1
 # Race a cancellation against a commitment. The final record can precede
 # cancellation, but never be inserted/changed after the cancellation timestamp.
-activity = Activity.objects.create(host=users[0], title='Cancel race', description='Together', capacity=1, available_responses=['committed'])
+activity = Activity.objects.create(host=users[0], title='Cancel race', description='Together', capacity=1, available_responses=['question'])
+ActivityInvitation.objects.create(activity=activity,user=users[1],invited_by=users[0])
 barrier = Barrier(2)
 def race(i):
     barrier.wait(timeout=10)

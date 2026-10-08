@@ -13,6 +13,7 @@ urlpatterns = [
     path("", views.index, name="index"),
     path("discover/categories/", views.category_explore, name="categories"),
     path("activities/new", views.create, name="create"),
+    path('activities/<int:pk>/invitations/', views.manage_invitations, name='manage_invitations'),
     path("activities/<int:pk>/roster/", views.roster, name="roster"),
     path("activities/<int:pk>/cancel/", views.cancel, name="cancel"),
     path("activities/<int:pk>/", views.detail, name="detail"),

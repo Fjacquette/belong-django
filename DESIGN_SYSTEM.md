@@ -393,44 +393,24 @@ Band 4 should have enough height for several useful lines of description.
 
 ### Band 5 — take action
 
-Band 5 is reserved for **one or two actions specific to this activity**.
+Band 5 reflects this viewer's relationship to the Activity:
+- ordinary discovery: exactly one navigation link, **See details / RSVP**;
+- directly invited or explicitly invited active Group member: **I'm coming** and
+  **Can't make it** RSVP buttons, using committed/declined ActivityResponse states;
+- cancelled: Cancelled, with no response controls.
 
-Examples from historical prototypes include:
-- I'm interested
-- Tell me more
-- Join on Discord
-- Join the club
-- Not for me
+Invitations never expand visibility or gate ordinary participation. Title navigation
+still opens Details. Creator-selected questions, votes, interest and external actions
+belong on Details. Both invited labels remain visible without JavaScript or a hidden
+second choice, including at 320px. A full activity disables a new commitment; its
+accessible title explains Full while retaining the complete compact label.
 
-Rules:
-- maximum two primary actions on the card
-- labels must be fully readable; never ellipsize action labels
-- actions use one coherent button geometry/family
-- **do not use global Belong purple as the default card-action color**; Band 5 should
-  inherit the activity/card palette
-- default unselected action: white/translucent surface with border/text derived from
-  `--card-primary` (or another explicitly defined accessible card accent)
-- Band 5 uses the same accessible horizontal gradient as Band 1
-- selected card action: white surface with card-local accent text, an inset 2px
-  accent border and underline; selection must remain visible without color alone
-- focus-visible: a white 2px outline with 2px offset against the colored footer
-- **a checkmark is status, not decoration**: render `✓` only when the user's current
-  response is a genuinely confirmed/committed state such as RSVP yes / Count me in
-- a softer selected state such as Interested uses the selected border/underline
-  treatment without a checkmark
-- question/vote/external/CTA buttons never receive a checkmark merely because they are
-  available actions
-- if a card palette cannot provide accessible contrast, use a documented accessible
-  fallback derived for that card rather than silently reverting the entire footer to
-  generic purple
-- peer actions on the same card must use the same card-local accent system
-- stateful response actions expose selected state
-- external/action links rendered as primary activity actions may use the same
-  footprint but must expose their navigation/external semantics appropriately
-- do not place Details, Hide/Unhide, generic Actions, response counts, or other
-  platform utility controls in the take-action band
-- if the activity has more than two possible responses/actions, choose the one or
-  two most useful direct actions and expose the rest on Details
+Use one geometry: compact controls, 1px border on both peers in both states, no
+checkmark, underline or inset/double border. Unselected is white with card-local
+accent text/border; selected is that accent fill with white text and aria-pressed.
+Use the existing contrast-safe --card-accent and neutral fallback; focus is a white
+2px outline/2px offset against the shared accessible Band 1/5 gradient. Preserve
+current response text in the body when it is not exposed by a selected direct choice.
 
 Platform utilities are secondary to the activity itself:
 - Details is available through the title/card navigation pattern
@@ -439,7 +419,7 @@ Platform utilities are secondary to the activity itself:
 - do not create additional generic utility menus elsewhere on the card merely to
   house leftover controls
 - response removal, payment, questions, voting, and other richer interaction belong
-  on Details unless explicitly promoted to Band 5 as a high-value shortcut
+  on Details
 - response counts are information, not actions, and need not appear on the compact
   discovery card
 
@@ -478,7 +458,7 @@ remain secondary and must not re-enter that band.
 - current selected response must be visible
 - clicking a selected direct response may clear it
 - if a historical/current response is no longer directly offered, show that state
-  coherently on Details rather than cluttering the compact card
+  in the compact card body, with richer controls on Details
 - use the single Band 1 contextual menu for repeated Discover-room operations
 - richer/infrequent interaction that does not support repeated card scanning belongs
   on Details
@@ -599,19 +579,13 @@ cards. Only matching tracked, owner-preserved authored demo prices are populated
   with individual ellipsis. Full title/when/where values remain available on
   hover/focus. Font loading, resize and HTMX replacement trigger refitting;
   without JS, the two-line title and separate logistics rows remain bounded.
-- Primary responses: `ui-button ui-button--compact ui-response ui-response--card`,
-  complete 12px labels. Card-local `--card-accent` derives from the primary palette:
-  retain colors with at least 4.5:1 contrast against white, otherwise darken RGB
-  channels together by 10% steps until they meet that ratio. Invalid colors use
-  neutral #333333. White card controls use accent text/borders in both states; selected
-  controls add an inset 2px accent border and a 2px underline without changing
-  their geometry. White focus outlines contrast with the shared Band 1/5 gradient. `ui-response--confirmed` supplies the
-  checkmark only for an actual selected `committed` response, on cards and Details.
-  Interested, question, more, vote, declined and external actions have no check.
-  General application actions stay purple.
-  The first choice works without JavaScript. `card-actions.js` exposes a second
-  choice only when both full labels plus any possible committed-state check fit.
-  Remaining choices stay available on Details. HTMX refreshes the entire card's state.
+- Invitation RSVP: `ui-button ui-button--compact ui-response ui-response--card`,
+  two complete 12px labels, visible together without JavaScript. Card accent retains
+  colors with 4.5:1 contrast against white, otherwise darkens RGB together by 10%
+  steps; invalid colors use #333333. Selection changes only fill/text, keeps 1px
+  border and aria-pressed, and never adds check/underline/inset decoration. Ordinary
+  viewers get one navigation action using the same card palette. Details retains
+  the complete creator-selected vocabulary, extended by RSVP for invitees.
 - `activity-card__context` has two columns: a fixed 44px circular avatar centered
   against the entire three/four-line metadata block, and aligned text. The image never stretches. The
   single contextual trigger is in the top-right of Band 1. Known numeric
@@ -623,9 +597,9 @@ cards. Only matching tracked, owner-preserved authored demo prices are populated
   counts, badges or platform overlays appear in the image band.
 - Details navigation uses the title link. Response counts, removal and richer
   participation live on Details; activity/organizer hiding also lives in the Band 1 menu.
-- Current response: the first direct response exposes pressed state. A
-  `card-current-response` line in the body identifies later/historical choices,
-  including a second choice that might not fit. Removal is available on Details.
+- Current response: invited RSVPs expose pressed state. A `card-current-response`
+  line identifies ordinary and historical responses not shown by a selected direct
+  choice. Removal is available on Details.
 - The 128px top-aligned description band uses the same 13px body size as Band 2,
   with relaxed 18px leading and up to six lines; a current response reserves a line. External CTAs and the generic headline stay on Details.
 
@@ -763,3 +737,15 @@ cards. Reuse section headings, `ui-link` navigation to a focused compose form,
 update shows author identity, semantic timestamp and escaped wrapping text. Lists
 show 20 updates per page with Newer/Older navigation; no feed controls or reactions.
 The compose form names its context and audience and suppresses floating Create.
+
+## Activity invitations
+
+An Activity is the published occurrence; invitations are per-viewer relationships,
+not an Activity subtype or the legacy personal-invitation boolean. Organizers use
+occurrence management to toggle inviting current active associated Group members
+and add/remove direct invitees from their friends or that Group's active membership.
+These POST/CSRF forms reuse standard fields, checkbox, and comfortable action families.
+Group-context creation defaults the explicit group-invite choice on; Series copies
+that choice into occurrences. Loss/removal changes affordances, never response history.
+Ordinary creator-selected vocabulary and its existing Interested default remain
+unchanged; historical Interested records stay valid. No outbound activity email.

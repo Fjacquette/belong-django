@@ -23,6 +23,7 @@ from django.utils.formats import date_format
 from .forms import ActivityForm, CancelActivityForm
 from .visibility import visible_activities
 from .announcements import update_context
+from .invitations import is_invited, with_invitation_state, RSVP_LABELS
 from .models import (
     Activity,
     ActivityCostType,
@@ -131,18 +132,20 @@ def _build_join_context(request: HttpRequest, activity: Activity) -> Dict[str, o
     current_response = next((r for r in responses if r.user_id == request.user.pk), None)
 
     capacity_reached = activity.capacity is not None and committed_count >= activity.capacity
+    invited = bool(is_invited(activity, request.user))
+    response_values = list(dict.fromkeys((list(RSVP_LABELS) if invited else []) + activity.active_responses()))
     response_options = []
-    for value in activity.active_responses():
+    for value in response_values:
         response_options.append(
             {
                 "value": value,
-                "label": RESPONSE_LABELS.get(value, value.replace("_", " ").title()),
+                "label": (RSVP_LABELS.get(value) if invited else None) or RESPONSE_LABELS.get(value, value.replace("_", " ").title()),
                 "disabled": value == ActivityResponseStatus.COMMITTED and capacity_reached and (not current_response or current_response.status != value),
             }
         )
 
     current_status = current_response.status if current_response else None
-    card_response_options = response_options[:2]
+    card_response_options = response_options[:2] if invited and not activity.is_cancelled else []
     card_current_status_label = (
         RESPONSE_LABELS.get(current_status, "")
         if current_status and current_status not in [option["value"] for option in card_response_options]
@@ -156,6 +159,7 @@ def _build_join_context(request: HttpRequest, activity: Activity) -> Dict[str, o
 
     return {
         "activity": activity,
+        "invited": invited,
         "attendee_count": attendee_count,
         "response_count": len(responses),
         "capacity_reached": capacity_reached,
@@ -168,7 +172,7 @@ def _build_join_context(request: HttpRequest, activity: Activity) -> Dict[str, o
         "committed_count": committed_count,
         "joined": activity.is_joined,
         "current_status": current_status,
-        "current_status_label": RESPONSE_LABELS.get(current_status, ""),
+        "current_status_label": (RSVP_LABELS.get(current_status) if invited else None) or RESPONSE_LABELS.get(current_status, ""),
         "response_options": response_options,
         "card_response_options": card_response_options,
         "card_current_status_label": card_current_status_label,
@@ -180,6 +184,7 @@ def _annotate_join_data(request: HttpRequest, activities: List[Activity]) -> Non
     for activity in activities:
         _decorate_activity(activity)
         context = _build_join_context(request, activity)
+        activity.j_invited = context["invited"]
         activity.j_attendee_count = context["attendee_count"]
         activity.j_response_count = context["response_count"]
         activity.j_response_counts_label = context["response_counts_label"]
@@ -230,7 +235,7 @@ def index(request: HttpRequest) -> HttpResponse:
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
-    activities = list(page_obj.object_list)
+    activities = list(with_invitation_state(page_obj.object_list, request.user))
     hidden_set = set(hidden_ids.values_list("activity_id", flat=True))
     for activity in activities:
         activity.is_hidden = activity.pk in hidden_set
@@ -549,13 +554,17 @@ def roster(request, pk):
     return _render_roster(request, _organizer_activity(request.user, pk))
 
 
-def _render_roster(request, activity, cancel_form=None):
+def _render_roster(request, activity, cancel_form=None, invite_form=None, group_invite_form=None):
+    from .invitations import DirectInviteForm, GroupInviteForm
     _decorate_activity(activity)
     responses = list(activity.responses.select_related('user__profile').order_by('created_at', 'pk'))
     counts = [{'label': label, 'count': sum(r.status == value for r in responses)}
               for value, label in ActivityResponseStatus.choices
               if value in activity.active_responses() or any(r.status == value for r in responses)]
     return render(request, 'activities/roster.html', {
+        'direct_invitees': activity.direct_invitations.select_related('user__profile'),
+        'invite_form': invite_form if invite_form is not None else DirectInviteForm(activity=activity, organizer=request.user),
+        'group_invite_form': group_invite_form if group_invite_form is not None else GroupInviteForm(activity=activity, initial={'invite_group_members': activity.invite_group_members}),
         **update_context(request, activity, organizer=True),
         'activity': activity, 'responses': responses, 'counts': counts,
         'committed_count': sum(r.status == ActivityResponseStatus.COMMITTED for r in responses),
@@ -575,4 +584,37 @@ def cancel(request, pk):
     from .participation import cancel_activity
     if not cancel_activity(activity.pk, request.user, form.cleaned_data['reason']):
         raise Http404
+    return redirect('activities:roster', pk=pk)
+
+
+@login_required
+@require_POST
+def manage_invitations(request, pk):
+    from .invitations import DirectInviteForm, GroupInviteForm
+    from .models import ActivityInvitation
+    from .participation import locked_activity
+    _organizer_activity(request.user, pk)
+    with locked_activity(pk) as activity:
+        if not activity.can_organize(request.user):
+            raise Http404
+        action = request.POST.get('action')
+        if action == 'group':
+            form = GroupInviteForm(request.POST, activity=activity)
+            if not form.is_valid():
+                return _render_roster(request, activity, group_invite_form=form)
+            activity.invite_group_members = form.cleaned_data['invite_group_members']
+            activity.save(update_fields=['invite_group_members', 'updated_at'])
+        elif action == 'add':
+            form = DirectInviteForm(request.POST, activity=activity, organizer=request.user)
+            if not form.is_valid():
+                return _render_roster(request, activity, invite_form=form)
+            ActivityInvitation.objects.get_or_create(activity=activity, user=form.cleaned_data['invitee'], defaults={'invited_by': request.user})
+        elif action == 'remove':
+            invitation_id = request.POST.get('invitation', '')
+            if not invitation_id.isdigit():
+                raise Http404
+            invitation = get_object_or_404(activity.direct_invitations, pk=invitation_id)
+            invitation.delete()
+        else:
+            raise Http404
     return redirect('activities:roster', pk=pk)

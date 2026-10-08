@@ -168,6 +168,7 @@ class Activity(models.Model):
     action2_url = models.CharField(max_length=255, blank=True, validators=[URLValidator(schemes=["http", "https"])])
     action3_label = models.CharField(max_length=80, blank=True)
     action3_url = models.CharField(max_length=255, blank=True, validators=[URLValidator(schemes=["http", "https"])])
+    invite_group_members = models.BooleanField(default=False, verbose_name='Invite active group members')
     available_responses = models.JSONField(default=list, blank=True)
     capacity = models.PositiveIntegerField(null=True, blank=True, validators=[MinValueValidator(1)])
     created_at = models.DateTimeField(auto_now_add=True)
@@ -291,6 +292,7 @@ class ActivitySeries(models.Model):
     description = models.TextField()
     category = models.ForeignKey(ActivityCategory, on_delete=models.SET_NULL, null=True, blank=True, related_name='series')
     audience = models.CharField(max_length=40, choices=PILOT_AUDIENCE_CHOICES, default=ActivityVisibility.EVERYONE)
+    invite_group_members = models.BooleanField(default=False, verbose_name='Invite active group members')
     available_responses = models.JSONField(default=list, blank=True)
     location_type = models.CharField(max_length=20, choices=ActivityLocationType.choices, default=ActivityLocationType.TBD)
     location_name = models.CharField(max_length=200, blank=True)
@@ -355,3 +357,13 @@ class Announcement(models.Model):
         super().clean()
         if bool(self.activity_id) == bool(self.group_id):
             raise ValidationError('Choose exactly one Activity or Group.')
+
+
+class ActivityInvitation(models.Model):
+    activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name='direct_invitations')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='activity_invitations')
+    invited_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='issued_activity_invitations')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['activity', 'user'], name='unique_activity_invitee')]
