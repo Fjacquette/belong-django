@@ -250,6 +250,7 @@ These preserve the original *Belong user stories* personas and distinct design p
 | **Bobby** | Theme-park trip in several weeks, date TBD | Poll first → finalize → invite every poll participant to confirm → separate RSVP; votes never reserve a place (#75) | Next, after #74 review |
 | **Cindy** | Find someone for a concert with unsettled plans | Shared outing, possible dates, ticket implications | Next |
 | **Jan (D&D)** | Weekly game with a fixed time and player count | Reusable Series, recurring social context, specific attendance | Next |
+| **Frank (sandcastles)** | Hear about future spontaneous outings, then decide each time | Revocable standing invitation opt-in → fresh outing from defaults → selected invitees → separate RSVP; no automatic attendance, enrollment or Group membership ([#78](https://github.com/Fjacquette/belong-django/issues/78)) | Design only; not implemented |
 | **Jonas** | Seasonal weekend sailing companions | Repeated opportunities with variable weather and guest capacity | Next |
 | **Ginger** | Party for friends and friends-of-friends | Audience expansion, invite/RSVP, hard capacity, graceful full state | Next |
 | **James** | Adventurers' club with changing excursions | Group as optional organizer; varied independent Activities | Pilot-adjacent |
@@ -280,6 +281,36 @@ These preserve the original *Belong user stories* personas and distinct design p
 | **Quark** | Advertise a retail sales party | Generally outside ordinary social participation; transparent commercial tools only if ever supported | Excluded pending policy |
 
 “Next” indicates suitable candidates for future validation and slicing, **not** a committed sprint. No one scenario should force an unnecessary new object category when a simple Activity plus appropriate response semantics suffices.
+
+### F-01 — Frank’s recurring spontaneous sandcastle outings (#78)
+
+**Given** Frank’s standing opportunity to hear about future sandcastle trips,
+**when** Alice, Bob and Carol explicitly opt in, **then** they can receive invitations
+for real future outings without promising attendance at an unknown date. This is a
+revocable, purpose-bound notification relationship, not ActivityResponse/Interested/
+Willing, Group membership, poll participation, Series enrollment, a place or blanket
+email-marketing consent. No implementation is included in this documentation PR.
+
+**Regression scenario:** Frank creates tomorrow’s outing as a fresh Activity from
+Series defaults or the approved clone flow, sets logistics and selects currently
+opted-in invitees (with the ability to omit someone). Eligible recipients receive
+proactive invitation notices under verified-address, visibility, channel preference/
+consent, sender and delivery controls; mail failure does not manufacture attendance
+or erase the independent in-app invitation. Alice goes, Bob declines and Carol does
+not answer. The roster/capacity reflect only this occurrence’s actual responses.
+A later trip has independent invitations, responses, capacity and cancellation.
+Bob can remain opted in despite declining one outing, or revoke future invitations
+without changing his prior RSVP, existing invitations or unrelated preferences.
+Never select someone merely because they once attended; no Group joining is required.
+
+**Design boundary:** candidate scope is a person-owned follow/notify relationship to
+an organizer-owned standing opportunity or Series; exact target/schema, lifecycle,
+organizer transfer, channel preference and notification volume remain open. Standing
+opt-out must suppress unsent notices as well as future audience selection. Neither
+opt-in nor invitation bypasses the new occurrence’s audience. Reuse #68/#67 foundations
+where appropriate; do not turn Series defaults into mandatory subscriptions. See
+[#78](https://github.com/Fjacquette/belong-django/issues/78) and
+[the #74 proposal](PARTICIPATION_MODEL_PROPOSAL.md). #75/#76 remain unimplemented.
 
 ## 6. Disagreements and decisions requiring explicit resolution
 
@@ -336,6 +367,8 @@ An informational Activity may require no response and must not write one for a c
 #75's poll-to-confirmation flow and #76's capacity/admission/payment policies are
 referenced follow-ups, not implemented in this documentation iteration. #76 authorizes
 no payment integration; the existing serialized free-event flow remains usable.
+#78 adds the separately scoped standing future-invitation use case above; it does
+not add an eighth participation preset or authorize implementation in this iteration.
 
 ## 7. Proposed implementation/validation sequence
 

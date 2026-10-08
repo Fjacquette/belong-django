@@ -3,8 +3,9 @@
 **Status:** Design phase of [#74](https://github.com/Fjacquette/belong-django/issues/74),
 2026-10-08. No schema, UX or runtime changes are implemented by this document.
 Assessed Django baseline: master `6128ccb` (includes #60/#70 and notification PR #73).
-[#75](https://github.com/Fjacquette/belong-django/issues/75) and
-[#76](https://github.com/Fjacquette/belong-django/issues/76) are dependencies/follow-ups,
+[#75](https://github.com/Fjacquette/belong-django/issues/75),
+[#76](https://github.com/Fjacquette/belong-django/issues/76), and
+[#78](https://github.com/Fjacquette/belong-django/issues/78) are dependencies/follow-ups,
 not authorized implementation in this iteration. Product-owner review precedes the
 replacement of current participation behavior.
 
@@ -44,6 +45,59 @@ Jadzia's companionship does not imply clinical/crisis support. Deanna/Carol/Quar
 remain policy-review/excluded cases in [USER_STORIES.md](USER_STORIES.md), not newly
 authorized participation modes.
 
+### Cross-Activity case — Frank’s spontaneous sandcastle outings (#78)
+
+[#78](https://github.com/Fjacquette/belong-django/issues/78) adds a standing,
+revocable **Notify me about future sandcastle outings** relationship, separate from
+all seven participation presets. It grants permission to invite this person to
+future occurrences of a specific opportunity. It is not participation intent/status,
+a poll answer, ongoing enrollment, Group membership, a place, or an RSVP to an
+unknown date. Prior attendance never creates it automatically; it is not blanket
+email-marketing or general messaging consent. This is a design scenario only;
+no #78 functionality is implemented in this PR.
+
+**Candidate scope and owner:** a person-owned follow/notify relationship to one
+organizer-owned standing opportunity or Series, with explicit purpose, active/revoked
+consent and timestamps. The Series may supply reusable defaults without acquiring
+mandatory membership/subscription semantics. If a standing open-ended Activity is
+the surface, this relationship still lives outside its ActivityResponse. Exact
+storage, standing-context lifecycle, organizer-transfer/consent-renewal rules and
+whether the surface belongs to a Series or separate opportunity remain open for
+#78 design. A notification opt-in and an ongoing D&D enrollment are distinct facts.
+
+Proposed flow and regression scenario:
+
+1. Frank publishes the standing sandcastle opportunity; Alice, Bob and Carol each
+   explicitly opt into future invitations. No hypothetical occurrence response,
+   enrollment, Group membership or capacity allocation is created.
+2. When Frank decides to go tomorrow, he copies reusable defaults into a **fresh
+   Activity** and sets actual date/time/place. He selects from the currently opted-in
+   audience, with a simple preselection and the ability to omit someone. Reuse the
+   Series-copy or approved #68 clone flow; preserve prior outings and never copy
+   their RSVPs or invitations as evidence of consent.
+3. Each selected person gets this occurrence’s independent invitation, using its
+   participation pattern. Audience authorization still gates disclosure and action;
+   neither standing opt-in nor invitation expands visibility. Email is a separate,
+   proactive invitation notice only when current verified-address, permission,
+   channel preference/consent, sender and delivery controls permit it. Do not promise
+   inbox delivery; preserve in-app invitation state independently of mail failure.
+4. Alice confirms this outing, Bob declines it and Carol does not answer. Only
+   Alice’s actual occurrence response can secure a place under its policy. The
+   organizer sees occurrence-specific responses; nobody auto-RSVPs from the list.
+5. Frank creates a later outing with fresh invitations, capacity and cancellation.
+   Bob may still receive its invitation despite declining the first trip, unless
+   he separately revokes his standing opt-in. Opting out stops future selections
+   and unsent standing-opt-in notices, without deleting existing invitations,
+   changing prior/current occurrence responses, cancelling a place, leaving a
+   Group or altering unrelated notification preferences.
+
+Future tests must cover explicit opt-in/opt-out, selectable/omitted recipients,
+no implicit signup from attendance, independent outings/RSVPs, revoke-vs-send races,
+visibility loss, verified/channel-ineligible users, bounded retries/deduplication
+and unchanged prior history. Organizer access to the list is limited to inviting
+people to actual outings in its agreed scope; no arbitrary marketing/message relay.
+Standing-context archival stops future invitations without erasing occurrence history.
+
 ## Actions and independent state
 
 A UI action has a defined server effect, not an arbitrary label mapped onto a giant
@@ -59,6 +113,7 @@ enum. Proposed conceptual records (exact fields/names await implementation revie
 | Question / contact request | Separate capability record with its own recipients, content, delivery/consent and lifecycle | Attendance or evidence that an external conversation happened |
 | External action | Validated navigation link; generally no local write | Completed registration, payment, attendance or a notification subscription |
 | Ongoing enrollment | Enrollment in an explicitly identified ongoing opportunity, potentially associated with a Series | An RSVP to all occurrences or joining its optional Group |
+| Standing notification opt-in (#78) | Person-owned, revocable permission for future outing invitations from one standing opportunity or Series | Participation intent, an occurrence RSVP/place, Group membership, poll participation, enrollment or blanket marketing consent |
 
 Use separate records for capability data and transactional allocations/payments;
 there need not be an empty record in every dimension for every person. A thin free
@@ -158,6 +213,17 @@ recipients must be chosen explicitly from real participation/capability records
 Whether poll-only participants continue receiving routine updates after finalization
 is an open decision below; do not inherit it accidentally from the old enum.
 
+For #78, standing opt-ins require a separate occurrence-invitation event/audience
+adapter, not synthetic responses to satisfy #73’s non-declined-response predicate.
+Recheck standing consent, selected audience and channel eligibility before dispatch;
+opt-out must suppress unsent standing-origin notices. Reuse canonical fixed notice
+content, verified sender/address checks, bounded quota/retry journals and after-commit
+delivery. Whether the current Activity email preference also governs future-outing
+invitation email, or needs a separate narrowly scoped channel preference, remains
+explicit #78 design work; never silently change the user’s global settings. Per-outing
+update/cancellation eligibility follows its own real participation policy. A follow
+alone must not subscribe someone to all occurrence updates or create an ActivityResponse.
+
 ## Transition from today's Django model
 
 Current evidence: `ActivityResponse.status` in [activities/models.py](../activities/models.py)
@@ -215,6 +281,7 @@ prefer disabling the new flow for review over pretending a destructive downgrade
 | Decision | Recommendation for review | Why it matters |
 | --- | --- | --- |
 | Default creation pattern | Require a deliberate pattern choice, with Scheduled event suggested only in an explicit occurrence flow | Time/date or a Group alone does not establish the user's intended interaction |
+| Standing invitation scope/consent (#78) | Person-owned follow/notify relationship to a standing opportunity or Series; purpose-bound organizer selection, revocation and channel eligibility | Exact target/lifecycle, ownership transfer, notification volume and channel-preference semantics need review; this is not enrollment or a new participation preset |
 | Scope of ongoing enrollment | Explicit ongoing opportunity with its own capacity/admission policy; Series may link to it later | A weekly D&D place and attendance at next week's game are different commitments; exact ownership/schema awaits #76 |
 | Confirmation labels | Going only when confirmation requirements are met; otherwise show Joining, Request sent, Approval pending, Payment pending or Place held as appropriate | No false promise of attendance/place; final short mobile labels need review |
 | Poll finalization with a separate existing response | Preserve it as prior evidence; issue a new round and require explicit reconfirmation before counting a **new** finalized plan's places | #75 forbids overwriting history; treatment of already-secured places must be approved before conversion |
@@ -230,9 +297,10 @@ prefer disabling the new flow for review over pretending a destructive downgrade
 | B — scheduled/free and immediate intent | Separate explicit intent from navigation; pattern-specific invitations; free open capacity stays serialized | Ordinary/invited controls, last free seat, cancellation races, selected-state/card geometry, no-JS and filter retention; no external attendance inference |
 | C — approved #75 implementation (not started) | Thin three-date poll → same-Activity finalization → new confirmation round → separate RSVP | Edits/history, every poll participant including No answers, nonresponders, visibility, concurrent finalize/cancel, eligible email/failure state, mobile/no-JS |
 | D — #76 design then separately authorized milestones (not started) | Free capped hike vs approval-based ongoing enrollment vs first-payment-priority 12-seat class | Separate roster dimensions; serialized allocation and last-seat race; design hold expiry/idempotency/refund/webhook failures before any real provider integration |
+| Separate #78 slice (not started; sequencing requires review) | Standing opt-in → fresh outing from defaults → selected independent invitations → per-outing RSVP | Alice/Bob/Carol scenario; revocation/send races, selection omissions, consent/visibility/delivery, no automatic enrollment/RSVP and unchanged occurrence history |
 | E — inquiry/other capability work only when approved | A real question/contact capability with consent and delivery, plus further supported pattern actions | Coexisting actions/intent, recipient privacy, accessibility, no fabricated participation |
 
 Each implementation slice updates DESIGN_SYSTEM, PROJECT_STATE and USER_STORIES,
 adds behavior tests, runs Django checks/relevant tests, and presents its exact committed
 browser-test HEAD. This documentation PR requires review of the model first; it does
-not close the implementation phase of #74 or start #75/#76.
+not close the implementation phase of #74 or start #75/#76/#78.

@@ -214,6 +214,10 @@ brand destination; unverified accounts retain Verify email / Logout only.
 - #75 proposes poll → finalize → new confirmation invitation → separate RSVP.
   #76 designs free capacity, ongoing admission and payment/place policies; no payment
   integration is authorized. Neither follow-up is started in this iteration.
+- #78’s spontaneous sandcastle scenario adds revocable standing permission for
+  future outing invitations, separate from participation/enrollment/Group membership.
+  Each fresh occurrence gets independently selected invitations and RSVPs; scope
+  and channel-consent design remain open. Included in the proposal only, not implemented.
 
 ## Current implementation sequence
 
