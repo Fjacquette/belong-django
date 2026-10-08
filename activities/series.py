@@ -15,6 +15,8 @@ def occurrence_initial(series):
         value = getattr(series, field.attname)
         initial[name] = list(value) if isinstance(value, list) else value
     initial['group'] = series.group_id
+    from .models import current_response_values, DEFAULT_RESPONSE_CHOICES
+    initial['available_responses'] = current_response_values(series.available_responses) or list(DEFAULT_RESPONSE_CHOICES)
     if not initial['header_image'] and series.group_id:
         initial['header_image'] = series.group.default_activity_image_id
     return initial

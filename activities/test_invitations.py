@@ -20,7 +20,7 @@ class ActivityInvitationTests(TestCase):
         GroupMembership.objects.create(group=cls.group,user=cls.viewer)
         GroupMembership.objects.create(group=cls.group,user=cls.co,role='organizer')
         Friendship.make_pair(cls.host,cls.other)
-        cls.activity = Activity.objects.create(host=cls.host,group=cls.group,title='Hike',description='Together',available_responses=['question','interested'])
+        cls.activity = Activity.objects.create(host=cls.host,group=cls.group,title='Hike',description='Together',available_responses=['question','more'])
 
     def setUp(self):
         self.client.force_login(self.viewer)
@@ -60,10 +60,9 @@ class ActivityInvitationTests(TestCase):
         before=ActivityResponse.objects.values().get(user=self.viewer)
         for status in ['pending','blocked']:
             GroupMembership.objects.filter(user=self.viewer).update(status=status)
-            self.assertContains(self.card(),'See details / RSVP')
-            self.assertContains(self.card(),'You: Count me in')
+            self.assertContains(self.card(),'Going / Edit response')
         GroupMembership.objects.filter(user=self.viewer).delete()
-        self.assertContains(self.card(),'See details / RSVP')
+        self.assertContains(self.card(),'Going / Edit response')
         self.assertEqual(ActivityResponse.objects.values().get(user=self.viewer),before)
 
     def test_direct_invitation_survives_group_loss_but_removal_keeps_response(self):
@@ -73,8 +72,7 @@ class ActivityInvitationTests(TestCase):
         GroupMembership.objects.filter(user=self.viewer).delete()
         self.assertContains(self.card(),escape("Can't make it"))
         invitation.delete()
-        self.assertContains(self.card(),'See details / RSVP')
-        self.assertContains(self.card(),'You: Cannot make it')
+        self.assertContains(self.card(),escape("Can't make it / Edit response"))
         self.assertEqual(ActivityResponse.objects.values().get(user=self.viewer),before)
 
     def test_invitation_does_not_override_visibility_or_legacy_boolean(self):
@@ -88,11 +86,11 @@ class ActivityInvitationTests(TestCase):
         self.assertFalse(ActivityResponse.objects.exists())
 
     def test_invitation_does_not_gate_ordinary_creator_responses(self):
-        self.post('interested')
-        self.assertEqual(ActivityResponse.objects.get(user=self.viewer).status,'interested')
-        self.assertContains(self.card(),'You: Interested')
+        self.post('more')
+        self.assertEqual(ActivityResponse.objects.get(user=self.viewer).status,'more')
+        self.assertContains(self.card(),'Tell me more / Edit response')
         self.post('committed')
-        self.assertEqual(ActivityResponse.objects.get(user=self.viewer).status,'interested')
+        self.assertEqual(ActivityResponse.objects.get(user=self.viewer).status,'more')
 
     def test_invited_answers_extend_vocabulary_and_details_match(self):
         self.invite()
@@ -105,7 +103,7 @@ class ActivityInvitationTests(TestCase):
             self.assertContains(detail,'You’re invited')
             self.assertContains(detail,f'You: {label}')
             self.assertContains(detail,'I have a question')
-            self.assertContains(detail,'Interested')
+            self.assertContains(detail,'Tell me more')
         self.post('declined')
         self.assertFalse(ActivityResponse.objects.exists())
 
@@ -118,7 +116,7 @@ class ActivityInvitationTests(TestCase):
                     self.assertContains(result, f'value="{status}" aria-pressed="true"')
                     self.assertNotContains(result, 'card-current-response')
 
-    def test_card_body_keeps_responses_without_a_selected_direct_choice(self):
+    def test_footer_keeps_responses_without_a_selected_direct_choice(self):
         invitation = self.invite()
         for invited in [True, False]:
             if not invited:
@@ -131,11 +129,11 @@ class ActivityInvitationTests(TestCase):
                     ActivityResponse.objects.update_or_create(
                         activity=self.activity, user=self.viewer, defaults={'status': status})
                     card = self.card()
-                    self.assertContains(card, 'card-current-response', count=1)
-                    self.assertContains(card, f'aria-label="You: {label}"')
-                    self.assertContains(card, f'>You: {label}</p>')
+                    self.assertNotContains(card, 'card-current-response')
+                    self.assertContains(card, 'Saved response:')
+                    self.assertContains(card, 'Details' if invited else '/ Edit response')
 
-    def test_cancelled_invited_rsvp_remains_visible_in_card_body(self):
+    def test_cancelled_invited_saved_response_is_accessible_from_footer(self):
         self.invite()
         self.activity.status = 'cancelled'
         self.activity.save()
@@ -146,7 +144,7 @@ class ActivityInvitationTests(TestCase):
                 card = self.card()
                 self.assertContains(card, 'Cancelled')
                 self.assertNotContains(card, 'name="status"')
-                self.assertContains(card, f'>You: {label}</p>')
+                self.assertContains(card, 'Details')
 
     def test_full_capacity_rejects_invited_commitment_retaining_previous_response(self):
         self.invite();self.activity.capacity=1;self.activity.save()
@@ -221,15 +219,15 @@ class ActivityInvitationTests(TestCase):
             self.assertTrue(form.is_valid(),form.errors)
             obj=form.save(commit=False);obj.host=self.host;obj.save()
             self.assertEqual(obj.invite_group_members,enabled)
-            self.assertEqual(obj.active_responses(),['interested'])
+            self.assertEqual(obj.active_responses(),['more'])
         invalid=ActivityForm({**data,'invite_group_members':'on'},user=self.host)
         self.assertFalse(invalid.is_valid())
 
     def test_ordinary_default_and_historical_interested_remain_valid(self):
         activity=Activity.objects.create(host=self.host,title='Default',description='Together')
-        self.assertEqual(activity.active_responses(),['interested'])
-        self.assertEqual(ActivityForm(user=self.host)['available_responses'].value(),['interested'])
-        self.assertEqual(ActivitySeriesForm(user=self.host)['available_responses'].value(),['interested'])
+        self.assertEqual(activity.active_responses(),['more'])
+        self.assertEqual(ActivityForm(user=self.host)['available_responses'].value(),['more'])
+        self.assertEqual(ActivitySeriesForm(user=self.host)['available_responses'].value(),['more'])
         response=ActivityResponse.objects.create(activity=activity,user=self.viewer,status='interested')
         self.client.get(reverse('activities:detail',args=[activity.pk]))
         response.refresh_from_db();self.assertEqual(response.status,'interested')

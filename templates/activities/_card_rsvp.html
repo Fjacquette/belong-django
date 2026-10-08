@@ -1,0 +1,8 @@
+<form method="post" action="{% url 'activities:respond' activity.pk %}" hx-post="{% url 'activities:respond' activity.pk %}" hx-target="#participation-{{ activity.pk }}" hx-swap="outerHTML" class="participation__response card-response">
+  {% csrf_token %}
+  <input type="hidden" name="variant" value="card">
+  <input type="hidden" name="next" value="{{ next_path }}">
+  {% for option in card_response_options %}
+    <button type="submit" name="status" value="{{ option.value }}" aria-pressed="{% if current_status == option.value %}true{% else %}false{% endif %}"{% if option.disabled %} disabled{% endif %} aria-label="{{ option.label }}{% if option.disabled %} · Full{% endif %}{% if current_status == option.value %} · selected; select again to clear{% endif %}" class="ui-button ui-button--compact ui-response ui-response--card">{{ option.label }}</button>
+  {% endfor %}
+</form>

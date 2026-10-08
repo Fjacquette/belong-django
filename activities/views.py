@@ -35,11 +35,15 @@ from .models import (
     ActivityResponse,
     ActivityResponseStatus,
     ActivityVisibility,
+    current_response_values,
+    DEFAULT_RESPONSE_CHOICES,
 )
 from social.models import Friendship, UserProfile
 
 PAGE_SIZE = 12
 RESPONSE_LABELS = dict(ActivityResponseStatus.choices)
+CARD_RESPONSE_LABELS = {'committed': 'Going', 'declined': "Can't make it", 'question': 'Have a question',
+                        'more': 'Tell me more', 'vote': 'Vote on details', 'interested': 'Past response'}
 
 
 def _decorate_activity(activity: Activity) -> None:
@@ -129,7 +133,7 @@ def _build_join_context(request: HttpRequest, activity: Activity) -> Dict[str, o
     responses = list(activity.responses.all())
     interested_count = sum(r.status == ActivityResponseStatus.INTERESTED for r in responses)
     committed_count = sum(r.status == ActivityResponseStatus.COMMITTED for r in responses)
-    attendee_count = interested_count + committed_count
+    attendee_count = committed_count
     current_response = next((r for r in responses if r.user_id == request.user.pk), None)
 
     capacity_reached = activity.capacity is not None and committed_count >= activity.capacity
@@ -147,11 +151,8 @@ def _build_join_context(request: HttpRequest, activity: Activity) -> Dict[str, o
 
     current_status = current_response.status if current_response else None
     card_response_options = response_options[:2] if invited and not activity.is_cancelled else []
-    card_current_status_label = (
-        RESPONSE_LABELS.get(current_status, "")
-        if current_status and current_status not in [option["value"] for option in card_response_options]
-        else ""
-    )
+    card_current_status_label = CARD_RESPONSE_LABELS.get(current_status, 'Previous response') if current_status else ''
+    card_unmatched_response = bool(invited and current_status and current_status not in RSVP_LABELS)
 
     if not hasattr(activity, "is_hidden"):
         activity.is_hidden = HiddenActivity.objects.filter(user=request.user, activity=activity).exists()
@@ -177,6 +178,7 @@ def _build_join_context(request: HttpRequest, activity: Activity) -> Dict[str, o
         "response_options": response_options,
         "card_response_options": card_response_options,
         "card_current_status_label": card_current_status_label,
+        "card_unmatched_response": card_unmatched_response,
         "next_path": _participation_next_path(request, activity) if request.method == "POST" else request.get_full_path(),
     }
 
@@ -197,6 +199,7 @@ def _annotate_join_data(request: HttpRequest, activities: List[Activity]) -> Non
         activity.j_response_options = context["response_options"]
         activity.j_card_response_options = context["card_response_options"]
         activity.j_card_current_status_label = context["card_current_status_label"]
+        activity.j_card_unmatched_response = context['card_unmatched_response']
 
 
 @login_required
@@ -549,7 +552,7 @@ def series_detail(request, pk):
     series = _series_for(request.user, pk)
     choices = dict(ActivityResponseStatus.choices)
     return render(request, 'activities/series_detail.html', {'series': series,
-        'response_labels': [choices[c] for c in (series.available_responses or ['interested']) if c in choices],
+        'response_labels': [choices[c] for c in (current_response_values(series.available_responses) if series.available_responses else DEFAULT_RESPONSE_CHOICES)],
         'occurrences': Activity.objects.filter(series=series).filter(Q(host=request.user) | (Q(group_id=series.group_id) if series.group_id else Q(pk__in=[]))),
     })
 

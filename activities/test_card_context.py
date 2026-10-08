@@ -66,13 +66,13 @@ class CardContextTests(TestCase):
             self.assertContains(page, f'name="{key}"')
             self.assertIn(key+'=', page.context['pagination_query'])
         response = self.client.post(reverse('activities:respond', args=[self.first.pk]),
-                                    {'status': 'interested', 'variant': 'card', 'next': destination}, HTTP_HX_REQUEST='true')
+                                    {'status': 'more', 'variant': 'card', 'next': destination}, HTTP_HX_REQUEST='true')
         self.assertContains(response, 'More from this organizer')
         self.assertContains(response, 'context_time=')
         self.assertContains(response, 'cost=free')
         self.assertContains(response, f'data-share-url="{reverse("activities:detail", args=[self.first.pk])}" hidden')
         plain = self.client.post(reverse('activities:respond', args=[self.first.pk]),
-                                 {'status': 'interested', 'variant': 'card', 'next': destination})
+                                 {'status': 'more', 'variant': 'card', 'next': destination})
         self.assertRedirects(plain, destination)
 
     def test_share_uses_details_url_and_escaped_activity_title(self):
@@ -92,12 +92,12 @@ class CardContextTests(TestCase):
         url = reverse('activities:detail', args=[self.private.pk])
         self.assertNotContains(response, f'data-share-url="{url}"')
         fragment = self.client.post(reverse('activities:respond', args=[self.private.pk]),
-                                    {'status': 'interested', 'variant': 'card'}, HTTP_HX_REQUEST='true')
+                                    {'status': 'more', 'variant': 'card'}, HTTP_HX_REQUEST='true')
         self.assertEqual(fragment.status_code, 404)
         self.assertNotContains(fragment, 'data-share-activity', status_code=404)
 
     def test_organizer_hiding_is_private_idempotent_reversible_and_preserves_responses(self):
-        ActivityResponse.objects.create(user=self.viewer, activity=self.first, status='interested')
+        ActivityResponse.objects.create(user=self.viewer, activity=self.first, status='more')
         url = reverse('activities:hide_organizer', args=[self.first.pk])
         destination = '/?q=walk&cost=free&audience=everyone'
         for _ in range(2):
@@ -113,7 +113,7 @@ class CardContextTests(TestCase):
         self.assertContains(recovery, "Unhide this organizer's activities")
         self.client.post(url, {'hidden': '0', 'next': '/?hidden=include'})
         self.assertIn(self.first.pk, self.ids())
-        self.assertTrue(ActivityResponse.objects.filter(user=self.viewer, activity=self.first, status='interested').exists())
+        self.assertTrue(ActivityResponse.objects.filter(user=self.viewer, activity=self.first, status='more').exists())
 
     def test_hidden_recovery_includes_either_preference_and_retains_activity_hiding(self):
         HiddenActivity.objects.create(user=self.viewer, activity=self.first)

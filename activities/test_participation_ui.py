@@ -16,7 +16,7 @@ class ParticipationUITests(TestCase):
         cls.viewer = create_legacy_user(username="ui-viewer")
         cls.activity = Activity.objects.create(
             host=cls.host, title="An open-ended walk", description="Find a time together",
-            available_responses=["interested", "committed", "question"],
+            available_responses=["more", "committed", "question"],
             action1_label="Organizer website", action1_url="https://example.com/walk",
             action2_label="Route", action2_url="https://example.com/route",
         )
@@ -28,7 +28,7 @@ class ParticipationUITests(TestCase):
         return reverse(f"activities:{name}", args=[self.activity.pk])
 
     def test_allowed_choices_stay_on_details_and_card_navigates(self):
-        self.activity.available_responses = ['interested', 'question', 'declined']; self.activity.save()
+        self.activity.available_responses = ['more', 'question', 'declined']; self.activity.save()
         card = self.client.get(reverse('activities:index'))
         self.assertContains(card, 'See details / RSVP')
         self.assertNotContains(card, 'name="status"')
@@ -42,9 +42,9 @@ class ParticipationUITests(TestCase):
         self.assertContains(detail, 'name="csrfmiddlewaretoken"')
 
     def test_htmx_direct_change_and_remove_preserve_variant_and_other_users(self):
-        ActivityResponse.objects.create(user=self.host, activity=self.activity, status="interested")
+        ActivityResponse.objects.create(user=self.host, activity=self.activity, status="more")
         for variant in ["card", "detail"]:
-            for status in ["interested", "committed", "question"]:
+            for status in ["more", "committed", "question"]:
                 with self.subTest(variant=variant, status=status):
                     response = self.client.post(self.url("respond"), {"status": status, "variant": variant}, HTTP_HX_REQUEST="true")
                     self.assertEqual(response.status_code, 200)
@@ -54,7 +54,8 @@ class ParticipationUITests(TestCase):
                         self.assertContains(response, f'You: {ActivityResponseStatus(status).label}')
                     else:
                         self.assertNotContains(response, 'aria-pressed="true"')
-                        self.assertContains(response, f'>You: {ActivityResponseStatus(status).label}</p>')
+                        self.assertContains(response, '/ Edit response')
+                        self.assertNotContains(response, 'card-current-response')
                     if variant == "detail":
                         self.assertContains(response, f'name="variant" value="{variant}"')
                     if variant == "detail":
@@ -73,16 +74,16 @@ class ParticipationUITests(TestCase):
             self.assertTrue(ActivityResponse.objects.filter(user=self.host).exists())
 
     def test_counts_distinguish_interest_from_commitment(self):
-        ActivityResponse.objects.create(user=self.host, activity=self.activity, status="interested")
+        ActivityResponse.objects.create(user=self.host, activity=self.activity, status="more")
         response = self.client.post(self.url("respond"), {"variant": "detail", "status": "committed"}, HTTP_HX_REQUEST="true")
-        self.assertContains(response, "Interested: 1; Count me in: 1")
+        self.assertContains(response, "Count me in: 1")
         self.assertContains(response, 'aria-pressed="true"', count=1)
         response = self.client.post(self.url("respond"), {"variant": "detail", "status": "question"}, HTTP_HX_REQUEST="true")
-        self.assertContains(response, "Interested: 1; Count me in: 0")
+        self.assertContains(response, "Count me in: 0")
 
     def test_removed_choice_keeps_existing_response_visible_and_removable(self):
         ActivityResponse.objects.create(user=self.viewer, activity=self.activity, status="committed")
-        self.activity.available_responses = ["interested"]
+        self.activity.available_responses = ["more"]
         self.activity.save()
         response = self.client.get(self.url("detail"))
         self.assertContains(response, "You: Count me in")
@@ -93,7 +94,7 @@ class ParticipationUITests(TestCase):
     def test_invalid_configuration_shows_no_choices_but_allows_removal(self):
         self.activity.available_responses = ["unknown"]
         self.activity.save()
-        ActivityResponse.objects.create(user=self.viewer, activity=self.activity, status="interested")
+        ActivityResponse.objects.create(user=self.viewer, activity=self.activity, status="more")
         response = self.client.get(self.url("detail"))
         self.assertContains(response, "No response choices available.")
         self.assertNotContains(response, f'hx-post="{self.url("respond")}"')
@@ -150,19 +151,19 @@ class ParticipationUITests(TestCase):
         self.assertContains(page, 'data-full-text="Location TBD"')
         self.assertContains(page, "Cost TBD")
 
-    def test_default_activity_offers_interested_on_details_and_navigation_on_card(self):
+    def test_default_activity_offers_more_on_details_and_navigation_on_card(self):
         self.activity.available_responses = []; self.activity.save()
         card = self.client.get(reverse('activities:index'))
         self.assertContains(card, 'See details / RSVP')
         self.assertNotContains(card, 'name="status"')
         detail = self.client.get(self.url('detail'))
-        self.assertContains(detail, 'name="status" value="interested"', count=1)
+        self.assertContains(detail, 'name="status" value="more"', count=1)
         self.assertNotContains(detail, 'name="status" value="committed"')
         form = self.client.get(reverse('activities:create')).context['form']
-        self.assertEqual(form['available_responses'].value(), ['interested'])
+        self.assertEqual(form['available_responses'].value(), ['more'])
 
     def test_later_response_chosen_from_details_remains_visible_on_card(self):
-        self.activity.available_responses = ["interested", "committed", "question", "more"]
+        self.activity.available_responses = ["more", "committed", "question", "more"]
         self.activity.save()
         for status in ["question", "more"]:
             with self.subTest(status=status):
@@ -173,18 +174,18 @@ class ParticipationUITests(TestCase):
                 label = ActivityResponseStatus(status).label
                 self.assertContains(detail, f"You: {label}")
                 card = self.client.get(reverse("activities:index"))
-                self.assertContains(card, f">You: {label}</p>")
-                self.assertContains(card, f'aria-label="You: {label}"')
+                self.assertContains(card, "/ Edit response")
+                self.assertContains(card, f'Saved response: {label}')
                 self.assertNotContains(card, 'aria-pressed="true"')
-                self.assertContains(card, 'See details / RSVP')
+                self.assertContains(card, '/ Edit response')
                 self.assertNotContains(card, 'name="status"')
                 self.assertNotContains(card, 'aria-label="Remove your response"')
                 self.assertContains(self.client.get(self.url('detail')), 'aria-label="Remove your response"')
 
         # A creator removing a choice must not hide the viewer's existing response.
-        self.activity.available_responses = ["interested", "committed"]
+        self.activity.available_responses = ["more", "committed"]
         self.activity.save()
-        self.assertContains(self.client.get(reverse("activities:index")), ">You: Tell me more</p>")
+        self.assertContains(self.client.get(reverse("activities:index")), "Tell me more / Edit response")
 
     def filtered_discover_url(self):
         self.activity.cost_type = "free"
@@ -206,7 +207,8 @@ class ParticipationUITests(TestCase):
             HTTP_HX_REQUEST="true",
         )
         self.assertContains(changed, next_input, count=3, html=True)
-        self.assertContains(changed, ">You: I have a question</p>")
+        self.assertContains(changed, "Have a question")
+        self.assertNotContains(changed, "card-current-response")
         removed = self.client.post(
             self.url("leave"), {"variant": "card", "next": destination}, HTTP_HX_REQUEST="true",
         )
@@ -216,7 +218,7 @@ class ParticipationUITests(TestCase):
 
     def test_plain_card_changes_and_removal_return_to_filtered_discover(self):
         destination = self.filtered_discover_url()
-        for action, status in [("respond", "interested"), ("respond", "question"), ("leave", ""), ("respond", "committed"), ("respond", "committed")]:
+        for action, status in [("respond", "more"), ("respond", "question"), ("leave", ""), ("respond", "committed"), ("respond", "committed")]:
             with self.subTest(action=action, status=status):
                 response = self.client.post(
                     self.url(action), {"variant": "card", "status": status, "next": destination},
@@ -230,7 +232,7 @@ class ParticipationUITests(TestCase):
                 for variant in ["card", "detail"]:
                     with self.subTest(destination=destination, action=action, variant=variant):
                         response = self.client.post(
-                            self.url(action), {"variant": variant, "status": "interested", "next": destination},
+                            self.url(action), {"variant": variant, "status": "more", "next": destination},
                         )
                         fallback = self.url("detail") if variant == "detail" else reverse("activities:index")
                         self.assertRedirects(response, fallback)
@@ -243,13 +245,13 @@ class ParticipationUITests(TestCase):
     def test_plain_forms_redirect_back_to_full_page(self):
         for variant, destination in [("card", reverse("activities:index")), ("detail", self.url("detail"))]:
             for action in ["respond", "leave"]:
-                response = self.client.post(self.url(action), {"variant": variant, "status": "interested"})
+                response = self.client.post(self.url(action), {"variant": variant, "status": "more"})
                 self.assertRedirects(response, destination)
 
     def test_ui_posts_require_csrf(self):
         client = Client(enforce_csrf_checks=True)
         client.force_login(self.viewer)
-        self.assertEqual(client.post(self.url("respond"), {"status": "interested", "variant": "card"}, HTTP_HX_REQUEST="true").status_code, 403)
+        self.assertEqual(client.post(self.url("respond"), {"status": "more", "variant": "card"}, HTTP_HX_REQUEST="true").status_code, 403)
         self.assertFalse(ActivityResponse.objects.filter(user=self.viewer).exists())
 
     def test_question_only_activity_renders_creator_choices_on_card(self):
@@ -259,7 +261,7 @@ class ParticipationUITests(TestCase):
         self.assertContains(response, f'href="{self.url("detail")}?discover=/" data-full-text="{self.activity.title}"')
         self.assertContains(response, "See details / RSVP")
         self.assertNotContains(response, 'name="status"')
-        self.assertNotContains(response, 'value="interested"')
+        self.assertNotContains(response, 'value="more"')
         self.assertNotContains(response, 'value="committed"')
         detail = self.client.get(self.url("detail"))
         self.assertContains(detail, 'value="question"')
@@ -314,8 +316,8 @@ class ParticipationUITests(TestCase):
         self.assertContains(details, '1 response')
 
     def test_only_actual_committed_responses_receive_confirmation_checks(self):
-        for status in ['interested', 'committed', 'more', 'question', 'vote', 'declined']:
-            self.activity.available_responses = ['committed', status] if status != 'committed' else ['committed', 'interested']
+        for status in ['more', 'committed', 'more', 'question', 'vote', 'declined']:
+            self.activity.available_responses = ['committed', status] if status != 'committed' else ['committed', 'more']
             self.activity.save()
             for variant in ['detail']:
                 with self.subTest(status=status, variant=variant):

@@ -57,7 +57,7 @@ class ActivitySeriesTests(TestCase):
             self.assertEqual(series.group, group)
             self.assertEqual(series.cadence, cadence)
             self.assertEqual(series.owner, self.owner)
-            self.assertEqual(series.available_responses, ['interested'])
+            self.assertEqual(series.available_responses, ['more'])
 
     def test_inherited_fields_can_be_overridden_and_occurrence_is_discoverable(self):
         page = self.client.get(self.occurrence_url())
@@ -68,7 +68,7 @@ class ActivitySeriesTests(TestCase):
         self.assertEqual(page.context['form'].initial['available_responses'], ['committed', 'question'])
         self.assertIsNone(page.context['form'].initial.get('starts_at'))
         response = self.post_occurrence(title='Specific Saturday hike', location_name='Different trail',
-                                        starts_at='2026-10-10T09:00', available_responses=['interested'], audience='everyone')
+                                        starts_at='2026-10-10T09:00', available_responses=['more'], audience='everyone')
         activity = Activity.objects.latest('pk')
         self.assertRedirects(response, reverse('activities:detail', args=[activity.pk]))
         self.assertEqual(activity.series, self.series)
@@ -76,7 +76,7 @@ class ActivitySeriesTests(TestCase):
         self.assertEqual(activity.location_name, 'Different trail')
         self.assertEqual(activity.cost_amount, Decimal('5.00'))
         self.assertEqual(activity.header_image, self.images[0])
-        self.assertEqual(activity.available_responses, ['interested'])
+        self.assertEqual(activity.available_responses, ['more'])
         self.assertEqual(activity.audience, 'everyone')
         self.assertContains(self.client.get(reverse('activities:index')), 'Specific Saturday hike')
 

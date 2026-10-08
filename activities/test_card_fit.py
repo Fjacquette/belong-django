@@ -87,12 +87,12 @@ class CardFitTests(TestCase):
 
     def test_card_fragment_retains_structured_fit_and_palette_after_response(self):
         response = self.client.post(reverse('activities:respond', args=[self.activity.pk]),
-                                    {'status': 'interested', 'variant': 'card', 'next': '/?cost=free'},
+                                    {'status': 'more', 'variant': 'card', 'next': '/?cost=free'},
                                     HTTP_HX_REQUEST='true')
         self.assertContains(response, 'activity-card__when')
         self.assertContains(response, 'card-context-menu__trigger')
         self.assertContains(response, '--card-accent: #06796b;')
-        self.assertContains(response, 'You: Interested')
+        self.assertContains(response, 'Tell me more / Edit response')
         self.assertContains(response, 'ui-response--card')
 
     def test_header_gradient_is_subtle_darkens_right_and_stays_accessible_throughout(self):

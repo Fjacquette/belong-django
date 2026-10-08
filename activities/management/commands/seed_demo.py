@@ -205,7 +205,7 @@ ACTIVITY_DATA = [
         "description": "Looking for friends to hang out with me on my boat most weekends during the season. Generally sail for three hour tours, weather permitting. No skills necessary, bring your own snacks and beverages.",
         "color_primary": "#7034A2",
         "color_secondary": "#0570C0",
-        "action1_label": "I'm interested",
+        "action1_label": "More information",
     },
     {
         "title": "Chill Overwatch 2",
@@ -339,15 +339,15 @@ ACTIVITY_DATA = [
 
 
 # Explicit pilot demo semantics, not inference from arbitrary user cost prose.
-DEMO_DISCOVERY = {'Sailing on weekends!': ('free', '39.267,-76.798', ['interested', 'more']),
+DEMO_DISCOVERY = {'Sailing on weekends!': ('free', '39.267,-76.798', ['more']),
  'Chill Overwatch 2': ('free', '', ['committed', 'question']),
- 'Hersheypark trip': ('paid', '40.288,-76.656', ['interested', 'vote', 'question']),
+ 'Hersheypark trip': ('paid', '40.288,-76.656', ['vote', 'question']),
  'Need help moving': ('free', '40.121,-75.339', ['committed', 'more']),
  'Co-ed softball league': ('paid', '40.130,-75.514', ['committed', 'declined']),
- 'Greg is bored': ('unknown', '40.028,-75.174', ['interested', 'vote']),
+ 'Greg is bored': ('unknown', '40.028,-75.174', ['vote']),
  'Firefighter flashover training': ('paid', '39.962,-75.606', ['committed', 'question']),
  'Wednesday night paddle': ('paid', '40.248,-75.649', ['committed', 'question']),
- 'Stroll the Street - Manayunk': ('free', '40.028,-75.225', ['interested', 'more'])}
+ 'Stroll the Street - Manayunk': ('free', '40.028,-75.225', ['more'])}
 for example in ACTIVITY_DATA:
     cost, gps, responses = DEMO_DISCOVERY[example["title"]]
     example.update(cost_type=cost, location_gps=gps, available_responses=responses,

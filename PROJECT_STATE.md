@@ -65,13 +65,19 @@ Default posture: **do it now**. If product behavior needs backend/model work, bu
   session IDs. Audience checks precede Activity disclosure/acceptance; accepting
   adds only the direct invitation, never a response or Group membership. External
   inbox/provider delivery remains an operational pilot gate, documented in README.
-- Ordinary cards have one See details / RSVP link. Invitees have I'm coming / Can't
+- Ordinary cards navigate with See details / RSVP before responding, then a concise
+  saved-state / Edit response label in Band 5. Band 4 is exclusively description.
+  Interested is retired from current choices and defaults; old rows display as
+  historical and are never silently converted or deleted. New Activity/Series
+  defaults use Tell me more, with organizer-specific choices retained on Details.
+  Invitees have I'm coming / Can't
   make it mutations on the existing response, including beyond creator vocabulary.
   Capacity/cancellation serialization still applies. Removal/membership loss retains
   responses. Both controls stay visible; selected accent fill/white text, no checks,
-  underlines or inset borders. Details retains ordinary vocabulary plus invited RSVP.
-- Ordinary creator-selected vocabulary and the existing Interested default remain
-  unchanged; historical records are preserved.
+  underlines or inset borders. An unmatched saved response has a compact Band 5
+  disclosure containing both RSVP actions and a Details/edit link. Cancelled cards
+  navigate to the saved history on Details. Details retains current creator-selected
+  vocabulary plus invited RSVP, including visible selection and safe removal.
 - After saving a valid response (including early interest or a declined RSVP), a
   nonmember may receive a separate optional Group join offer. Open/Unlisted joins
   are active; Closed requests await normal organizer approval. Private Groups,
