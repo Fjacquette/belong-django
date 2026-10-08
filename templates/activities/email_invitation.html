@@ -7,7 +7,7 @@
     <h2 class="text-xl font-display">{{ invitation.activity.title }}</h2>
     <p class="whitespace-pre-line">{{ invitation.activity.description }}</p>
     <p>{{ invitation.inviter.profile.identity_label }} invited you.</p>
-    <p>{% if invitation.activity.uses_legacy_participation %}You can RSVP after accepting.{% else %}You can view Details after accepting; no response is required.{% endif %} Accepting does not join a Group.</p>
+    <p>After accepting: {{ invitation.activity.participation_invitation_prompt }}. Accepting does not record participation or join a Group.</p>
     <form method="post">{% csrf_token %}<button class="ui-button ui-button--primary ui-button--comfortable">Accept invitation</button></form>
   {% elif available %}
     {% if not user.is_authenticated %}

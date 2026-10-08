@@ -17,15 +17,25 @@ def locked_activity(pk):
         yield Activity.objects.select_related('group').get(pk=pk)
 
 
-def change_response(pk, user, status=None, *, toggle=False, remove=False):
+def change_response(pk, user, status=None, *, action=None, toggle=False, remove=False):
     with locked_activity(pk) as activity:
-        if not activity.uses_legacy_participation:
+        if not activity.accepts_responses:
             return 'No response is required for this activity.'
         if activity.is_cancelled:
             return 'This activity is cancelled. Responses are retained; participation is closed.'
         from .invitations import is_invited
         invited = is_invited(activity, user)
-        allowed = activity.active_responses() + (['committed', 'declined'] if invited else [])
+        allowed = activity.active_responses() + (['committed', 'declined'] if invited and activity.uses_legacy_participation else [])
+        if not activity.uses_legacy_participation and not remove:
+            options = activity.participation_options()
+            # The old explicit POST /join remains idempotent. Configured /respond
+            # requires semantic action IDs, never arbitrary legacy response labels.
+            if action is None and status is None:
+                action = next(option['value'] for option in options if option['status'] == 'committed')
+            selected = next((option for option in options if option['value'] == action), None)
+            if not selected:
+                return 'Choose an available participation action.'
+            status = selected['status']
         if status is None and not remove:
             status = 'committed' if invited else next(iter(activity.active_responses()), None)
         if not remove and status not in allowed:

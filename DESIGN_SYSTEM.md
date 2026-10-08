@@ -13,24 +13,35 @@ The system is anchored in:
 - Belong's existing purple/teal/slate palette, Rockwell display type, Inter/system
   body type, rounded shapes, warm/lightweight tone, and dense activity-card model.
 
-## Participation-pattern foundation (#74, slice A)
+## Participation patterns (#74, slices A/B)
 
-[The reviewed participation model](docs/PARTICIPATION_MODEL_PROPOSAL.md) proposes pattern-specific actions/invitations, independent
-intent/admission/place/payment state, and separate poll/question/contact capabilities.
-#75 and #76 are referenced follow-ups; neither is implemented here. Null configuration keeps #60/#70 Band 5 controls and five current creator choices.
-Slice A adds a How will people take part? select to Activity/Series forms: Response
-choices (current flow), or No response required. Unsupported patterns/actions are
-not offered. The latter hides legacy checkboxes as progressive enhancement; without
-JavaScript their help explains that those choices are ignored. Series defaults are
-copied per occurrence. No-response cards use See details, including for invitees;
-Details/rosters state No response required and show only permitted navigation links.
-Acceptance of an email invitation does not imply RSVP. Existing Activity configuration
-is read-only; historical rows remain accessible without mutation.
-The proposed replacement keeps Band 4 description-only, compact Band 5 state/action,
-Details for richer controls, and explicit pending labels that never promise an
-unsecured place. Future slices must validate keyboard/no-JS and 320/375px geometry
-before replacing the remaining legacy rules. Existing control families/geometry
-are reused; no new card status or unimplemented participation control is introduced.
+Use [the reviewed participation model](docs/PARTICIPATION_MODEL_PROPOSAL.md).
+Null configuration keeps #60/#70 controls and current creator choices. Version 1
+remains navigation-only; No response required uses See details even for invitees.
+The native **How will people take part?** select also offers Scheduled event
+(free/open attendance) and Immediate activity (free/Join now), using version 2.
+Unsupported polling/enrollment/registration/contact/payment actions are not offered.
+Legacy response checkboxes are hidden for configured patterns as progressive
+enhancement; their help explains that they are ignored without JavaScript.
+Series defaults are copied per occurrence; existing Activity configuration stays
+read-only. No automatic conversion, observed-attendance claim or Group requirement.
+
+Band 4 stays description-only. Ordinary configured cards use **See details**, then
+**Going / Edit response** or **Joining / Edit response** after explicit intent.
+Invited scheduled cards use **I'm coming / Can't make it**; immediate cards use one
+**Join now** button, reading **Joining** when selected. Reuse the existing compact
+response family: accent fill/white selected text, unchanged borders, no checks or
+underlines, `aria-pressed`, select again to clear. Immediate invitations never add
+Coming/Can't make it. Cancellation retains the saved-history Details link.
+Details uses comfortable POST buttons, separate validated external navigation,
+visible current intent and Remove response; roster labels use Going or Joining.
+Limited free capacity displays secured places, counts only affirmative intent, and
+keeps declined/removal available when full. Join now is intended participation;
+opening an external game is neither joining nor evidence of attendance.
+Email acceptance requests the Activity's pattern action without setting intent.
+Visibility and Group membership remain independent. Validate keyboard/no-JS,
+filtered returns, 320/375px card geometry and capacity/cancellation races. Rich
+admission/place/payment policies remain separately scoped under #75/#76/#78.
 
 ## 1. Core geometry
 

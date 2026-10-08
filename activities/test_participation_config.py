@@ -76,12 +76,12 @@ class ParticipationConfigurationTests(TestCase):
     def test_creator_default_stays_legacy_and_only_ready_pattern_is_selectable(self):
         form=ActivityForm(user=self.host)
         self.assertEqual(form.initial['participation_pattern'],'')
-        self.assertEqual(list(form.fields['participation_pattern'].choices),[('','Response choices (current flow)'),('none','No response required')])
+        self.assertEqual([value for value, label in form.fields['participation_pattern'].choices], ['', 'scheduled', 'immediate', 'none'])
         legacy=ActivityForm(data=self.form_data(),user=self.host)
         self.assertTrue(legacy.is_valid(),legacy.errors)
         a=legacy.save(commit=False);a.host=self.host;a.save()
         self.assertIsNone(a.participation_config);self.assertEqual(a.available_responses,['more'])
-        for pattern in set(PATTERNS)-{'none'}:
+        for pattern in set(PATTERNS)-{'none', 'scheduled', 'immediate'}:
             forged=ActivityForm(data=self.form_data(participation_pattern=pattern),user=self.host)
             self.assertFalse(forged.is_valid());self.assertIn('participation_pattern',forged.errors)
 

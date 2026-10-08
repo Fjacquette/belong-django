@@ -1,6 +1,6 @@
 from copy import deepcopy
 from django import forms
-from .participation_config import CREATOR_PATTERN_CHOICES, make_config
+from .participation_config import CREATOR_PATTERN_CHOICES, make_config, INTENT_VERSION
 
 from media_assets.models import ImageAsset, ImageAssetPurpose
 
@@ -45,7 +45,7 @@ class ActivityDefaultsValidationMixin:
             choices.append((pattern, self.instance.participation_pattern_label))
         self.fields['participation_pattern'] = forms.ChoiceField(choices=choices, required=False,
             disabled=disabled, label='How will people take part?',
-            help_text='Use response choices, or publish information with no response required. No response required also applies to invitees; opening an external link does not record participation.',
+            help_text='Scheduled attendance and Join now are free, open participation. Invitees use the same pattern. External links never record attendance. Response choices apply only to the current flow.',
             widget=forms.Select(attrs={'class': 'ui-field mt-1'}))
         self.initial['participation_pattern'] = pattern
         self.stored_response_choices = deepcopy(self.instance.available_responses)
@@ -58,10 +58,11 @@ class ActivityDefaultsValidationMixin:
             config = self.instance.participation_config
         elif pattern:
             original = self.initial.get('participation_config') or self.instance.participation_config
-            actions = deepcopy(original['actions']) if original and original['pattern'] == pattern else ['view_details']
+            version = original['version'] if original and original['pattern'] == pattern else INTENT_VERSION if pattern in {'scheduled', 'immediate'} else 1
+            actions = deepcopy(original['actions']) if original and original['pattern'] == pattern else make_config(pattern, version=version)['actions']
             if 'open_external' not in actions and any(data.get(f'action{n}_url') for n in range(1, 4)):
                 actions.append('open_external')
-            config = make_config(pattern, actions=actions)
+            config = make_config(pattern, actions=actions, version=version)
         else:
             config = None
         self.instance.participation_config = config
@@ -107,7 +108,7 @@ class ActivityForm(ActivityDefaultsValidationMixin, forms.ModelForm):
         required=False,
         initial=list(DEFAULT_RESPONSE_CHOICES),
         widget=ResponseChoicesWidget,
-        help_text="Choose what intent is useful for this activity. Choices appear in Details for the response-choice flow. No response required ignores these choices, including for invitees.",
+        help_text="Choose what intent is useful for this activity. These choices apply only to Response choices (current flow). Scheduled, immediate and No response required use their own actions, including for invitees.",
     )
 
     class Meta:

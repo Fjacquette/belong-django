@@ -1,5 +1,5 @@
   <div class="participation__utilities {% if variant == 'detail' %}ui-cluster{% else %}flex flex-col gap-2{% endif %}">
-    {% if current_status and not activity.is_cancelled and activity.uses_legacy_participation %}
+    {% if current_status and not activity.is_cancelled and activity.accepts_responses %}
       <form method="post" action="{% url 'activities:leave' activity.pk %}" hx-post="{% url 'activities:leave' activity.pk %}" hx-target="#participation-{{ activity.pk }}" hx-swap="outerHTML">
         {% csrf_token %}
         <input type="hidden" name="variant" value="{{ variant|default:'card' }}">

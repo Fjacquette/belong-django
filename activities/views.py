@@ -140,18 +140,26 @@ def _build_join_context(request: HttpRequest, activity: Activity) -> Dict[str, o
     invited = bool(is_invited(activity, request.user))
     response_values = list(dict.fromkeys((list(RSVP_LABELS) if invited and activity.uses_legacy_participation else []) + activity.active_responses()))
     response_options = []
-    for value in response_values:
+    for value in response_values if activity.uses_legacy_participation else []:
         response_options.append(
             {
                 "value": value,
+                "status": value,
+                "field": "status",
                 "label": (RSVP_LABELS.get(value) if invited else None) or RESPONSE_LABELS.get(value, value.replace("_", " ").title()),
                 "disabled": value == ActivityResponseStatus.COMMITTED and capacity_reached and (not current_response or current_response.status != value),
             }
         )
+    if not activity.uses_legacy_participation:
+        response_options = activity.participation_options()
+        for option in response_options:
+            option['disabled'] = option['status'] == 'committed' and capacity_reached and (not current_response or current_response.status != 'committed')
 
     current_status = current_response.status if current_response else None
     card_response_options = response_options[:2] if invited and not activity.is_cancelled else []
     card_current_status_label = CARD_RESPONSE_LABELS.get(current_status, 'Previous response') if current_status else ''
+    if activity.participation_options() and current_status:
+        card_current_status_label = activity.response_label(current_status)
     card_unmatched_response = bool(activity.uses_legacy_participation and invited and current_status and current_status not in RSVP_LABELS)
 
     if not hasattr(activity, "is_hidden"):
@@ -166,7 +174,7 @@ def _build_join_context(request: HttpRequest, activity: Activity) -> Dict[str, o
         "response_count": len(responses),
         "capacity_reached": capacity_reached,
         "response_counts_label": "; ".join(
-            f"{label}: {sum(r.status == value for r in responses)}"
+            f"{activity.response_label(value)}: {sum(r.status == value for r in responses)}"
             for value, label in ActivityResponseStatus.choices
             if value in activity.active_responses() or any(r.status == value for r in responses)
         ),
@@ -174,7 +182,7 @@ def _build_join_context(request: HttpRequest, activity: Activity) -> Dict[str, o
         "committed_count": committed_count,
         "joined": activity.is_joined,
         "current_status": current_status,
-        "current_status_label": (RSVP_LABELS.get(current_status) if invited else None) or RESPONSE_LABELS.get(current_status, ""),
+        "current_status_label": activity.response_label(current_status, invited=invited) if current_status else '',
         "response_options": response_options,
         "card_response_options": card_response_options,
         "card_current_status_label": card_current_status_label,
@@ -353,7 +361,7 @@ def create(request: HttpRequest) -> HttpResponse:
 def respond(request: HttpRequest, pk: int) -> HttpResponse:
     activity = get_object_or_404(visible_activities(request.user).select_related("host"), pk=pk)
     from .participation import change_response
-    notice = change_response(activity.pk, request.user, request.POST.get('status', ''), toggle=True)
+    notice = change_response(activity.pk, request.user, request.POST.get('status', ''), action=request.POST.get('action'), toggle=True)
     activity.refresh_from_db()
     return _render_join_region(request, activity, notice)
 
@@ -573,7 +581,9 @@ def _render_roster(request, activity, cancel_form=None, invite_form=None, group_
     from .invitations import DirectInviteForm, GroupInviteForm, EmailInviteForm
     _decorate_activity(activity)
     responses = list(activity.responses.select_related('user__profile').order_by('created_at', 'pk'))
-    counts = [{'label': label, 'count': sum(r.status == value for r in responses)}
+    for response in responses:
+        response.participation_label = activity.response_label(response.status)
+    counts = [{'label': activity.response_label(value), 'count': sum(r.status == value for r in responses)}
               for value, label in ActivityResponseStatus.choices
               if value in activity.active_responses() or any(r.status == value for r in responses)]
     return render(request, 'activities/roster.html', {

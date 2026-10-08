@@ -632,7 +632,7 @@ recipient logic is separate from the email transport for later channels; only em
 exists now, and other channels require their own consent/privacy design.
 
 
-## Participation pattern configuration (issue #74, slice A)
+## Participation patterns (issue #74, slices A/B)
 
 Activity/Series `participation_config = NULL` retains the current response-choice
 flow, default Tell me more, invited RSVP and historical Interested read path.
@@ -648,7 +648,21 @@ ActivityResponse or notification subscription. Without JavaScript legacy respons
 checkboxes remain visible with explanatory help, but are ignored for this choice.
 
 All seven patterns are registered in `activities/participation_config.py`; the
-configuration is strict `{version: 1, pattern, actions}` JSON. Unsupported/unknown
-versions/actions are rejected. Attendance/Join now, actual polls/questions/contact,
-enrollment/registration/payment and standing notification opt-ins are later slices,
-not offered controls. See [the reviewed model](docs/PARTICIPATION_MODEL_PROPOSAL.md).
+configuration is strict `{version, pattern, actions}` JSON. Version 1 remains
+navigation-only for every existing configuration. Unsupported/unknown
+versions/actions are rejected. Version 2 enables scheduled/free `confirm_attendance` / `decline_attendance` and
+immediate/free `join_now`, plus Details and optional external navigation. Creators
+explicitly select these presets; Free with absent/zero numeric cost is required.
+Semantic POSTs use the existing committed/declined response authority under the
+occurrence lock. Scheduled confirmation reads Going, immediate intent reads Joining;
+only committed intent secures limited free capacity. A full attempt keeps the
+saved response, cancellation freezes it, and removal releases a place. No observed
+attendance is inferred, especially from an external game link.
+
+Ordinary configured cards navigate to Details. Scheduled invitees receive attendance
+confirmation/decline controls; immediate invitees receive only Join now. Invitation
+acceptance creates neither response nor Group membership. Historical/null/version 1
+records are not converted. Series copies are independent; response-based notification
+consent/eligibility and past delivery snapshots remain unchanged. Real polls/questions/
+contact, enrollment/registration/payment and standing notification opt-ins remain
+later slices, not offered controls. See [the reviewed model](docs/PARTICIPATION_MODEL_PROPOSAL.md).

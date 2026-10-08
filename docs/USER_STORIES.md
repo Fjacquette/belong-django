@@ -10,7 +10,7 @@ Belong helps people make and deepen friendships through things they do together.
 
 1. **No group-first dependency:** users may discover, create, respond to and participate in an otherwise visible Activity without joining a Group. Group membership is never itself a participation gate.
 2. **Low social cost:** people can help shape a plan before committing. Bobby’s poll is the initial interaction: no preliminary Interested/Willing button. No global Interested action/status/default; historical records remain readable.
-3. **Meaningful participation:** #74 requires Activity participation presets, separating actions from intent, admission, places and payment. The model was reviewed in PR #79; slice A adds configuration and a genuine no-response option. Null-configured #60/#70 UX remains: ordinary cards navigate with a saved-state footer, invitees get attendance RSVP, and Details retains five current creator choices with Interested excluded. Inviting someone grants neither visibility nor Group membership.
+3. **Meaningful participation:** #74 requires Activity participation presets, separating actions from intent, admission, places and payment. The model was reviewed in PR #79; slices A/B add configuration, genuine no-response and explicit free scheduled/immediate intent. Null-configured #60/#70 UX remains: ordinary cards navigate with a saved-state footer, invitees get attendance RSVP, and Details retains five current creator choices with Interested excluded. Inviting someone grants neither visibility nor Group membership.
 4. **Separate relations:** friendship, group membership, Activity visibility, invitation, and ActivityResponse are different facts. None silently implies another. Activity RSVPs must not silently join a Group; where the Group accepts members, offer an optional join action after a nonmember responds.
 5. **Accessible, safe by design:** preserve useful privacy, reporting/blocking, suitability, and trust questions; do not assume every real-world interaction is equally low-risk.
 6. **Lightweight coordination rather than a social-media feed:** announcements, updates and eventual messaging serve shared activities; avoid mandatory discussion boards, status competition or engagement farming.
@@ -61,7 +61,7 @@ Each story states a human outcome, not a preferred form or database schema. “A
 **Acceptance**
 - Creating a one-off Activity does not require a Group or a Series.
 - Time, place and details support “not decided yet” where appropriate.
-- #74 slice A: the creator chooses the current response-choice flow or No response required. All seven patterns are registered for later slices, but unsupported actions are not offered. Null configuration retains five current choices and the Tell me more default; Interested is historical only. No-response configuration creates no ActivityResponse, including for invitees.
+- #74 slices A/B: the creator chooses the current response-choice flow, Scheduled/free open attendance, Immediate/free Join now, or No response required. All seven patterns are registered, but polling, enrollment, registration/payment and inquiry actions remain unavailable. Scheduled confirmation/decline and immediate Join now use semantic POST actions and the existing serialized free-capacity authority, displaying Going and Joining intent respectively. Invitations use those same actions; external links never record participation. Null configuration retains five current choices and the Tell me more default; Interested is historical only. No-response configuration creates no ActivityResponse, including for invitees.
 - Costs, limitations, capacity and access requirements can be conveyed when relevant. Do not make every optional field mandatory.
 - The Activity can later be refined through an explicitly supported editing flow (editing scope is a follow-up where not implemented).
 
@@ -358,22 +358,22 @@ An existing user must be able to invite a real-world email address to **a partic
 
 Current repository status is not proof that Janine can receive signup, Group invitation and Activity invitation emails from the intended deployment. Validate external email delivery, origin, access restrictions, response flow and account recovery end-to-end before calling the pilot ready.
 
-### 6.11 Participation model — reviewed basis and slice A (#74)
+### 6.11 Participation model — reviewed basis and slices A/B (#74)
 
-Use [the reviewed model](PARTICIPATION_MODEL_PROPOSAL.md) for bounded slices. Slice A
-adds versioned configuration and No response required while keeping existing
+Use [the reviewed model](PARTICIPATION_MODEL_PROPOSAL.md) for bounded slices. Slices A/B
+add versioned configuration, No response required and free scheduled/immediate intent while keeping existing
 #60/#70 behavior for null-configured Activities. Patterns are Activity configuration, not subtypes. Questions/polls/contact/
 external navigation are capabilities separate from intent, approval, places and payment.
 An informational Activity may require no response and must not write one for a click.
 #75's poll-to-confirmation flow and #76's capacity/admission/payment policies are
-referenced follow-ups, not implemented in this documentation iteration. #76 authorizes
+referenced follow-ups, not implemented in slices A/B. #76 authorizes
 no payment integration; the existing serialized free-event flow remains usable.
 #78 adds the separately scoped standing future-invitation use case above; it does
 not add an eighth participation preset or authorize implementation in this iteration.
 
 ## 7. Proposed implementation/validation sequence
 
-**Participation sequencing:** PR #79 supplies the reviewed model; slice A adds configuration/compatibility only. Further state/capability replacements require their own bounded slices. #75, #76 and #78 are not implemented in this iteration.
+**Participation sequencing:** PR #79 supplies the reviewed model; slices A/B add configuration/compatibility and explicit free scheduled/immediate intent, retaining the existing response/capacity/notification authority. Further state/capability replacements require their own bounded slices. #75, #76 and #78 are not implemented in this iteration.
 
 **Stage A — Janine's first real walkthrough:** external signup, Group creation, real invitations and acceptance, Series creation, first hike, invitation-based and ordinary RSVP, roster, update, cancellation, next hike. Reuse existing Django functionality; **file issues only for evidenced gaps**. Test with Janine and a few actual hikers before broadening.
 

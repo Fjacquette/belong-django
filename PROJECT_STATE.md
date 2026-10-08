@@ -203,20 +203,27 @@ brand destination; unverified accounts retain Verify email / Logout only.
   while invitations/proofs retain explicit retries. Existing retained
   delivery records are backfilled. Provider webhook integration is still deployment work.
 
-## Participation pattern foundation (slice A)
+## Participation patterns (slices A/B)
 
-- #74 defines pattern-specific participation and separates user actions from intent,
-  admission, capacity and payment. The proposed model is in
-  [docs/PARTICIPATION_MODEL_PROPOSAL.md](docs/PARTICIPATION_MODEL_PROPOSAL.md), reviewed
-  in PR #79. Slice A adds nullable versioned configuration to Activity/Series; null
-  retains legacy behavior and data. All seven patterns are registered, but only
-  navigation capabilities execute. Creators can explicitly choose No response
-  required, including for invitees; no click or forged RSVP creates a response.
-  Other pattern actions remain unavailable. Series copies configuration deeply;
-  existing Activities cannot be silently converted. The default creation path
-  retains current response choices/More during compatibility.
-- Keep #60/#70 behavior and #73 notification eligibility intact until an approved
-  incremental slice replaces them. No universal Interested or Willing response.
+- #74 uses the reviewed [participation model](docs/PARTICIPATION_MODEL_PROPOSAL.md)
+  from PR #79. Null configuration retains #60/#70 behavior and historical data.
+  Version 1 remains navigation-only, including all existing slice A records.
+- Version 2 enables explicitly selected Scheduled event (free/open attendance) and
+  Immediate activity (free/Join now). Semantic POST actions use existing
+  committed/declined responses as the single intent/capacity/notification authority:
+  Going for scheduled confirmation, Joining for immediate intent. No payment or
+  admission step exists; only committed intent secures a limited free place under
+  the existing serialized lock. Cancellation freezes responses; removal releases
+  capacity. Neither action proves observed attendance. External links never RSVP.
+- Invitations request the same pattern action as ordinary participation. Scheduled
+  invitees get confirmation/decline; immediate invitees get Join now, without
+  universal attendance RSVPs. Audience and Group membership remain independent.
+  Ordinary cards navigate to Details; invited cards show their supported actions.
+- Series defaults are copied independently. Existing Activity configuration is
+  immutable; no bulk conversion/history rewrite. Default creation remains the
+  legacy response-choice flow/More. No universal Interested or Willing response.
+  Real polls, enrollment, registration/payment and inquiry remain unavailable.
+  #73's response-based notification eligibility/consent/history remains intact.
 - #75 proposes poll → finalize → new confirmation invitation → separate RSVP.
   #76 designs free capacity, ongoing admission and payment/place policies; no payment
   integration is authorized. Neither follow-up is started in this iteration.
