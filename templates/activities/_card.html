@@ -9,6 +9,9 @@
       <summary class="card-context-menu__trigger" aria-label="Discover options for {{ activity.title }}"><span aria-hidden="true">⋮</span></summary>
       <div class="card-context-menu__panel ui-menu-panel">
         {% for item in activity.context_actions %}<a href="{{ item.url }}" class="ui-context-action">{{ item.label }}</a>{% endfor %}
+        <button type="button" class="ui-context-action" data-share-activity data-share-title="{{ activity.title }}" data-share-url="{% url 'activities:detail' activity.pk %}" hidden>Share activity</button>
+        <p data-share-feedback role="status" class="empty:hidden text-sm text-belong-slate px-3 py-2"></p>
+        <div data-share-link hidden><input type="url" readonly aria-label="Activity link" class="ui-field w-full min-w-0"></div>
         <hr class="border-belong-purple/20">
         <form method="post" action="{% url 'activities:hide' activity.pk %}">
           {% csrf_token %}<input type="hidden" name="next" value="{{ next_path }}">

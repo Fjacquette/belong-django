@@ -320,6 +320,7 @@ Recommended menu contents:
 - More at this time
 - More at this place
 - More in this category
+- Share activity
 - divider
 - Hide this activity
 - Hide this organizer's activities
@@ -327,6 +328,13 @@ Recommended menu contents:
 The first four commands keep the user in Discover and change discovery context rather
 than sending them into the activity Details room. `Hide this organizer's activities`
 is a private discovery preference, not a full user block.
+
+Share activity is an enhanced `ui-context-action` button in this menu, never in
+Band 5. It shares the Activity title and canonical Details URL through native Web
+Share, falling back to clipboard copying with a brief `role="status"` confirmation.
+If copying is denied, show a labelled read-only URL for manual copying within the
+same panel. Without JavaScript, omit only Share; keep native disclosure/navigation
+and Hide forms usable. Enhanced menu actions honor the `hidden` attribute.
 
 Use a restrained horizontal light-left → dark-right header gradient derived from
 the existing palette. Darken the primary to meet 4.5:1 white-text contrast; blend
