@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django import forms
 
-from .models import Activity, ActivitySeries, ActivityCategory, ActivityResponse, PILOT_AUDIENCE_CHOICES, CURRENT_RESPONSE_CHOICES, ActivityResponseStatus
+from .models import Activity, ActivitySeries, ActivityCategory, ActivityResponse, PILOT_AUDIENCE_CHOICES, CURRENT_RESPONSE_CHOICES, ActivityResponseStatus, ActivityNotificationEvent, ActivityNotificationDelivery
 
 
 class ActivityResponseAdminForm(forms.ModelForm):
@@ -59,3 +59,26 @@ class ActivitySeriesAdmin(admin.ModelAdmin):
     list_display = ('title', 'owner', 'group', 'cadence')
     search_fields = ('title', 'description')
     autocomplete_fields = ('owner', 'group', 'category', 'header_image')
+
+
+class NotificationAuditAdmin(admin.ModelAdmin):
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(ActivityNotificationEvent)
+class NotificationEventAdmin(NotificationAuditAdmin):
+    list_display = ('id', 'activity', 'kind', 'actor', 'created_at')
+    list_filter = ('kind',)
+
+
+@admin.register(ActivityNotificationDelivery)
+class NotificationDeliveryAdmin(NotificationAuditAdmin):
+    list_display = ('id', 'event', 'recipient', 'status', 'reason', 'attempts', 'retry_at', 'attempt')
+    list_filter = ('status', 'channel', 'event__kind')

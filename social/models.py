@@ -41,6 +41,7 @@ class UserProfile(models.Model):
     # Only locally provisioned/legacy users; public signup explicitly disables this.
     legacy_access = models.BooleanField(default=False)
     pending_email = models.EmailField(blank=True)
+    activity_email_enabled = models.BooleanField(default=False)
     outbound_mail_suspended = models.BooleanField(default=False, db_default=False)
 
     @property

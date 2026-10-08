@@ -27,6 +27,15 @@
       <button type="submit" class="ui-button ui-button--secondary">Verify new email</button>
     </form>
   </section>
+  <section class="space-y-4" aria-labelledby="notifications-heading">
+    <h2 id="notifications-heading" class="text-lg font-semibold">Activity emails</h2>
+    <form method="post" class="space-y-4">{% csrf_token %}<input type="hidden" name="action" value="notifications">
+      <label class="flex items-start gap-3">{{ notification_form.activity_email_enabled }}<span>{{ notification_form.activity_email_enabled.label }}</span></label>
+      <p class="text-sm">{{ notification_form.activity_email_enabled.help_text }}</p>
+      {{ notification_form.errors }}
+      <button type="submit" class="ui-button ui-button--secondary">Save email preferences</button>
+    </form>
+  </section>
   <a href="{% url 'password_change' %}" class="ui-link">Change password</a>
 </div>
 {% endblock %}

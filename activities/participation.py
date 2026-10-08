@@ -53,4 +53,6 @@ def cancel_activity(pk, organizer, reason):
             activity.cancelled_at = timezone.now()
             activity.cancelled_by = organizer
             activity.save(update_fields=['status', 'cancellation_reason', 'cancelled_at', 'cancelled_by', 'updated_at'])
+            from .notifications import queue_event
+            queue_event(activity, organizer, 'cancellation')
         return True

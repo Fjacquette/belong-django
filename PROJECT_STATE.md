@@ -48,7 +48,7 @@ Default posture: **do it now**. If product behavior needs backend/model work, bu
   reason, freezes existing responses, and leaves Group, Series and siblings intact.
 - Only Count me in consumes capacity. Serialized server mutations reject new
   commitments when full; interest/questions remain possible while active. No
-  waitlist, automatic notifications or reactivation in this slice.
+  waitlist or reactivation. Explicit cancellation now queues opted-in participant email.
 
 ## Activity invitations and card RSVP
 
@@ -95,8 +95,16 @@ Default posture: **do it now**. If product behavior needs backend/model work, bu
   updates. Reading also requires current participation/membership and context access;
   organizers can see all updates in their management context.
 - Cancelled occurrences may still receive coordination updates without changing
-  participation history. This slice sends no email and adds no automatic cancellation
-  announcements, inbox, read receipts or notifications.
+  participation history. Activity updates and cancellation now create durable email
+  events for verified, opted-in, non-declined responders (including historical
+  responses); invitations alone and Group membership do not subscribe someone.
+  Account settings controls consent, default off. Delivery snapshots never expand;
+  live access, participation, sender authority and address proof are rechecked.
+  Fixed notices link to authenticated canonical Details without private Activity
+  text. Cancellation has priority and a separate budget; obsolete queued updates
+  are suppressed. Bounded delivery retries use the management command; interrupted
+  or ambiguous SMTP claims require reconciliation. Group updates remain in-app.
+  No automatic cancellation announcement, inbox, read receipts or other channels.
 
 ## Product direction
 
@@ -191,7 +199,8 @@ brand destination; unverified accounts retain Verify email / Logout only.
   creation, self-address/IP and invitation quotas/cooldowns across retries/restarts.
   Invitations cap both 50 unique recipients and 50 attempts per rolling day, 20/action;
   seven-day Group/Activity-address cooldown survives revoke/recreate. Failed sends retain quota.
-- SMTP runs after commit; bounded explicit retries, no automatic loop. Existing retained
+- SMTP runs after commit; Activity notifications have a durable bounded-retry outbox,
+  while invitations/proofs retain explicit retries. Existing retained
   delivery records are backfilled. Provider webhook integration is still deployment work.
 
 ## Current implementation sequence

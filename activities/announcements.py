@@ -1,5 +1,7 @@
 """Context-only organizer updates, with a fixed delivery audience and live access checks."""
+import uuid
 from django import forms
+from django.core import signing
 from django.db import transaction
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
@@ -15,6 +17,27 @@ from .visibility import visible_activities
 
 
 class AnnouncementForm(forms.Form):
+    submission_token = forms.CharField(required=False, widget=forms.HiddenInput)
+
+    def __init__(self, *args, context=None, user=None, **kwargs):
+        self.activity = context if isinstance(context, Activity) else None
+        self.user = user
+        super().__init__(*args, **kwargs)
+        if self.activity and not self.is_bound:
+            self.initial['submission_token'] = signing.dumps({'key': str(uuid.uuid4()), 'activity': context.pk, 'actor': user.pk}, salt='activity-update')
+
+    def clean_submission_token(self):
+        token = self.cleaned_data['submission_token']
+        if not self.activity:
+            return None
+        try:
+            payload = signing.loads(token, salt='activity-update', max_age=86400)
+            if payload['activity'] != self.activity.pk or payload['actor'] != self.user.pk:
+                raise ValueError
+            return uuid.UUID(payload['key'])
+        except (signing.BadSignature, ValueError, KeyError, TypeError):
+            raise forms.ValidationError('Reload this page before posting your update.')
+
     body = forms.CharField(max_length=2000, label='Update',
                            widget=forms.Textarea(attrs={'class': 'ui-field', 'rows': 4, 'maxlength': 2000}))
 
@@ -62,8 +85,14 @@ def _publish(request, context, form):
     else:
         recipients = set(context.responses.exclude(status=ActivityResponseStatus.DECLINED).values_list('user_id', flat=True))
         scope = {'activity': context}
-    announcement = Announcement.objects.create(author=request.user, body=form.cleaned_data['body'], **scope)
+    key = form.cleaned_data.get('submission_token') if isinstance(context, Activity) else None
+    if key and Announcement.objects.filter(submission_key=key).exists():
+        return
+    announcement = Announcement.objects.create(author=request.user, body=form.cleaned_data['body'], submission_key=key, **scope)
     announcement.recipients.set(recipients)
+    if isinstance(context, Activity):
+        from .notifications import queue_event
+        queue_event(context, request.user, 'update', announcement=announcement)
 
 
 @login_required
@@ -72,7 +101,7 @@ def activity_announce(request, pk):
     context = get_object_or_404(Activity.objects.select_related('group'), pk=pk)
     if not context.can_organize(request.user):
         raise Http404
-    form = AnnouncementForm(request.POST if request.method == 'POST' else None)
+    form = AnnouncementForm(request.POST if request.method == 'POST' else None, context=context, user=request.user)
     if request.method == 'POST' and form.is_valid():
         with locked_activity(pk) as context:
             _publish(request, context, form)
@@ -86,7 +115,7 @@ def group_announce(request, pk):
     context = get_object_or_404(Group, pk=pk)
     if not context.can_organize(request.user):
         raise Http404
-    form = AnnouncementForm(request.POST if request.method == 'POST' else None)
+    form = AnnouncementForm(request.POST if request.method == 'POST' else None, context=context, user=request.user)
     if request.method == 'POST' and form.is_valid():
         with transaction.atomic():
             context = Group.objects.select_for_update().get(pk=pk)

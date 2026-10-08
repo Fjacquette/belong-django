@@ -86,7 +86,7 @@
       <label for="{{ cancel_form.reason.id_for_label }}" class="block text-sm font-semibold">{{ cancel_form.reason.label }}</label>
       {{ cancel_form.reason }}
       {% for error in cancel_form.reason.errors %}<p class="text-sm" role="alert">{{ error }}</p>{% endfor %}
-      <p class="text-sm">{{ cancel_form.reason.help_text }}</p>
+      <p class="text-sm">{{ cancel_form.reason.help_text }} Participants with verified emails who opted in receive a cancellation notice. Invited nonresponders and declined responses are not emailed.</p>
       <button type="submit" class="ui-button ui-button--secondary ui-button--comfortable">Cancel this occurrence</button>
     </form>
   {% endif %}

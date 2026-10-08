@@ -215,3 +215,8 @@ EMAIL_LIMITS = {
 }
 # Production must supply an explicit canonical origin, never a user-provided Host.
 BELONG_PUBLIC_ORIGIN = CONFIG.get('BELONG_PUBLIC_ORIGIN', '')
+
+ACTIVITY_NOTIFICATION_LIMITS = {
+    'max_attempts': 3, 'retry_seconds': 300,
+    'recipient_hour': 3, 'cancellation_actor_day': 100,
+}

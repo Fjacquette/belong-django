@@ -77,7 +77,8 @@ def invitation_reservation(request, inviter, email, *, group=None, activity=None
     limits = settings.EMAIL_LIMITS
     recipient = address_hash(email)
     attempts = OutboundEmailAttempt.objects.filter(kind='invitation').exclude(outcome='blocked')
-    recent = attempts.filter(actor=inviter, created_at__gt=now-timedelta(days=1))
+    recent = OutboundEmailAttempt.objects.exclude(outcome='blocked').filter(
+        kind__in=['invitation', 'activity_update'], actor=inviter, created_at__gt=now-timedelta(days=1))
     previous = attempts.filter(**scope, recipient_hash=recipient,
                                created_at__gt=now-timedelta(days=limits['invitation_cooldown_days']))
     reason = ''

@@ -350,6 +350,7 @@ class ActivitySeries(models.Model):
 
 
 class Announcement(models.Model):
+    submission_key = models.UUIDField(null=True, blank=True, unique=True, editable=False)
     activity = models.ForeignKey(Activity, null=True, blank=True, on_delete=models.CASCADE, related_name='announcements')
     group = models.ForeignKey('groups.Group', null=True, blank=True, on_delete=models.CASCADE, related_name='announcements')
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='authored_announcements')
@@ -420,3 +421,33 @@ class GroupJoinOffer(models.Model):
             models.UniqueConstraint(fields=['user', 'group'], name='unique_activity_group_join_offer'),
             models.CheckConstraint(condition=models.Q(status__in=['pending', 'dismissed', 'accepted']), name='activity_group_offer_valid_status'),
         ]
+
+
+class ActivityNotificationEvent(models.Model):
+    """One immutable semantic event; transports fan out from a captured audience."""
+    activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name='notification_events')
+    announcement = models.OneToOneField(Announcement, null=True, blank=True, on_delete=models.SET_NULL)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    kind = models.CharField(max_length=12, choices=[('update', 'Update'), ('cancellation', 'Cancellation')])
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['activity'], condition=models.Q(kind='cancellation'),
+                                               name='one_activity_cancellation_notification')]
+
+
+class ActivityNotificationDelivery(models.Model):
+    event = models.ForeignKey(ActivityNotificationEvent, on_delete=models.CASCADE, related_name='deliveries')
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
+    recipient_hash = models.CharField(max_length=64)
+    channel = models.CharField(max_length=12, default='email', choices=[('email', 'Email')])
+    status = models.CharField(max_length=12, default='pending', choices=[(v, v.title()) for v in
+        ['pending', 'sending', 'sent', 'failed', 'skipped', 'unknown']])
+    reason = models.CharField(max_length=80, blank=True)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    retry_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    attempt = models.ForeignKey('social.OutboundEmailAttempt', null=True, blank=True, on_delete=models.SET_NULL)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['event', 'recipient', 'channel'], name='unique_activity_notification_delivery')]

@@ -10,7 +10,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
 from django.views.decorators.http import require_http_methods
 
-from .forms import StyledAuthenticationForm, SignupEmailForm, AccountSetupForm, RecoveryPasswordForm, ProfileForm, EmailChangeForm, VerificationEmailForm, InterestsForm, style_fields
+from .forms import NotificationPreferencesForm, StyledAuthenticationForm, SignupEmailForm, AccountSetupForm, RecoveryPasswordForm, ProfileForm, EmailChangeForm, VerificationEmailForm, InterestsForm, style_fields
 from .email_verification import send_verification, confirm_email
 
 logger = logging.getLogger(__name__)
@@ -106,8 +106,13 @@ def account_settings(request):
     profile = request.user.profile
     action = request.POST.get('action')
     profile_form = ProfileForm(request.POST if action == 'profile' else None, request.FILES if action == 'profile' else None, instance=profile)
+    notification_form = NotificationPreferencesForm(request.POST if action == 'notifications' else None, instance=profile)
     email_form = EmailChangeForm(request.POST if action == 'email' else None, user=request.user)
     if request.method == 'POST':
+        if action == 'notifications' and notification_form.is_valid():
+            notification_form.save()
+            messages.success(request, 'Email preferences saved.')
+            return redirect('account_settings')
         if action == 'profile' and profile_form.is_valid():
             profile_form.save()
             messages.success(request, 'Profile saved.')
@@ -117,7 +122,7 @@ def account_settings(request):
         if action == 'resend' and profile.pending_email:
             deliver(request, request.user, profile.pending_email)
             return redirect('account_settings')
-    response = render(request, 'registration/account_settings.html', {'profile_form': profile_form, 'email_form': email_form, 'suppress_create': True})
+    response = render(request, 'registration/account_settings.html', {'notification_form': notification_form, 'profile_form': profile_form, 'email_form': email_form, 'suppress_create': True})
     response['Cache-Control'] = 'no-store'
     return response
 

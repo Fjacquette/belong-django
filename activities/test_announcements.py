@@ -33,7 +33,9 @@ class AnnouncementTests(TestCase):
     def post(self, context, user, body='Weather update'):
         self.client.force_login(user)
         scope = 'groups' if isinstance(context, Group) else 'activities'
-        return self.client.post(reverse(scope+':announce', args=[context.pk]), {'body': body})
+        url = reverse(scope+':announce', args=[context.pk])
+        token = self.client.get(url).context['form'].initial.get('submission_token', '') if context.can_organize(user) else ''
+        return self.client.post(url, {'body': body, 'submission_token': token})
 
     def page(self, context, user):
         self.client.force_login(user)
@@ -144,6 +146,7 @@ class AnnouncementTests(TestCase):
         self.assertFalse(Announcement.objects.exists())
         self.client.force_login(self.host)
         self.client.post(reverse('activities:announce', args=[self.activity.pk]), {
+            'submission_token': self.client.get(reverse('activities:announce', args=[self.activity.pk])).context['form'].initial['submission_token'],
             'body':'<script>alert(1)</script>\nWeather update', 'group':self.group.pk, 'author':self.outsider.pk,
             'recipients':[self.blocked.pk]})
         update = Announcement.objects.get()
