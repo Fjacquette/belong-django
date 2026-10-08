@@ -99,3 +99,8 @@ class NotificationDeliveryAdmin(NotificationAuditAdmin):
 from .models import DatePoll, DatePollOption, DatePollSubmission, ConfirmationRound, ConfirmationInvitation, AttendanceAnswer
 for audit_model in [DatePoll, DatePollOption, DatePollSubmission, ConfirmationRound, ConfirmationInvitation, AttendanceAnswer]:
     admin.site.register(audit_model, NotificationAuditAdmin)
+
+
+from .models import OngoingOpportunity, EnrollmentRequest, AdmissionDecision, OngoingEnrollment, CohortPlace
+for audit_model in [OngoingOpportunity, EnrollmentRequest, AdmissionDecision, OngoingEnrollment, CohortPlace]:
+    admin.site.register(audit_model, NotificationAuditAdmin)

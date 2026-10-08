@@ -1,6 +1,7 @@
 from copy import deepcopy
 from django import forms
-from .participation_config import CREATOR_PATTERN_CHOICES, make_config, INTENT_VERSION, POLL_VERSION
+from django.core.validators import MinValueValidator
+from .participation_config import CREATOR_PATTERN_CHOICES, make_config, INTENT_VERSION, POLL_VERSION, ENROLLMENT_VERSION
 
 from media_assets.models import ImageAsset, ImageAssetPurpose
 
@@ -42,6 +43,7 @@ class ActivityDefaultsValidationMixin:
         choices = list(CREATOR_PATTERN_CHOICES)
         if self._meta.model is Activity:
             choices.append(('planning', 'Tentative planning (three-date poll)'))
+            choices.append(('ongoing', 'Ongoing activity (free, approval secures a place)'))
             for n in range(1, 4):
                 self.fields[f'poll_date_{n}'] = forms.DateTimeField(**_DATETIME_INPUT_KWARGS, label=f'Poll date {n}',
                     help_text='For tentative planning only. Availability does not reserve a place.')
@@ -51,7 +53,7 @@ class ActivityDefaultsValidationMixin:
             choices.append((pattern, self.instance.participation_pattern_label))
         self.fields['participation_pattern'] = forms.ChoiceField(choices=choices, required=False,
             disabled=disabled, label='How will people take part?',
-            help_text='Scheduled attendance, Join now and date polls require Free. Planning asks for availability before attendance. Invitees use the same pattern. External links never record attendance. Response choices apply only to the current flow.',
+            help_text='Scheduled attendance, Join now and date polls require Free. Planning asks for availability before attendance. Invitees use the same pattern. External links never record attendance. Ongoing approval secures enrollment, not meeting attendance. Response choices apply only to the current flow.',
             widget=forms.Select(attrs={'class': 'ui-field mt-1'}))
         self.initial['participation_pattern'] = pattern
         self.stored_response_choices = deepcopy(self.instance.available_responses)
@@ -65,7 +67,7 @@ class ActivityDefaultsValidationMixin:
             config = self.instance.participation_config
         elif pattern:
             original = self.initial.get('participation_config') or self.instance.participation_config
-            version = original['version'] if original and original['pattern'] == pattern else INTENT_VERSION if pattern in {'scheduled', 'immediate'} else POLL_VERSION if pattern == 'planning' else 1
+            version = original['version'] if original and original['pattern'] == pattern else INTENT_VERSION if pattern in {'scheduled', 'immediate'} else POLL_VERSION if pattern == 'planning' else ENROLLMENT_VERSION if pattern == 'ongoing' else 1
             actions = deepcopy(original['actions']) if original and original['pattern'] == pattern else make_config(pattern, version=version)['actions']
             if 'open_external' not in actions and any(data.get(f'action{n}_url') for n in range(1, 4)):
                 actions.append('open_external')
@@ -87,6 +89,12 @@ class ActivityDefaultsValidationMixin:
                 self.add_error('poll_date_1', 'Choose three different dates and times.')
             if data.get('starts_at') or data.get('ends_at'):
                 self.add_error('starts_at', 'Leave the schedule undecided until you finalize a poll date.')
+        if config and config['version'] == ENROLLMENT_VERSION and self._meta.model is Activity:
+            # Existing Capacity input configures the independent player pool.
+            if getattr(self, 'context_opportunity', None):
+                self.add_error('participation_pattern', 'Choose a separate meeting pattern, not another ongoing player pool.')
+            data['cohort_capacity'] = data.get('capacity')
+            data['capacity'] = None
         if data.get('invite_group_members') and not data.get('group'):
             self.add_error('invite_group_members', 'Choose a Group to invite its members.')
         amount = data.get('cost_amount')
@@ -186,10 +194,12 @@ class ActivityForm(ActivityDefaultsValidationMixin, forms.ModelForm):
             "location_type": forms.Select(choices=ActivityLocationType.choices),
         }
 
-    def __init__(self, *args, user=None, context_group=None, context_series=None, **kwargs) -> None:
+    def __init__(self, *args, user=None, context_group=None, context_series=None, context_opportunity=None, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         from django.db.models import Q
         from groups.models import Group
+        self.fields['capacity'].validators.append(MinValueValidator(1))
+        self.fields['capacity'].widget.attrs['min'] = 1
         self.fields["group"].queryset = Group.objects.filter(
             Q(owner=user) | Q(memberships__user=user, memberships__role="organizer", memberships__status="active")
         ).distinct() if user and user.is_authenticated else Group.objects.none()
@@ -197,6 +207,7 @@ class ActivityForm(ActivityDefaultsValidationMixin, forms.ModelForm):
         self.context_group = context_group
         self.fields['invite_group_members'].help_text = 'Invite active members of the associated Group; this does not change the activity audience.'
         self.context_series = context_series
+        self.context_opportunity = context_opportunity
         if context_group:
             self.initial.setdefault('invite_group_members', True)
             self.initial['group'] = context_group.pk
@@ -230,6 +241,7 @@ class ActivityForm(ActivityDefaultsValidationMixin, forms.ModelForm):
         self.fields["organizer_image"].queryset = ImageAsset.objects.filter(
             purpose=ImageAssetPurpose.ORGANIZER
         )
+        self.fields['capacity'].help_text = 'Optional limit. For ongoing activities this is the approved player limit; each meeting has its own capacity. Approval secures a free player place.'
         self.configure_participation_field()
 
     def save(self, commit=True):

@@ -26,6 +26,7 @@ from .announcements import update_context
 from .invitations import is_invited, with_invitation_state, RSVP_LABELS
 from .group_offers import current_offer
 from .polls import responses_for, poll_context, create_poll
+from .enrollment import enrollment_context
 from .models import (
     Activity,
     ActivityCostType,
@@ -168,9 +169,12 @@ def _build_join_context(request: HttpRequest, activity: Activity) -> Dict[str, o
     activity.is_joined = current_response is not None
     activity.attendee_count = attendee_count
 
+    enrollment = enrollment_context(request, activity)
+    activity.j_enrollment_state = enrollment.get('enrollment_state', '')
     return {
         "activity": activity,
         **poll_context(request,activity),
+        **enrollment,
         "invited": invited,
         "attendee_count": attendee_count,
         "response_count": len(responses),
@@ -211,6 +215,7 @@ def _annotate_join_data(request: HttpRequest, activities: List[Activity]) -> Non
         activity.j_card_current_status_label = context["card_current_status_label"]
         activity.j_card_unmatched_response = context['card_unmatched_response']
         activity.j_poll_answered = context.get('poll_answered', False)
+        activity.j_enrollment_state = context.get('enrollment_state', '')
 
 
 @login_required
@@ -316,6 +321,9 @@ def detail(request: HttpRequest, pk: int) -> HttpResponse:
     }
     context.update(update_context(request, activity, organizer=activity.can_organize(request.user)))
     context.update(poll_context(request,activity))
+    context.update(enrollment_context(request,activity))
+    origin = activity.ongoing_opportunity
+    context['meeting_origin'] = origin if origin and visible_activities(request.user).filter(pk=origin.activity_id).exists() else None
     return render(request, "activities/detail.html", context)
 
 
@@ -325,41 +333,61 @@ def create(request: HttpRequest) -> HttpResponse:
     from .models import ActivitySeries
     series = None
     initial = {}
+    opportunity = None
+    opportunity_id = request.GET.get('opportunity')
+    if opportunity_id:
+        from .models import OngoingOpportunity
+        if not opportunity_id.isdigit() or request.GET.get('series'):
+            raise Http404
+        opportunity = get_object_or_404(OngoingOpportunity.objects.select_related('activity__group'), pk=opportunity_id)
+        if not opportunity.activity.can_organize(request.user) or opportunity.activity.is_cancelled:
+            raise Http404
+        initial = {'title': opportunity.activity.title, 'cost_type': 'free', 'audience': opportunity.activity.audience,
+            'participation_config': {'version': 2, 'pattern': 'scheduled', 'actions': ['view_details', 'confirm_attendance', 'decline_attendance']}}
     series_id = request.GET.get('series')
     if series_id:
         if not series_id.isdigit():
             raise Http404
         series = _series_for(request.user, series_id)
         initial = occurrence_initial(series)
-    group = series.group if series else None
+    group = series.group if series else opportunity.activity.group if opportunity else None
     group_id = request.GET.get('group')
     if group_id:
         if not group_id.isdigit():
             raise Http404
         choices = ActivityForm(user=request.user).fields['group'].queryset
         selected = get_object_or_404(choices, pk=group_id)
+        if opportunity and opportunity.activity.group_id and selected.pk != opportunity.activity.group_id:
+            raise Http404
         if series and series.group_id and selected.pk != series.group_id:
             raise Http404
         group = selected
     if request.method == 'POST':
-        form = ActivityForm(request.POST, user=request.user, context_group=group, context_series=series, initial=initial)
+        form = ActivityForm(request.POST, user=request.user, context_group=group, context_series=series, context_opportunity=opportunity, initial=initial)
         if form.is_valid():
             activity = form.save(commit=False)
             activity.host = request.user
+            activity.ongoing_opportunity = opportunity
             from django.db import transaction
-            with transaction.atomic():
+            from .participation import locked_activity
+            with (locked_activity(opportunity.activity_id) if opportunity else transaction.atomic()) as source:
+                if opportunity and (source.is_cancelled or not source.can_organize(request.user)):
+                    raise Http404
                 activity.save()
                 if activity.is_date_planning:
                     create_poll(activity,[form.cleaned_data[f'poll_date_{n}'] for n in range(1,4)])
+                if activity.is_free_ongoing:
+                    from .models import OngoingOpportunity
+                    OngoingOpportunity.objects.create(activity=activity, capacity=form.cleaned_data.get('cohort_capacity'))
             messages.success(request, 'Activity created!')
             return redirect('activities:detail', pk=activity.pk)
     else:
-        form = ActivityForm(user=request.user, context_group=group, context_series=series, initial=initial)
+        form = ActivityForm(user=request.user, context_group=group, context_series=series, context_opportunity=opportunity, initial=initial)
     groups = list(form.fields['group'].queryset.select_related('default_activity_image'))
     series_choices = ActivitySeries.objects.filter(Q(owner=request.user, group__isnull=True) | Q(group__in=groups)).distinct()
     if group:
         series_choices = series_choices.filter(group=group)
-    return render(request, 'activities/form.html', {'form': form, 'context_group': group, 'context_series': series, 'series_choices': series_choices,
+    return render(request, 'activities/form.html', {'form': form, 'context_group': group, 'context_series': series, 'context_opportunity': opportunity, 'series_choices': series_choices,
                   'group_defaults': {str(g.pk): {'name': g.name, 'image': str((series.header_image_id if series else None) or g.default_activity_image_id or '')} for g in groups},
                   'suppress_create': True})
 
@@ -604,6 +632,7 @@ def _render_roster(request, activity, cancel_form=None, invite_form=None, group_
         'group_invite_form': group_invite_form if group_invite_form is not None else GroupInviteForm(activity=activity, initial={'invite_group_members': activity.invite_group_members}),
         **update_context(request, activity, organizer=True),
         **poll_context(request,activity,organizer=True),
+        **enrollment_context(request,activity,organizer=True),
         'activity': activity, 'responses': responses, 'counts': counts,
         'committed_count': sum(r.status == ActivityResponseStatus.COMMITTED for r in responses),
         'cancel_form': cancel_form if cancel_form is not None else CancelActivityForm(), 'suppress_create': True,

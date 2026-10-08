@@ -10,7 +10,7 @@
     {% endif %}
     <section class="flex-1">
       {% if show_series %}<p>Series: <a href="{{ activity.series.get_absolute_url }}" class="ui-link">{{ activity.series.title }}</a></p>{% endif %}
-      {% if can_organize %}<a href="{% url 'activities:roster' activity.pk %}" class="ui-link inline-flex items-center min-h-11">Manage responses and occurrence</a>{% endif %}
+      {% if can_organize %}<a href="{% url 'activities:roster' activity.pk %}" class="ui-link inline-flex items-center min-h-11">{% if activity.is_free_ongoing %}Manage enrollment{% else %}Manage responses and occurrence{% endif %}</a>{% endif %}
       <a href="{{ discover_path }}" class="ui-link text-sm">← Back to activities</a>
       <div class="rounded-[36px] border border-white/60 bg-white/95 mt-4 overflow-hidden shadow-soft">
         <div class="p-8 text-white" style="background: linear-gradient(135deg, {{ activity.display_color_primary }} 0%, {{ activity.display_color_secondary }} 100%);">
@@ -104,6 +104,7 @@
           {% include 'activities/_announcements.html' %}
       <p class="text-sm"><a href="{% url 'account_settings' %}#notifications-heading" class="ui-link">Activity email preferences</a></p>
           <p class="text-base text-belong-slate leading-relaxed whitespace-pre-line">{{ activity.description }}</p>
+          {% if meeting_origin %}<p>Meeting of <a class="ui-link" href="{{ meeting_origin.activity.get_absolute_url }}">{{ meeting_origin.activity.title }}</a>. Attendance is separate from ongoing enrollment.</p>{% endif %}
           {% if show_group %}
             <p>With <a href="{{ activity.group.get_absolute_url }}" class="ui-link">{{ activity.group.name }}</a></p>
           {% endif %}

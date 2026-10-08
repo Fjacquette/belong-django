@@ -19,6 +19,8 @@ def locked_activity(pk):
 
 def change_response(pk, user, status=None, *, action=None, confirmation_round=None, toggle=False, remove=False):
     with locked_activity(pk) as activity:
+        if activity.is_free_ongoing:
+            return 'Request ongoing enrollment on Details; meeting attendance is separate.'
         if activity.is_date_planning:
             from .polls import change_attendance_locked
             from .visibility import visible_activities

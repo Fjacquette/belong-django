@@ -21,7 +21,8 @@ remains navigation-only; No response required uses See details even for invitees
 The native **How will people take part?** select also offers Scheduled event
 (free/open attendance) and Immediate activity (free/Join now), using version 2.
 One-off Activities also offer Tentative planning (three-date poll), version 3.
-Enrollment/registration/contact/payment actions are not offered.
+One-off Activities additionally offer Ongoing activity (free, approval secures a place),
+version 4. Registration/contact/payment actions are not offered.
 Legacy response checkboxes are hidden for configured patterns as progressive
 enhancement; their help explains that they are ignored without JavaScript.
 Series defaults are copied per occurrence; existing Activity configuration stays
@@ -43,8 +44,8 @@ Email acceptance requests the Activity's pattern action without setting intent.
 Visibility and Group membership remain independent. Validate keyboard/no-JS,
 filtered returns, 320/375px card geometry and capacity/cancellation races. Rich
 admission/place/payment policies and standing permissions remain scoped under #76/#78.
-The [#76 policy proposal](docs/RESERVATION_POLICY_PROPOSAL.md) describes future
-Details/roster labels for review; it enables no controls or visual changes.
+The [#76 policy proposal](docs/RESERVATION_POLICY_PROPOSAL.md) now bounds D1
+free ongoing enrollment; its remaining financial/hold/queue labels are future designs.
 
 Planning creation shows three native future date/time fields; the finalized schedule
 stays unset. Progressive enhancement hides these fields for other patterns; no-JS
@@ -59,6 +60,20 @@ date, readonly availability/history, fresh invitation copy and scheduled confirm
 controls. Keep availability, current attendance, and prior response evidence distinct.
 The roster retains all submissions and attendance changes in disclosures; polls never
 count as secured places. Reuse existing field/button/disclosure tokens and card bands.
+
+D1 ongoing cards always navigate: **Request a player place**, **Request sent / View**,
+**Enrolled / View**, or the retained denied/withdrawn state. Invitation does not add
+attendance RSVP. Band 4 and 258×440 geometry are unchanged. Details shows the free
+approval policy, separate player limit/count, actual request/enrollment state and
+comfortable Request / Withdraw request / Leave ongoing enrollment POST buttons.
+Past requests/decisions/enrollment/place release remain in a native history disclosure.
+The organizer roster separates admission, enrollment and place facts in wrapping
+rows with explicit Approve and enroll / Deny buttons. Full approval leaves Pending;
+requests are neither seats nor a waitlist. Unlimited pools show No player limit.
+Create a separate meeting opens a normal scheduled/free form, copying title/audience
+context only (plus optional Group context), with independent date/capacity/RSVP.
+Use existing field, button, disclosure and link families; no new one-off CSS. Linked
+private contexts must not be disclosed to an unauthorized meeting viewer.
 
 ## 1. Core geometry
 

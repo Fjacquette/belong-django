@@ -4,6 +4,7 @@
 {% block content %}
   <div class="max-w-2xl">
     <h1 class="text-2xl font-semibold mb-6">{% if context_series %}Create an occurrence{% else %}Create a new activity{% endif %}</h1>
+    {% if context_opportunity %}<p class="mb-4">Separate meeting of {{ context_opportunity.activity.title }}. Choose its date and capacity; no enrollment or previous response is copied.</p>{% endif %}
     {% if context_series %}<p class="mb-4">From series: <a href="{{ context_series.get_absolute_url }}" class="ui-link">{{ context_series.title }}</a>. Change the copied values for this occurrence.</p>
     {% else %}<p class="mb-4">For repeated activities, <a href="{% url 'activities:series_create' %}{% if context_group %}?group={{ context_group.pk }}{% endif %}" class="ui-link">create a series</a>.</p>
       {% if series_choices %}<details class="mb-4"><summary class="ui-menu-trigger">Create from a saved series <span aria-hidden="true">▾</span></summary>
