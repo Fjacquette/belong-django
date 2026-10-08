@@ -1,7 +1,7 @@
 # Activity participation model — proposal for review
 
 **Status:** Reviewed design basis (PR #79) for [#74](https://github.com/Fjacquette/belong-django/issues/74),
-2026-10-08. Implementation of slices A/B and #75 is bounded below; the remaining capabilities
+2026-10-08. Implementation of slices A/B, #75 and #76 D1 is bounded below; the remaining capabilities
 and independent state changes remain future slices.
 Assessed Django baseline: master `6128ccb` (includes #60/#70 and notification PR #73).
 [#75](https://github.com/Fjacquette/belong-django/issues/75),
@@ -97,6 +97,17 @@ For these planning Activities, routine updates/cancellation use only explicit cu
 affirmative round attendance, not poll-only people. Whether poll-only people should
 later subscribe remains a product decision; legacy events/eligibility are unchanged.
 
+## Slice D1 (#76) implementation boundary
+
+See the [reservation-policy D1 boundary](RESERVATION_POLICY_PROPOSAL.md).
+Version 4 enables explicitly selected free ongoing approval/enrollment on a new
+Activity surface with a separate player pool. Request, admission decision, enrollment
+and limited place evidence are distinct records; approval and place allocation
+serialize together, denial/withdrawal retain history, and full requests stay pending.
+Separate linked meetings keep independent RSVP/capacity/cancellation. No enrollment
+prerequisite, Group joining, Series enrollment default, money, holds or waitlist is
+inferred. Existing free-event and finalized-poll authorities remain unchanged.
+
 ## Recommendation
 
 Give each Activity a **participation pattern**: a preset for the question it asks,
@@ -117,7 +128,7 @@ All labels below are examples whose effects must remain fixed when wording chang
 | Fixed/scheduled — Janine J-06–J-10, Ginger | Confirm attendance or decline; affirmative **intent** is Going, not observed presence | Free/open confirmation secures a limited place atomically. Invitation asks the same attendance question | Current committed/declined and capacity lock fit this slice; ordinary choices need a coherent preset |
 | Immediate — Peter, Greg | Peter: Join now explicitly records joining intent; Open game is a separate link. Greg: coordinate the immediate plan, or answer a planning prompt if the plan is still unresolved | Only explicit admission/place allocation affects local capacity; launching an external game proves neither participation nor attendance | Current action URLs and one response status cannot establish whether someone actually joined; Greg must not be forced into an event merely because timing is Now |
 | Tentative planning — Bobby, Cindy | Answer the actual date/preferences poll; editable answers live independently of attendance | Invitation initially asks for poll input. After finalization a **new confirmation invitation** asks for attendance; no vote reserves a place | `vote` is only a response label today, not stored poll options/answers or finalization. #75 supplies the first real date-poll flow |
-| Ongoing/recurring opportunity — Jan (D&D), Jonas, Sam, James | Request a place in an ongoing game/companion context or sign up under its chosen admission policy | Ongoing enrollment is separate from a particular outing's attendance and capacity. Invitation requests enrollment, not “coming” to every occurrence | Series currently copies defaults only; neither Group membership nor an occurrence response is enrollment. #76 must decide scope/capacity rules |
+| Ongoing/recurring opportunity — Jan (D&D), Jonas, Sam, James | Request a place in an ongoing game/companion context or sign up under its chosen admission policy | Ongoing enrollment is separate from a particular outing's attendance and capacity. Invitation requests enrollment, not “coming” to every occurrence | D1 adds explicit free ongoing request/approval/player places with independent meetings; Series still copies defaults only, never enrollment or RSVP |
 | Registration — classes/leagues/paid series; Geordi's external class is distinct | Register/request admission; show the actual pending approval/payment steps | “Registration started” is not a secured place. Approval/payment/place policy determines confirmation; invitation starts that same flow | Cost fields describe cost, not a payment ledger. No provider, approval or reservation/hold workflow exists; #76 designs these first |
 | Open-ended social inquiry — Alice, Jake | Safe contact/connection request or a concrete question, without attendance state | Invitation requests contact/coordination, not an RSVP. No event capacity is inferred | No conversation/contact delivery model is established. Existing `question` response is not a sent message; safety/consent work is required before enabling it |
 | No response required — informational or external opportunity | View Details / Open opportunity; navigation creates **no** participation record | An invitation may draw attention to the opportunity but has no acceptance-to-attendance effect | Empty `available_responses` currently means Tell me more, not “none”; an explicit configuration is needed |
@@ -385,7 +396,7 @@ prefer disabling the new flow for review over pretending a destructive downgrade
 | A — pattern configuration/compatibility | Explicit pattern/version + validated actions; legacy Activities untouched; unsupported capabilities unavailable | All seven configs including genuine no-response; Series copy isolation; creator defaults; no response on GET/external click; migration preservation |
 | B — scheduled/free and immediate intent | Separate explicit intent from navigation; pattern-specific invitations; free open capacity stays serialized | Ordinary/invited controls, last free seat, cancellation races, selected-state/card geometry, no-JS and filter retention; no external attendance inference |
 | C — #75 implementation | Thin three-date poll → same-Activity finalization → new confirmation round → separate RSVP | Edits/history, every poll participant including No answers, nonresponders, visibility, concurrent finalize/cancel, eligible email/failure state, mobile/no-JS |
-| D — #76 design proposed; implementation not started | [Reservation-policy proposal](RESERVATION_POLICY_PROPOSAL.md): unchanged free capped hike vs ongoing admission vs paid 12-seat class; explicit holds/queue/priority choices | Independent state, serialized allocation/last-seat race, expiry/idempotency/refund/provider recovery; separately authorized milestones only |
+| D — #76 D1 implemented; later milestones separately authorized | [Reservation-policy proposal](RESERVATION_POLICY_PROPOSAL.md): unchanged free capped hike vs ongoing admission vs paid 12-seat class; explicit holds/queue/priority choices | Independent state, serialized allocation/last-seat race, expiry/idempotency/refund/provider recovery; separately authorized milestones only |
 | Separate #78 slice (not started; sequencing requires review) | Standing opt-in → fresh outing from defaults → selected independent invitations → per-outing RSVP | Alice/Bob/Carol scenario; revocation/send races, selection omissions, consent/visibility/delivery, no automatic enrollment/RSVP and unchanged occurrence history |
 | E — inquiry/other capability work only when approved | A real question/contact capability with consent and delivery, plus further supported pattern actions | Coexisting actions/intent, recipient privacy, accessibility, no fabricated participation |
 

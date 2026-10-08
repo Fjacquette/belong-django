@@ -1,0 +1,25 @@
+{% if ongoing %}
+<section class="space-y-3" aria-labelledby="enrollment-heading-{{ activity.pk }}">
+  <h2 id="enrollment-heading-{{ activity.pk }}" class="text-xl font-display">Ongoing player places</h2>
+  {% if invited %}<p class="text-sm font-semibold">You’re invited · Request an ongoing player place</p>{% endif %}
+  <p class="text-sm">Free · Approval secures an ongoing player place. Each meeting has a separate attendance response.</p>
+  <p class="text-sm">{{ enrollment_count }}{% if ongoing.capacity %} / {{ ongoing.capacity }}{% endif %} enrolled{% if not ongoing.capacity %} · No player limit{% endif %}.</p>
+  {% if activity.is_cancelled %}<p class="text-sm font-semibold">Cancelled · Requests and enrollment history are retained.</p>{% endif %}
+  {% if enrollment_state %}<p class="text-sm font-semibold">You: {{ enrollment_state }}{% if activity.is_cancelled %} (before cancellation){% endif %}</p>{% endif %}
+  {% if not activity.is_cancelled %}
+    {% if enrollment_request and not enrollment_request.closed_at %}
+      <form method="post" action="{% url 'activities:withdraw_enrollment' activity.pk %}" hx-post="{% url 'activities:withdraw_enrollment' activity.pk %}" hx-target="#participation-{{ activity.pk }}" hx-swap="outerHTML">
+        {% csrf_token %}<input type="hidden" name="variant" value="detail"><input type="hidden" name="next" value="{{ next_path }}"><input type="hidden" name="policy" value="{{ ongoing.version }}"><input type="hidden" name="request" value="{{ enrollment_request.pk }}">
+        <button class="ui-button ui-button--quiet ui-button--comfortable">{% if enrollment_state == 'Enrolled' %}Leave ongoing enrollment{% else %}Withdraw request{% endif %}</button>
+      </form>
+    {% else %}
+      <form method="post" action="{% url 'activities:request_enrollment' activity.pk %}" hx-post="{% url 'activities:request_enrollment' activity.pk %}" hx-target="#participation-{{ activity.pk }}" hx-swap="outerHTML">
+        {% csrf_token %}<input type="hidden" name="variant" value="detail"><input type="hidden" name="next" value="{{ next_path }}"><input type="hidden" name="policy" value="{{ ongoing.version }}"><input type="hidden" name="request" value="{{ enrollment_request.pk|default:'' }}">
+        <button class="ui-button ui-button--secondary ui-button--comfortable">{% if enrollment_request %}Request again{% else %}Request a player place{% endif %}</button>
+      </form>
+    {% endif %}
+  {% endif %}
+  {% if enrollment_history %}<details><summary class="ui-disclosure">Your enrollment history</summary><ul class="space-y-2 mt-2">{% for application in enrollment_history %}<li class="text-sm">Requested {{ application.created_at|date:'M j, Y, g:i a' }}{% if application.decision %} · {{ application.decision.get_result_display }} {{ application.decision.created_at|date:'M j, g:i a' }}{% endif %}{% if application.enrollment %} · Enrolled{% if application.enrollment.place %} · Player place secured{% if application.enrollment.place.released_at %}, released {{ application.enrollment.place.released_at|date:'M j, g:i a' }}{% endif %}{% endif %}{% if application.enrollment.ended_at %} · Enrollment ended {{ application.enrollment.ended_at|date:'M j, g:i a' }}{% endif %}{% endif %}{% if application.withdrawn_at %} · Withdrawn {{ application.withdrawn_at|date:'M j, g:i a' }}{% endif %}</li>{% endfor %}</ul></details>{% endif %}
+  {% if enrollment_meetings %}<div class="space-y-2"><h3 class="font-semibold">Meetings · Respond separately</h3>{% for meeting in enrollment_meetings %}<p><a class="ui-link" href="{{ meeting.get_absolute_url }}">{{ meeting.title }}</a>{% if meeting.is_cancelled %} · Cancelled{% endif %}</p>{% endfor %}</div>{% endif %}
+</section>
+{% endif %}

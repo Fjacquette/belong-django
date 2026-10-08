@@ -664,7 +664,7 @@ confirmation/decline controls; immediate invitees receive only Join now. Invitat
 acceptance creates neither response nor Group membership. Historical/null/version 1
 records are not converted. Series copies are independent; response-based notification
 consent/eligibility and past delivery snapshots remain unchanged. Questions/
-contact, enrollment/registration/payment and standing notification opt-ins remain
+contact, registration/payment and standing notification opt-ins remain
 later slices, not offered controls. See [the reviewed model](docs/PARTICIPATION_MODEL_PROPOSAL.md).
 
 
@@ -694,3 +694,31 @@ update/cancellation notices for these Activities target current affirmative roun
 attendance only; voting alone subscribes to nothing. Existing response-based notices
 and old snapshots remain unchanged. External provider delivery still needs pilot
 validation; local console tests establish only application behavior.
+
+
+### Free ongoing approval and enrollment (#76 D1)
+
+One-off creation offers Ongoing activity (free, approval secures a place), using
+configuration version 4. Its Capacity input creates an independent optional player
+limit on OngoingOpportunity; the surface itself has no occurrence attendance limit.
+Requests are pending admission, consume no place, and are not a waitlist. Only an
+authorized organizer's explicit approval creates admission, enrollment and a limited
+player place atomically under the existing Activity lock. Full approval leaves the
+request pending. Unlimited enrollment uses no artificial place rows.
+
+Denial/withdrawal keep request/decision/enrollment history; leaving enrollment releases
+its limited place. A new explicit request gets a new identity. History is readonly in
+admin, and D1 pool capacity/policy cannot be edited. Audience checks still apply;
+invitation or Group membership never auto-enrolls or bypasses approval. No Group join
+is required. Ongoing cards navigate with the actual Request sent/Enrolled/Withdrawn
+state, never an attendance RSVP. Details and organizer roster distinguish the facts.
+
+Create a separate meeting publishes a fresh ordinary Activity with independent
+schedule, capacity, audience and responses. No people/RSVPs/invitations are copied;
+enrollment is not an attendance prerequisite in D1. Leaving/cancelling one context
+never silently changes the other. Cancelling the ongoing opportunity closes its
+flows and freezes history without cancelling its meetings. Only active enrollees
+qualify for ongoing updates/cancellation notices under existing email consent/access
+controls; requests and approval produce no new email. Existing free/poll recipient
+rules are unchanged. No payment, holds, waitlists, Series enrollment defaults or
+historical conversion is included. See [the D1 boundary](docs/RESERVATION_POLICY_PROPOSAL.md).

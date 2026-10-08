@@ -1,5 +1,8 @@
 <div {% if variant == 'detail' %}id="participation-{{ activity.pk }}" aria-live="polite"{% endif %} class="w-full {% if variant == 'detail' %}space-y-3{% endif %}" aria-label="Participation in {{ activity.title }}">
   {% if variant == 'detail' %}
+    {% if activity.is_free_ongoing %}
+      {% include 'activities/_ongoing_enrollment.html' %}
+    {% else %}
     {% include 'activities/_date_poll.html' %}
     {% if invited %}<p class="text-sm font-semibold">You’re invited · {{ activity.participation_invitation_prompt }}</p>{% endif %}
     {% if activity.is_cancelled %}
@@ -21,9 +24,12 @@
       <p class="text-sm">No response choices available.</p>
     {% endif %}
     {% if activity.accepts_responses or current_status %}<p class="text-sm">{% if current_status %}You: {{ current_status_label }}{% else %}No response yet{% endif %}</p>{% endif %}
+    {% endif %}
   {% else %}
     {% if activity.is_cancelled %}
       <a href="{% url 'activities:detail' activity.pk %}{% if next_path %}?discover={{ next_path|urlencode }}{% endif %}" class="ui-button ui-button--compact ui-response--card w-full" aria-label="Cancelled.{% if current_status %} Saved response: {{ current_status_label }}.{% endif %} View response in Details.">Cancelled</a>
+    {% elif activity.is_free_ongoing %}
+      <a href="{% url 'activities:detail' activity.pk %}{% if next_path %}?discover={{ next_path|urlencode }}{% endif %}" class="ui-button ui-button--compact ui-response--card w-full">{% if activity.j_enrollment_state %}{{ activity.j_enrollment_state }} / View{% else %}Request a player place{% endif %}</a>
     {% elif activity.is_date_planning and not activity.attendance_round %}
       <a href="{% url 'activities:detail' activity.pk %}{% if next_path %}?discover={{ next_path|urlencode }}{% endif %}" class="ui-button ui-button--compact ui-response--card w-full">{% if activity.j_poll_answered %}Poll answered / Edit answers{% else %}Answer poll{% endif %}</a>
     {% elif card_unmatched_response %}

@@ -222,7 +222,7 @@ brand destination; unverified accounts retain Verify email / Logout only.
 - Series defaults are copied independently. Existing Activity configuration is
   immutable; no bulk conversion/history rewrite. Default creation remains the
   legacy response-choice flow/More. No universal Interested or Willing response.
-  Enrollment, registration/payment and inquiry remain unavailable.
+  Registration/payment and inquiry remain unavailable.
   #73's response-based notification eligibility/consent/history remains intact.
 - #75 adds explicitly selected version 3, free three-date planning on one-off
   Activities. Yes/Maybe/No availability submissions are append-only history, separate
@@ -240,11 +240,22 @@ brand destination; unverified accounts retain Verify email / Logout only.
   Delivery failure does not remove in-app invitations. Poll-only participation
   does not subscribe to routine updates; only current affirmative round attendance
   qualifies on these Activities. Legacy notification behavior/history is unchanged.
-- #76 has a [reservation-policy proposal](docs/RESERVATION_POLICY_PROPOSAL.md)
-  for review: unchanged free capacity, separately scoped ongoing approval/enrollment,
-  registration, payment priority, holds/waitlists and provider recovery. Policy choices,
-  expiry/refund terms and ongoing scope remain proposed. Review precedes separately
-  authorized milestones; no payment/reservation infrastructure is implemented.
+- #76 D1 adds explicitly selected version 4 free ongoing approval/enrollment. An
+  OngoingOpportunity capability owns a separate immutable player limit/policy on its
+  Activity surface; requests consume nothing. Authorized approval atomically records
+  admission, enrollment and a secured limited place. Unlimited enrollment has no
+  artificial place rows. Full approval leaves the request pending; denial/withdrawal
+  retain history and withdrawal releases the player place. No Group join is implied.
+- Organizers can publish separate linked meetings with independent audience, RSVP,
+  capacity and cancellation; no people/responses/invitations are copied. Enrollment
+  is not an attendance prerequisite in D1. Cancelling the ongoing opportunity freezes
+  its request/enrollment evidence without cancelling meetings. Active enrollees alone
+  qualify for ongoing updates/cancellation under existing email consent/access rules;
+  requests and approval alone send no new mail. No Series enrollment defaults exist.
+- The [#76 policy proposal](docs/RESERVATION_POLICY_PROPOSAL.md) remains the boundary
+  for later registration/payment, holds/waitlists and provider recovery. Financial
+  terms/priority and later milestones need separate review/authorization; none of
+  those capabilities is implemented by D1.
 - #78’s spontaneous sandcastle scenario adds revocable standing permission for
   future outing invitations, separate from participation/enrollment/Group membership.
   Each fresh occurrence gets independently selected invitations and RSVPs; scope

@@ -47,6 +47,8 @@ def latest_rows(rows):
 
 
 def responses_for(activity):
+    if activity.is_free_ongoing:
+        return []  # Enrollment is not an occurrence response.
     if not activity.is_date_planning:
         return list(activity.responses.all())
     round = confirmation_for(activity)
@@ -58,6 +60,9 @@ def has_response(activity, user, *, affirmative=False):
 
 
 def recipient_ids(activity):
+    if activity.is_free_ongoing:
+        from .enrollment import enrollment_recipients
+        return enrollment_recipients(activity)
     if not activity.is_date_planning:
         return set(activity.responses.exclude(status='declined').values_list('user_id', flat=True))
     return {r.user_id for r in responses_for(activity) if r.status == 'committed'}

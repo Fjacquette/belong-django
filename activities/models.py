@@ -8,7 +8,7 @@ from django.db import models
 from django.utils import timezone
 
 from media_assets.models import ImageAssetPurpose
-from .participation_config import validate_config, configured_pattern_label, navigation_allowed, intent_options, is_date_planning, make_config
+from .participation_config import validate_config, configured_pattern_label, navigation_allowed, intent_options, is_date_planning, is_free_ongoing, make_config
 
 
 class DemoSeedRecord(models.Model):
@@ -109,6 +109,10 @@ class ParticipationConfigurationMixin:
         return is_date_planning(self.participation_config)
 
     @property
+    def is_free_ongoing(self):
+        return is_free_ongoing(self.participation_config)
+
+    @property
     def accepts_responses(self):
         return self.uses_legacy_participation or bool(self.participation_options())
 
@@ -124,6 +128,8 @@ class ParticipationConfigurationMixin:
 
     @property
     def participation_invitation_prompt(self):
+        if self.is_free_ongoing:
+            return 'Request an ongoing player place; approval secures enrollment, not meeting attendance'
         if self.is_date_planning:
             return 'Confirm the selected date below' if self.participation_options() else 'Answer the date poll'
         if self.uses_legacy_participation:
@@ -133,8 +139,10 @@ class ParticipationConfigurationMixin:
         return 'View this opportunity; no response is required'
 
     def validate_participation_policy(self):
-        if (intent_options(self.participation_config) or self.is_date_planning) and (self.cost_type != ActivityCostType.FREE or self.cost_amount not in (None, 0)):
-            raise ValidationError({'cost_type': 'Scheduled attendance, Join now and date polls require Free with no nonzero cost. Registration/payment policies are not available.'})
+        if self.is_free_ongoing and isinstance(self, ActivitySeries):
+            raise ValidationError({'participation_config': 'Ongoing enrollment is available only for one-off opportunities in D1.'})
+        if (intent_options(self.participation_config) or self.is_date_planning or self.is_free_ongoing) and (self.cost_type != ActivityCostType.FREE or self.cost_amount not in (None, 0)):
+            raise ValidationError({'cost_type': 'Scheduled attendance, Join now, date polls and ongoing enrollment require Free with no nonzero cost. Registration/payment policies are not available.'})
 
     @property
     def uses_legacy_participation(self):
@@ -261,6 +269,10 @@ class Activity(ParticipationConfigurationMixin, models.Model):
     invite_group_members = models.BooleanField(default=False, verbose_name='Invite active group members')
     participation_config = models.JSONField(null=True, blank=True, default=None, validators=[validate_config])
     available_responses = models.JSONField(default=list, blank=True)
+    # A meeting can reference an ongoing context without sharing its player pool.
+    ongoing_opportunity = models.ForeignKey('OngoingOpportunity', null=True, blank=True,
+        on_delete=models.PROTECT, related_name='meetings', editable=False)
+
     capacity = models.PositiveIntegerField(null=True, blank=True, validators=[MinValueValidator(1)])
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -608,3 +620,68 @@ class AttendanceAnswer(models.Model):
         ordering = ['pk']
         indexes = [models.Index(fields=['round', 'user', 'id'], name='round_user_attendance')]
         constraints = [models.CheckConstraint(condition=models.Q(status__in=['committed', 'declined', 'withdrawn']), name='round_attendance_valid_status')]
+
+
+class OngoingOpportunity(models.Model):
+    """Explicit free player pool attached to an Activity's ongoing capability."""
+    activity = models.OneToOneField(Activity, on_delete=models.CASCADE, related_name='ongoing')
+    capacity = models.PositiveIntegerField(null=True, blank=True, validators=[MinValueValidator(1)])
+    policy = models.CharField(max_length=32, default='approval_secures_place', editable=False)
+    version = models.PositiveSmallIntegerField(default=1, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.CheckConstraint(condition=models.Q(policy='approval_secures_place', version=1),
+            name='ongoing_free_approval_policy')]
+
+    def clean(self):
+        super().clean()
+        if not self.activity.is_free_ongoing:
+            raise ValidationError('Choose the explicit free ongoing enrollment pattern.')
+        self.activity.validate_participation_policy()
+        if self.capacity is not None and self.capacity < 1:
+            raise ValidationError('A player limit must be positive or unlimited.')
+        if self.pk:
+            old = type(self).objects.get(pk=self.pk)
+            if (self.activity_id, self.policy, self.version, self.capacity) != (old.activity_id, old.policy, old.version, old.capacity):
+                raise ValidationError('Ongoing pool policy and capacity are immutable in D1.')
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        return super().save(*args, **kwargs)
+
+
+class EnrollmentRequest(models.Model):
+    opportunity = models.ForeignKey(OngoingOpportunity, on_delete=models.CASCADE, related_name='requests')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    closed_at = models.DateTimeField(null=True, blank=True)
+    withdrawn_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['pk']
+        constraints = [models.UniqueConstraint(fields=['opportunity', 'user'], condition=models.Q(closed_at__isnull=True),
+            name='unique_open_enrollment_request')]
+
+
+class AdmissionDecision(models.Model):
+    request = models.OneToOneField(EnrollmentRequest, on_delete=models.CASCADE, related_name='decision')
+    result = models.CharField(max_length=8, choices=[('approved', 'Approved'), ('denied', 'Denied')])
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.CheckConstraint(condition=models.Q(result__in=['approved', 'denied']), name='valid_enrollment_decision')]
+
+
+class OngoingEnrollment(models.Model):
+    request = models.OneToOneField(EnrollmentRequest, on_delete=models.CASCADE, related_name='enrollment')
+    created_at = models.DateTimeField(auto_now_add=True)
+    ended_at = models.DateTimeField(null=True, blank=True)
+
+
+class CohortPlace(models.Model):
+    """Only limited ongoing pools need a place record; no holds or payment states."""
+    enrollment = models.OneToOneField(OngoingEnrollment, on_delete=models.CASCADE, related_name='place')
+    created_at = models.DateTimeField(auto_now_add=True)
+    released_at = models.DateTimeField(null=True, blank=True)

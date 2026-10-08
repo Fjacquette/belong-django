@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 CONFIG_VERSION = 1
 INTENT_VERSION = 2
 POLL_VERSION = 3
+ENROLLMENT_VERSION = 4
 PATTERNS = {
     'scheduled': ('Fixed / scheduled event', ('confirm_attendance', 'decline_attendance')),
     'immediate': ('Immediate activity', ('join_now',)),
@@ -28,7 +29,7 @@ INTENT_ACTIONS = {
 
 
 def make_config(pattern, *, actions=None, version=CONFIG_VERSION):
-    defaults = ['view_details'] + (list(INTENT_ACTIONS.get(pattern, {})) if version == INTENT_VERSION else ['answer_poll'] if version == POLL_VERSION else [])
+    defaults = ['view_details'] + (list(INTENT_ACTIONS.get(pattern, {})) if version == INTENT_VERSION else ['answer_poll'] if version == POLL_VERSION else ['request_enrollment'] if version == ENROLLMENT_VERSION else [])
     config = {'version': version, 'pattern': pattern,
               'actions': list(actions) if actions is not None else defaults}
     validate_config(config)
@@ -40,7 +41,7 @@ def validate_config(config):
         return  # The sole compatibility sentinel: legacy behavior is unchanged.
     if not isinstance(config, dict) or set(config) != {'version', 'pattern', 'actions'}:
         raise ValidationError('Choose a valid participation configuration.')
-    if type(config['version']) is not int or config['version'] not in (CONFIG_VERSION, INTENT_VERSION, POLL_VERSION):
+    if type(config['version']) is not int or config['version'] not in (CONFIG_VERSION, INTENT_VERSION, POLL_VERSION, ENROLLMENT_VERSION):
         raise ValidationError('Unsupported participation configuration version.')
     if not isinstance(config['pattern'], str) or config['pattern'] not in PATTERNS:
         raise ValidationError('Unknown participation pattern.')
@@ -50,6 +51,10 @@ def validate_config(config):
         if config['pattern'] != 'planning':
             raise ValidationError('Date polling requires the planning pattern.')
         required = {'answer_poll': None}
+    if config['version'] == ENROLLMENT_VERSION:
+        if config['pattern'] != 'ongoing':
+            raise ValidationError('Free enrollment requires the ongoing pattern.')
+        required = {'request_enrollment': None}
     if config['version'] == INTENT_VERSION and not required:
         raise ValidationError('This version supports only scheduled/free and immediate participation.')
     allowed = (*NAVIGATION_ACTIONS, *required)
@@ -98,3 +103,11 @@ def navigation_allowed(config, action):
     except ValidationError:
         return False
     return action in config['actions']
+
+
+def is_free_ongoing(config):
+    try:
+        validate_config(config)
+    except ValidationError:
+        return False
+    return config is not None and config['version'] == ENROLLMENT_VERSION

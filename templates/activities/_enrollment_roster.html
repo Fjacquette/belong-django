@@ -1,0 +1,22 @@
+{% if ongoing %}
+<section class="space-y-3" aria-labelledby="enrollment-roster-heading">
+  <h2 id="enrollment-roster-heading" class="text-xl font-display">Ongoing enrollment</h2>
+  <p class="text-sm">Free · Approval secures a player place. Requests consume no capacity and do not form a waitlist.</p>
+  <p>{{ enrollment_pending }} pending · {{ enrollment_count }}{% if ongoing.capacity %} / {{ ongoing.capacity }}{% endif %} enrolled{% if not ongoing.capacity %} · No player limit{% endif %}.</p>
+  {% if not activity.is_cancelled %}<p><a href="{% url 'activities:create' %}?opportunity={{ ongoing.pk }}" class="ui-link">Create a separate meeting</a></p>{% endif %}
+  {% for application in enrollment_history %}
+    <div class="space-y-2">
+      <p><strong>{{ application.user.profile.identity_label }}</strong> · Requested {{ application.created_at|date:'M j, g:i a' }}</p>
+      <p class="text-sm">Admission: {% if application.decision %}{{ application.decision.get_result_display }} by {{ application.decision.actor.profile.identity_label }}{% else %}Pending{% endif %} · Enrollment: {% if application.enrollment %}{% if application.enrollment.ended_at %}Ended{% else %}Enrolled{% endif %}{% else %}None{% endif %} · Place: {% if application.enrollment.place %}{% if application.enrollment.place.released_at %}Released{% else %}Secured{% endif %}{% elif application.enrollment and not ongoing.capacity %}Unlimited{% else %}None{% endif %}{% if application.withdrawn_at %} · Withdrawn{% endif %}</p>
+      {% if not application.closed_at and not application.decision and not activity.is_cancelled %}
+        <form method="post" action="{% url 'activities:decide_enrollment' activity.pk application.pk %}" class="ui-cluster">
+          {% csrf_token %}<input type="hidden" name="policy" value="{{ ongoing.version }}">
+          <button name="decision" value="approved" class="ui-button ui-button--secondary ui-button--comfortable">Approve and enroll {{ application.user.profile.identity_label }}</button>
+          <button name="decision" value="denied" class="ui-button ui-button--quiet ui-button--comfortable">Deny {{ application.user.profile.identity_label }}</button>
+        </form>
+      {% endif %}
+    </div>
+  {% empty %}<p class="text-sm">No enrollment requests yet.</p>{% endfor %}
+  {% if enrollment_meetings %}<h3 class="font-semibold">Separate meetings</h3>{% for meeting in enrollment_meetings %}<p><a class="ui-link" href="{{ meeting.get_absolute_url }}">{{ meeting.title }}</a>{% if meeting.is_cancelled %} · Cancelled{% endif %}</p>{% endfor %}{% endif %}
+</section>
+{% endif %}

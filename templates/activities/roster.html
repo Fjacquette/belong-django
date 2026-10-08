@@ -16,6 +16,8 @@
     </div>
   {% else %}<p>Active</p>{% endif %}
   {% include 'activities/_poll_roster.html' %}
+  {% include 'activities/_enrollment_roster.html' %}
+  {% if not activity.is_free_ongoing %}
   <section class="space-y-3" aria-labelledby="roster-heading">
     <h2 id="roster-heading" class="text-xl font-display">Responses</h2>
     <p class="text-sm">{% for count in counts %}{{ count.label }}: {{ count.count }}{% if not forloop.last %} · {% endif %}{% endfor %}</p>
@@ -28,6 +30,7 @@
       </table>
     {% else %}<p class="text-sm">{% if activity.is_date_planning %}No attendance answers yet.{% elif activity.accepts_responses %}No responses yet.{% else %}No response required.{% endif %}</p>{% endif %}
   </section>
+  {% endif %}
   <section class="space-y-3" aria-labelledby="invitation-heading">
     <h2 id="invitation-heading" class="text-xl font-display">Invitations</h2>
     <p class="text-sm">Invitations request: {{ activity.participation_invitation_prompt }}; they do not change who can see this activity or join anyone to a Group.</p>
@@ -83,12 +86,13 @@
   {% if not activity.is_cancelled %}
     <form action="{% url 'activities:cancel' activity.pk %}" method="post" class="space-y-3">
       {% csrf_token %}
-      <h2 class="text-xl font-display">Cancel this occurrence</h2>
+      <h2 class="text-xl font-display">{% if activity.is_free_ongoing %}Cancel this opportunity{% else %}Cancel this occurrence{% endif %}</h2>
       <label for="{{ cancel_form.reason.id_for_label }}" class="block text-sm font-semibold">{{ cancel_form.reason.label }}</label>
       {{ cancel_form.reason }}
       {% for error in cancel_form.reason.errors %}<p class="text-sm" role="alert">{{ error }}</p>{% endfor %}
-      <p class="text-sm">{{ cancel_form.reason.help_text }} Participants with verified emails who opted in receive a cancellation notice. Invited nonresponders and declined responses are not emailed.</p>
-      <button type="submit" class="ui-button ui-button--secondary ui-button--comfortable">Cancel this occurrence</button>
+      {% if activity.is_free_ongoing %}<p class="text-sm">Closes this ongoing opportunity and freezes its request/enrollment history. Separate meetings remain unchanged. Enrollees with verified emails who opted in receive a cancellation notice; pending requests and invitations alone do not subscribe.</p>
+      {% else %}<p class="text-sm">{{ cancel_form.reason.help_text }} Participants with verified emails who opted in receive a cancellation notice. Invited nonresponders and declined responses are not emailed.</p>{% endif %}
+      <button type="submit" class="ui-button ui-button--secondary ui-button--comfortable">{% if activity.is_free_ongoing %}Cancel this opportunity{% else %}Cancel this occurrence{% endif %}</button>
     </form>
   {% endif %}
 </section>

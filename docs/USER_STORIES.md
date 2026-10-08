@@ -61,7 +61,7 @@ Each story states a human outcome, not a preferred form or database schema. “A
 **Acceptance**
 - Creating a one-off Activity does not require a Group or a Series.
 - Time, place and details support “not decided yet” where appropriate.
-- #74 slices A/B: the creator chooses the current response-choice flow, Scheduled/free open attendance, Immediate/free Join now, or No response required. One-off creation also offers free three-date Tentative planning (#75). All seven patterns are registered, but enrollment, registration/payment and inquiry actions remain unavailable. Scheduled confirmation/decline and immediate Join now use semantic POST actions and the existing serialized free-capacity authority, displaying Going and Joining intent respectively. Invitations use those same actions; external links never record participation. Null configuration retains five current choices and the Tell me more default; Interested is historical only. No-response configuration creates no ActivityResponse, including for invitees.
+- #74 slices A/B: the creator chooses the current response-choice flow, Scheduled/free open attendance, Immediate/free Join now, or No response required. One-off creation also offers free three-date Tentative planning (#75). D1 (#76) also offers free ongoing approval/enrollment with a separate player pool; requests do not consume places and approval secures enrollment, not meeting attendance. All seven patterns are registered, but registration/payment and inquiry remain unavailable. Scheduled confirmation/decline and immediate Join now use semantic POST actions and the existing serialized free-capacity authority, displaying Going and Joining intent respectively. Invitations use those same actions; external links never record participation. Null configuration retains five current choices and the Tell me more default; Interested is historical only. No-response configuration creates no ActivityResponse, including for invitees.
 - Costs, limitations, capacity and access requirements can be conveyed when relevant. Do not make every optional field mandatory.
 - The Activity can later be refined through an explicitly supported editing flow (editing scope is a follow-up where not implemented).
 
@@ -310,7 +310,7 @@ opt-out must suppress unsent notices as well as future audience selection. Neith
 opt-in nor invitation bypasses the new occurrence’s audience. Reuse #68/#67 foundations
 where appropriate; do not turn Series defaults into mandatory subscriptions. See
 [#78](https://github.com/Fjacquette/belong-django/issues/78) and
-[the #74 proposal](PARTICIPATION_MODEL_PROPOSAL.md). #75 implements the thin free date-poll flow; #76 remains design work.
+[the #74 proposal](PARTICIPATION_MODEL_PROPOSAL.md). #75 implements the thin free date-poll flow; #76 D1 provides free ongoing approval/enrollment; later policies remain design work.
 
 ## 6. Disagreements and decisions requiring explicit resolution
 
@@ -369,15 +369,16 @@ An informational Activity may require no response and must not write one for a c
 referenced follow-ups, not implemented in slices A/B. #76 now has a
 [capacity/admission/registration/payment policy proposal](RESERVATION_POLICY_PROPOSAL.md)
 for review, comparing Janine's free capped hike, ongoing D&D approval/enrollment and
-a paid 12-seat class. Holds, waitlists, priority and refund terms are proposed, not
-implemented or approved. #76 authorizes no payment integration; the existing
-serialized free-event flow remains usable.
+a paid 12-seat class. D1 implements only free ongoing requests/approval/enrollment, retaining distinct
+admission/player place history and independent meeting RSVP. Holds, waitlists,
+financial priority and refund terms remain proposed, not implemented or approved.
+#76 authorizes no payment integration; the existing serialized free-event flow remains usable.
 #78 adds the separately scoped standing future-invitation use case above; it does
 not add an eighth participation preset or authorize implementation in this iteration.
 
 ## 7. Proposed implementation/validation sequence
 
-**Participation sequencing:** PR #79 supplies the reviewed model; slices A/B add configuration/compatibility and explicit free scheduled/immediate intent. #75 adds a real free three-date poll, preserving the same Activity and append-only availability history through finalization. Every participant, including all-No people, receives a fresh round invitation; only explicit current-round attendance owns capacity. Prior responses remain evidence, secured legacy places block finalization, and visibility still gates invitations. Eligible confirmation email uses existing consent/abuse/retry controls; poll-only people do not subscribe to routine updates. #76 and #78 remain separately scoped and unimplemented.
+**Participation sequencing:** PR #79 supplies the reviewed model; slices A/B add configuration/compatibility and explicit free scheduled/immediate intent. #75 adds a real free three-date poll, preserving the same Activity and append-only availability history through finalization. Every participant, including all-No people, receives a fresh round invitation; only explicit current-round attendance owns capacity. Prior responses remain evidence, secured legacy places block finalization, and visibility still gates invitations. Eligible confirmation email uses existing consent/abuse/retry controls; poll-only people do not subscribe to routine updates. #76 D1 adds free ongoing approval/enrollment; later #76 milestones and #78 remain separately scoped and unimplemented.
 
 **Stage A — Janine's first real walkthrough:** external signup, Group creation, real invitations and acceptance, Series creation, first hike, invitation-based and ordinary RSVP, roster, update, cancellation, next hike. Reuse existing Django functionality; **file issues only for evidenced gaps**. Test with Janine and a few actual hikers before broadening.
 

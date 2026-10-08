@@ -1,11 +1,48 @@
 # Capacity, admission, registration and payment policies — proposal for review
 
-**Status: proposed, not approved or implemented.** Design deliverable for
+**Status: D1 free ongoing approval/enrollment authorized and implemented; remaining policies proposed.** Design basis for
 [#76](https://github.com/Fjacquette/belong-django/issues/76), using the reviewed
 [#74 participation model](PARTICIPATION_MODEL_PROPOSAL.md). Assessed baseline:
-master `b2fd166`, including #75 / PR #82. This PR changes documentation only.
-No reservation tables, payment provider, approval/enrollment controls, migrations,
-or conversion of existing data are authorized by this proposal.
+original design master `b2fd166`, including #75 / PR #82; D1 builds from master
+`63aefd9` (merged proposal PR #83). Authorization is limited to free ongoing D1.
+No payments, holds, waitlists, registration infrastructure or existing-data conversion
+is implemented by D1; the financial/expiry/queue terms below remain proposals.
+
+## D1 implementation boundary
+
+An explicitly selected version 4 ongoing Activity hosts one OngoingOpportunity
+capability, with immutable approval-secures-place policy/version and a separate
+optional player limit. It is not a new Activity subtype or a Series/Group membership.
+Only new one-off creation offers this pattern; existing null/version 1/2/3 Activities,
+Series and all historical data stay on their own authority.
+
+EnrollmentRequest retains each explicit request and its closure/withdrawal evidence;
+AdmissionDecision separately retains authorized actor/result/time. Approval creates
+OngoingEnrollment and, for a limited pool, CohortPlace in the same occurrence-locked
+transaction. Full approval leaves the request undecided. Unlimited approval creates
+no place row. Denial closes the request; withdrawal closes it, ends any enrollment
+and records any place release without deleting history. New explicit re-request
+has a new identity; stale forms cannot withdraw/approve a newer request. There is
+no waitlist, hold, approval-only eligibility mode, money or automatic admission.
+
+Each linked meeting is an ordinary independent Activity. An organizer can create
+one with a fresh scheduled/free default and independent schedule/capacity, copying
+no people or prior responses/invitations. The link adds no enrollment/Group gate to
+attendance; such admission prerequisites remain later scoped work. Meeting withdrawal
+or cancellation does not end cohort enrollment; cohort withdrawal leaves existing
+meeting answers untouched. Cancelling the ongoing surface closes its flows and
+freezes historical requests/enrollments/places without cancelling separate meetings.
+D1 does not offer pool/policy editing, organizer revocation of enrolled people,
+Series enrollment defaults or conversion of existing secured free places.
+
+Audience checks still gate request, approval and Details disclosure; lost access or
+Group membership never silently deletes a secured place/history. Own Details shows
+only one's own request history; the authorized organizer roster shows all admission,
+enrollment and place dimensions. Only actual active enrollees qualify for ongoing
+updates/cancellation via the existing consent/verified-email/access/sender controls;
+pending requests/invitation alone do not subscribe. Approval/denial are in-app
+outcomes, with no new decision-email event or delivery promise. Existing free-event
+and poll notification authorities/history remain unchanged.
 
 ## Recommendation and decisions to review
 
@@ -306,7 +343,7 @@ ordinary Activity mail or a public roster.
 | Milestone, each separately authorized | Scope | Required tests / demonstration before completion |
 | --- | --- | --- |
 | D0: this proposal | Review policies, priority, terms, scope and unresolved decisions | Documentation consistency and existing free-capacity regressions; no schema/UI/runtime change |
-| D1: free ongoing approval/enrollment | Explicit new opportunity, one cohort pool, no money/holds/queue; approval-secures-place only if approved | Two requests/one approval place; authorize organizer; decline/withdraw; unlimited cohort; independent next-session RSVP; optional Group; history and migration preservation |
+| D1: free ongoing approval/enrollment implemented | Explicit new opportunity, one cohort pool, no money/holds/queue; approval-secures-place only if approved | Two requests/one approval place; authorize organizer; decline/withdraw; unlimited cohort; independent next-session RSVP; optional Group; history and migration preservation |
 | D2: registration eligibility | Explicit new registration target/quote, independent admission and derived readiness, no payment promise | Open/request/invitation modes; approval-allocates versus eligibility-only; immutable terms; no fake paid/confirmed records; Details/roster/no-JS/access/notification adapters |
 | D3: reservation policy, no real payment | Only approved hold/queue variants; explicit supported free-use cases, never fake paid checkout | Last claim, expire/claim race, stale-version/idempotent actions, cleanup without worker, duplicate promotion, offer accept/expire race, capacity reduction, cancellation races; expiry UI |
 | D4: provider feasibility and separately authorized sandbox | Prove authorization/capture/void/refund/reconciliation contracts before production infrastructure | Signed/reordered/duplicate/missing callbacks; incorrect amount/currency; definitive failure and timeout; retry/crash recovery; duplicate browser requests; no new charge on replay |
