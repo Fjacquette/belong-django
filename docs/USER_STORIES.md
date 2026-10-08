@@ -366,8 +366,12 @@ add versioned configuration, No response required and free scheduled/immediate i
 external navigation are capabilities separate from intent, approval, places and payment.
 An informational Activity may require no response and must not write one for a click.
 #75's poll-to-confirmation flow and #76's capacity/admission/payment policies are
-referenced follow-ups, not implemented in slices A/B. #76 authorizes
-no payment integration; the existing serialized free-event flow remains usable.
+referenced follow-ups, not implemented in slices A/B. #76 now has a
+[capacity/admission/registration/payment policy proposal](RESERVATION_POLICY_PROPOSAL.md)
+for review, comparing Janine's free capped hike, ongoing D&D approval/enrollment and
+a paid 12-seat class. Holds, waitlists, priority and refund terms are proposed, not
+implemented or approved. #76 authorizes no payment integration; the existing
+serialized free-event flow remains usable.
 #78 adds the separately scoped standing future-invitation use case above; it does
 not add an eighth participation preset or authorize implementation in this iteration.
 
