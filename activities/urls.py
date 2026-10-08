@@ -2,11 +2,13 @@ from django.urls import path
 
 from . import views
 from . import email_invitations
+from . import group_offers
 from .announcements import activity_announce
 
 app_name = "activities"
 
 urlpatterns = [
+    path('activities/<int:pk>/group-offer/', group_offers.answer, name='answer_group_offer'),
     path('activity-invitations/pending/', email_invitations.pending_invitation_view, name='pending_email_invitation'),
     path('activity-invitations/<str:token>/', email_invitations.invitation, name='email_invitation'),
     path('activities/<int:pk>/email-invitations/', email_invitations.send_invitation, name='send_email_invitation'),

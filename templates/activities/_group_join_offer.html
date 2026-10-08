@@ -1,0 +1,17 @@
+<div id="group-join-offer" aria-live="polite"{% if not group_join_offer and not group_join_result %} hidden{% endif %}{% if offer_oob %} hx-swap-oob="outerHTML"{% endif %}>
+  {% if group_join_offer %}
+    <section class="space-y-3 break-words" aria-labelledby="group-join-heading">
+      <h2 id="group-join-heading" class="text-xl font-display">Also join this Group?</h2>
+      <p class="text-sm">Your response to {{ group_join_offer.activity.title }} is saved. Joining <a href="{{ group_join_offer.group.get_absolute_url }}" class="ui-link">{{ group_join_offer.group.name }}</a> is optional.</p>
+      {% if group_join_offer.group.access == 'closed' %}<p class="text-sm">An organizer will review your request. Your activity response does not depend on approval.</p>{% endif %}
+      <form method="post" action="{% url 'activities:answer_group_offer' group_join_offer.activity_id %}" hx-post="{% url 'activities:answer_group_offer' group_join_offer.activity_id %}" hx-target="#group-join-offer" hx-swap="outerHTML" class="ui-cluster">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ offer_next_path }}">
+        <button name="action" value="join" class="ui-button ui-button--secondary ui-button--comfortable">{% if group_join_offer.group.access == 'closed' %}Request to join{% else %}Join Group{% endif %}</button>
+        <button name="action" value="dismiss" class="ui-button ui-button--quiet ui-button--comfortable">Not now</button>
+      </form>
+    </section>
+  {% elif group_join_result %}
+    <p class="text-sm" role="status">{{ group_join_result }}{% if result_group %} <a href="{{ result_group.get_absolute_url }}" class="ui-link">View Group</a>{% endif %}</p>
+  {% endif %}
+</div>

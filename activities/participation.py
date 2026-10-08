@@ -38,6 +38,8 @@ def change_response(pk, user, status=None, *, toggle=False, remove=False):
             if activity.capacity is not None and committed >= activity.capacity:
                 return 'This activity is full. Your response has not changed.'
         ActivityResponse.objects.update_or_create(activity=activity, user=user, defaults={'status': status})
+        from .group_offers import offer_after_response
+        offer_after_response(activity, user)
         return ''
 
 

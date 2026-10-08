@@ -74,21 +74,9 @@ def detail(request, pk, invitation_form=None):
 @login_required
 @require_POST
 def join(request, pk):
-    with transaction.atomic():
-        group = _visible_group(request.user, pk)
-        # Serialize membership creation/policy decisions with organizer actions.
-        group = Group.objects.select_for_update().get(pk=group.pk)
-        if group.access == GroupAccess.PRIVATE or group.memberships.filter(user=request.user, status=MemberStatus.BLOCKED).exists():
-            raise Http404
-        membership, _ = GroupMembership.objects.get_or_create(group=group, user=request.user, defaults={
-            "status": MemberStatus.PENDING if group.access == GroupAccess.CLOSED else MemberStatus.ACTIVE,
-        })
-        # Existing pending requests survive migration. Joining an Open/Unlisted
-        # group explicitly now completes membership without organizer approval.
-        if membership.status == MemberStatus.PENDING and group.access in [GroupAccess.OPEN, GroupAccess.UNLISTED]:
-            membership.status = MemberStatus.ACTIVE
-            membership.save(update_fields=["status"])
-    return redirect(group)
+    from .membership import join_group
+    membership = join_group(pk, request.user)
+    return redirect(membership.group)
 
 
 @login_required

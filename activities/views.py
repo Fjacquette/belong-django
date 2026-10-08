@@ -24,6 +24,7 @@ from .forms import ActivityForm, CancelActivityForm
 from .visibility import visible_activities
 from .announcements import update_context
 from .invitations import is_invited, with_invitation_state, RSVP_LABELS
+from .group_offers import current_offer
 from .models import (
     Activity,
     ActivityCostType,
@@ -247,6 +248,8 @@ def index(request: HttpRequest) -> HttpResponse:
 
     context = {
         "page_obj": page_obj,
+        "group_join_offer": current_offer(request.user),
+        "offer_next_path": request.get_full_path(),
         "activities": activities,
         "friends": _friend_context(request.user),
         "categories": ActivityCategory.objects.all().order_by("name"),
@@ -281,9 +284,16 @@ def detail(request: HttpRequest, pk: int) -> HttpResponse:
 
     _decorate_activity(activity)
     join_context = _build_join_context(request, activity)
+    discover_path = request.GET.get('discover', '')
+    if (not url_has_allowed_host_and_scheme(discover_path, {request.get_host()}, require_https=request.is_secure())
+            or urlsplit(discover_path).path != reverse('activities:index')):
+        discover_path = reverse('activities:index')
 
     context = {
         "activity": activity,
+        "group_join_offer": current_offer(request.user, activity),
+        "offer_next_path": request.get_full_path(),
+        "discover_path": discover_path,
         "join_context": join_context,
         "friends": _friend_context(request.user),
         "can_organize": activity.can_organize(request.user),
@@ -375,11 +385,13 @@ def _render_join_region(request: HttpRequest, activity: Activity, notice="") -> 
     context = _build_join_context(request, activity)
     context["variant"] = variant
     context["participation_notice"] = notice
+    context['group_join_offer'] = current_offer(request.user, activity)
+    context['offer_next_path'] = context['next_path']
+    context['offer_oob'] = request.headers.get('HX-Request') == 'true'
     if variant == "card":
         _decorate_activity(activity)
         _card_context(request, activity, canonical_filters(QueryDict(urlsplit(context["next_path"]).query)))
-        return render(request, "activities/_card.html", context)
-    return render(request, "activities/_join_region.html", context)
+    return render(request, "activities/_participation_result.html", context)
 
 
 @login_required

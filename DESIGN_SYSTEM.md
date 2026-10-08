@@ -768,3 +768,20 @@ matching-account verification and audience checks; anonymous/wrong-account or de
 viewers get a context-free sign-in/signup/access explanation. Acceptance leads to
 Details/RSVP without an automatic response or Group join. Group invitations remain
 a distinct operation.
+
+## Optional Group join after responding
+
+A successful Activity response may reveal a quiet inline **Also join this Group?**
+section. On Details it follows participation; on Discover it sits between filters
+and results, outside card bands. A hidden empty live region reserves no layout space.
+HTMX replaces that region separately from participation, without navigation, a modal
+or moving keyboard focus; ordinary POST redirects retain the same return context.
+Card Details links carry that Discover return, validated on Details; canonical
+Share URLs remain free of personal filters or query state.
+Use the existing heading/link, `ui-cluster`, secondary and quiet comfortable button
+families. Name the saved Activity and eligible Group, make joining explicitly optional,
+and explain approval for Closed Groups. **Join Group** / **Request to join** and
+**Not now** are POST actions; the Group name and completion’s **View Group** are links.
+No member list appears. Dismissal persists per person/Group across sessions and
+occurrences, so later response changes do not repeatedly ask. Joining/dismissing
+does not change the response or close Activity participation.

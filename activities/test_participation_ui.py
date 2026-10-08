@@ -256,7 +256,7 @@ class ParticipationUITests(TestCase):
         self.activity.available_responses = ["question", "declined"]
         self.activity.save()
         response = self.client.get(reverse("activities:index"))
-        self.assertContains(response, f'href="{self.url("detail")}" data-full-text="{self.activity.title}"')
+        self.assertContains(response, f'href="{self.url("detail")}?discover=/" data-full-text="{self.activity.title}"')
         self.assertContains(response, "See details / RSVP")
         self.assertNotContains(response, 'name="status"')
         self.assertNotContains(response, 'value="interested"')
@@ -307,7 +307,7 @@ class ParticipationUITests(TestCase):
                     # Restrict the assertion to the compact card, excluding page menus.
                     card = html.split('class="activity-card relative', 1)[1].split('data-stack-item', 1)[0].split('</section>', 1)[0]
                     self.assertNotIn(control, card)
-                self.assertContains(response, f'href="{self.url("detail")}" data-full-text="{self.activity.title}"')
+                self.assertContains(response, f'href="{self.url("detail")}?discover=/" data-full-text="{self.activity.title}"')
         details = self.client.get(self.url('detail'))
         self.assertContains(details, '>Hide</button>')
         self.assertContains(details, 'aria-label="Remove your response"')
