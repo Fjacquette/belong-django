@@ -93,3 +93,9 @@ class NotificationEventAdmin(NotificationAuditAdmin):
 class NotificationDeliveryAdmin(NotificationAuditAdmin):
     list_display = ('id', 'event', 'recipient', 'status', 'reason', 'attempts', 'retry_at', 'attempt')
     list_filter = ('status', 'channel', 'event__kind')
+
+
+# Planning history and confirmation state change only through serialized flows.
+from .models import DatePoll, DatePollOption, DatePollSubmission, ConfirmationRound, ConfirmationInvitation, AttendanceAnswer
+for audit_model in [DatePoll, DatePollOption, DatePollSubmission, ConfirmationRound, ConfirmationInvitation, AttendanceAnswer]:
+    admin.site.register(audit_model, NotificationAuditAdmin)

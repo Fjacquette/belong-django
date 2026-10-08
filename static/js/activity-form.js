@@ -2,6 +2,7 @@
   const participation = document.getElementById('id_participation_pattern');
   if (participation) {
     function updateParticipation() {
+      document.querySelectorAll('[data-poll-date]').forEach(section => { section.hidden = participation.value !== 'planning'; });
       document.querySelectorAll('[data-legacy-response-choices]').forEach(section => {
         section.hidden = Boolean(participation.value);
       });

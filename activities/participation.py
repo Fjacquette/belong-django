@@ -17,8 +17,16 @@ def locked_activity(pk):
         yield Activity.objects.select_related('group').get(pk=pk)
 
 
-def change_response(pk, user, status=None, *, action=None, toggle=False, remove=False):
+def change_response(pk, user, status=None, *, action=None, confirmation_round=None, toggle=False, remove=False):
     with locked_activity(pk) as activity:
+        if activity.is_date_planning:
+            from .polls import change_attendance_locked
+            from .visibility import visible_activities
+            from django.http import Http404
+            if not visible_activities(user).filter(pk=pk).exists():
+                raise Http404
+            return change_attendance_locked(activity,user,action,confirmation_round,
+                toggle=toggle,remove=remove,join=action is None and status is None and not remove)
         if not activity.accepts_responses:
             return 'No response is required for this activity.'
         if activity.is_cancelled:

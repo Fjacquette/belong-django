@@ -10,7 +10,7 @@ Belong helps people make and deepen friendships through things they do together.
 
 1. **No group-first dependency:** users may discover, create, respond to and participate in an otherwise visible Activity without joining a Group. Group membership is never itself a participation gate.
 2. **Low social cost:** people can help shape a plan before committing. Bobby’s poll is the initial interaction: no preliminary Interested/Willing button. No global Interested action/status/default; historical records remain readable.
-3. **Meaningful participation:** #74 requires Activity participation presets, separating actions from intent, admission, places and payment. The model was reviewed in PR #79; slices A/B add configuration, genuine no-response and explicit free scheduled/immediate intent. Null-configured #60/#70 UX remains: ordinary cards navigate with a saved-state footer, invitees get attendance RSVP, and Details retains five current creator choices with Interested excluded. Inviting someone grants neither visibility nor Group membership.
+3. **Meaningful participation:** #74 requires Activity participation presets, separating actions from intent, admission, places and payment. The model was reviewed in PR #79; slices A/B add configuration, genuine no-response and explicit free scheduled/immediate intent; #75 adds real date polling and independent confirmation. Null-configured #60/#70 UX remains: ordinary cards navigate with a saved-state footer, invitees get attendance RSVP, and Details retains five current creator choices with Interested excluded. Inviting someone grants neither visibility nor Group membership.
 4. **Separate relations:** friendship, group membership, Activity visibility, invitation, and ActivityResponse are different facts. None silently implies another. Activity RSVPs must not silently join a Group; where the Group accepts members, offer an optional join action after a nonmember responds.
 5. **Accessible, safe by design:** preserve useful privacy, reporting/blocking, suitability, and trust questions; do not assume every real-world interaction is equally low-risk.
 6. **Lightweight coordination rather than a social-media feed:** announcements, updates and eventual messaging serve shared activities; avoid mandatory discussion boards, status competition or engagement farming.
@@ -61,7 +61,7 @@ Each story states a human outcome, not a preferred form or database schema. “A
 **Acceptance**
 - Creating a one-off Activity does not require a Group or a Series.
 - Time, place and details support “not decided yet” where appropriate.
-- #74 slices A/B: the creator chooses the current response-choice flow, Scheduled/free open attendance, Immediate/free Join now, or No response required. All seven patterns are registered, but polling, enrollment, registration/payment and inquiry actions remain unavailable. Scheduled confirmation/decline and immediate Join now use semantic POST actions and the existing serialized free-capacity authority, displaying Going and Joining intent respectively. Invitations use those same actions; external links never record participation. Null configuration retains five current choices and the Tell me more default; Interested is historical only. No-response configuration creates no ActivityResponse, including for invitees.
+- #74 slices A/B: the creator chooses the current response-choice flow, Scheduled/free open attendance, Immediate/free Join now, or No response required. One-off creation also offers free three-date Tentative planning (#75). All seven patterns are registered, but enrollment, registration/payment and inquiry actions remain unavailable. Scheduled confirmation/decline and immediate Join now use semantic POST actions and the existing serialized free-capacity authority, displaying Going and Joining intent respectively. Invitations use those same actions; external links never record participation. Null configuration retains five current choices and the Tell me more default; Interested is historical only. No-response configuration creates no ActivityResponse, including for invitees.
 - Costs, limitations, capacity and access requirements can be conveyed when relevant. Do not make every optional field mandatory.
 - The Activity can later be refined through an explicitly supported editing flow (editing scope is a follow-up where not implemented).
 
@@ -72,7 +72,7 @@ Each story states a human outcome, not a preferred form or database schema. “A
 **Acceptance**
 - Current ordinary card: “See details / RSVP” before responding, then a concise saved-state / Edit response navigation action in Band 5; Band 4 stays description-only.
 - Current Details: organizer-selected committed/declined/question/more/vote choices where offered, never a selectable Interested response. A saved question/vote label is not a delivered question or stored poll answer.
-- Current explicitly invited viewer: attendance RSVP on the card, including an unmatched-state disclosure, using ActivityResponse and capacity/cancellation rules. Target #74: invitations use the Activity’s participation pattern; a planning, inquiry or registration invitation must not universally force attendance RSVP. Replacing the remaining attendance behavior awaits slice B; configured no-response invitees have navigation only.
+- Current explicitly invited viewer: attendance RSVP on the card, including an unmatched-state disclosure, using ActivityResponse and capacity/cancellation rules. Target #74: invitations use the Activity’s participation pattern; a planning, inquiry or registration invitation must not universally force attendance RSVP. Configured invitations now request the pattern action: immediate Join now, planning poll input before finalization and fresh attendance afterward; configured no-response invitees have navigation only.
 - An invitation never bypasses Activity visibility, forces a Group membership, or discards prior response history when revoked.
 - A full Activity prevents new commitments but permits noncommittal responses when allowed; cancellation stops response changes and preserves history.
 
@@ -247,7 +247,7 @@ These preserve the original *Belong user stories* personas and distinct design p
 | --- | --- | --- | --- |
 | **Peter** | Join an online game immediately; up to a few others | “Now,” online joining instructions, finite capacity | Next |
 | **Greg** | Bored now, flexible about what to do | Proto-intent may lack a fixed activity or location | Next |
-| **Bobby** | Theme-park trip in several weeks, date TBD | Poll first → finalize → invite every poll participant to confirm → separate RSVP; votes never reserve a place (#75) | Next, after #74 review |
+| **Bobby** | Theme-park trip in several weeks, date TBD | Poll first → finalize → invite every poll participant to confirm → separate RSVP; votes never reserve a place (#75) | Implemented thin free three-date flow (#75) |
 | **Cindy** | Find someone for a concert with unsettled plans | Shared outing, possible dates, ticket implications | Next |
 | **Jan (D&D)** | Weekly game with a fixed time and player count | Reusable Series, recurring social context, specific attendance | Next |
 | **Frank (sandcastles)** | Hear about future spontaneous outings, then decide each time | Revocable standing invitation opt-in → fresh outing from defaults → selected invitees → separate RSVP; no automatic attendance, enrollment or Group membership ([#78](https://github.com/Fjacquette/belong-django/issues/78)) | Design only; not implemented |
@@ -310,7 +310,7 @@ opt-out must suppress unsent notices as well as future audience selection. Neith
 opt-in nor invitation bypasses the new occurrence’s audience. Reuse #68/#67 foundations
 where appropriate; do not turn Series defaults into mandatory subscriptions. See
 [#78](https://github.com/Fjacquette/belong-django/issues/78) and
-[the #74 proposal](PARTICIPATION_MODEL_PROPOSAL.md). #75/#76 remain unimplemented.
+[the #74 proposal](PARTICIPATION_MODEL_PROPOSAL.md). #75 implements the thin free date-poll flow; #76 remains design work.
 
 ## 6. Disagreements and decisions requiring explicit resolution
 
@@ -320,7 +320,7 @@ The older model prioritizes browsing Groups, joining them, then attending Events
 
 ### 6.2 Direct/group invitations versus discovery — resolved by issue #60
 
-An invitation is a person-specific request, not an invitation-only Activity subtype or an audience grant. Current #60/#70 code asks invitees for attendance RSVP. Product direction in #74 makes the requested interaction pattern-specific; this replacement remains subject to design review. #70 retired Interested from current choices/defaults, preserving old records without conversion. #75 adds a new confirmation invitation after a poll, without treating votes as attendance.
+An invitation is a person-specific request, not an invitation-only Activity subtype or an audience grant. Current #60/#70 code asks invitees for attendance RSVP. Product direction in #74 makes the requested interaction pattern-specific; scheduled/immediate pattern actions are implemented in slice B, and planning poll/confirmation in #75. #70 retired Interested from current choices/defaults, preserving old records without conversion. #75 adds a new confirmation invitation after a poll, without treating votes as attendance.
 
 ### 6.3 Circles, boards and messaging — deferred
 
@@ -373,7 +373,7 @@ not add an eighth participation preset or authorize implementation in this itera
 
 ## 7. Proposed implementation/validation sequence
 
-**Participation sequencing:** PR #79 supplies the reviewed model; slices A/B add configuration/compatibility and explicit free scheduled/immediate intent, retaining the existing response/capacity/notification authority. Further state/capability replacements require their own bounded slices. #75, #76 and #78 are not implemented in this iteration.
+**Participation sequencing:** PR #79 supplies the reviewed model; slices A/B add configuration/compatibility and explicit free scheduled/immediate intent. #75 adds a real free three-date poll, preserving the same Activity and append-only availability history through finalization. Every participant, including all-No people, receives a fresh round invitation; only explicit current-round attendance owns capacity. Prior responses remain evidence, secured legacy places block finalization, and visibility still gates invitations. Eligible confirmation email uses existing consent/abuse/retry controls; poll-only people do not subscribe to routine updates. #76 and #78 remain separately scoped and unimplemented.
 
 **Stage A — Janine's first real walkthrough:** external signup, Group creation, real invitations and acceptance, Series creation, first hike, invitation-based and ordinary RSVP, roster, update, cancellation, next hike. Reuse existing Django functionality; **file issues only for evidenced gaps**. Test with Janine and a few actual hikers before broadening.
 

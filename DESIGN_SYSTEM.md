@@ -13,14 +13,15 @@ The system is anchored in:
 - Belong's existing purple/teal/slate palette, Rockwell display type, Inter/system
   body type, rounded shapes, warm/lightweight tone, and dense activity-card model.
 
-## Participation patterns (#74, slices A/B)
+## Participation patterns (#74 slices A/B, #75 date polling)
 
 Use [the reviewed participation model](docs/PARTICIPATION_MODEL_PROPOSAL.md).
 Null configuration keeps #60/#70 controls and current creator choices. Version 1
 remains navigation-only; No response required uses See details even for invitees.
 The native **How will people take part?** select also offers Scheduled event
 (free/open attendance) and Immediate activity (free/Join now), using version 2.
-Unsupported polling/enrollment/registration/contact/payment actions are not offered.
+One-off Activities also offer Tentative planning (three-date poll), version 3.
+Enrollment/registration/contact/payment actions are not offered.
 Legacy response checkboxes are hidden for configured patterns as progressive
 enhancement; their help explains that they are ignored without JavaScript.
 Series defaults are copied per occurrence; existing Activity configuration stays
@@ -41,7 +42,21 @@ opening an external game is neither joining nor evidence of attendance.
 Email acceptance requests the Activity's pattern action without setting intent.
 Visibility and Group membership remain independent. Validate keyboard/no-JS,
 filtered returns, 320/375px card geometry and capacity/cancellation races. Rich
-admission/place/payment policies remain separately scoped under #75/#76/#78.
+admission/place/payment policies and standing permissions remain scoped under #76/#78.
+
+Planning creation shows three native future date/time fields; the finalized schedule
+stays unset. Progressive enhancement hides these fields for other patterns; no-JS
+help explains that they are ignored outside planning. Series do not offer dated poll
+presets. Open compact cards use **Answer poll**, or **Poll answered / Edit answers**;
+no availability or preliminary Willing button is an attendance mutation.
+Details uses three native fieldsets with Yes/Maybe/No radios in existing comfortable
+control clusters, one Save availability button, and a separate history disclosure.
+Finalization happens on the organizer roster, with per-date counts and explicit
+**Finalize date and invite to confirm**. The same Activity then shows its selected
+date, readonly availability/history, fresh invitation copy and scheduled confirmation
+controls. Keep availability, current attendance, and prior response evidence distinct.
+The roster retains all submissions and attendance changes in disclosures; polls never
+count as secured places. Reuse existing field/button/disclosure tokens and card bands.
 
 ## 1. Core geometry
 

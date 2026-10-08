@@ -25,6 +25,7 @@ from .visibility import visible_activities
 from .announcements import update_context
 from .invitations import is_invited, with_invitation_state, RSVP_LABELS
 from .group_offers import current_offer
+from .polls import responses_for, poll_context, create_poll
 from .models import (
     Activity,
     ActivityCostType,
@@ -130,7 +131,7 @@ def _participation_next_path(request: HttpRequest, activity: Activity) -> str:
 
 def _build_join_context(request: HttpRequest, activity: Activity) -> Dict[str, object]:
     # Reuse discovery's prefetched responses; keep interest distinct from commitment.
-    responses = list(activity.responses.all())
+    responses = responses_for(activity)
     interested_count = sum(r.status == ActivityResponseStatus.INTERESTED for r in responses)
     committed_count = sum(r.status == ActivityResponseStatus.COMMITTED for r in responses)
     attendee_count = committed_count
@@ -169,6 +170,7 @@ def _build_join_context(request: HttpRequest, activity: Activity) -> Dict[str, o
 
     return {
         "activity": activity,
+        **poll_context(request,activity),
         "invited": invited,
         "attendee_count": attendee_count,
         "response_count": len(responses),
@@ -208,6 +210,7 @@ def _annotate_join_data(request: HttpRequest, activities: List[Activity]) -> Non
         activity.j_card_response_options = context["card_response_options"]
         activity.j_card_current_status_label = context["card_current_status_label"]
         activity.j_card_unmatched_response = context['card_unmatched_response']
+        activity.j_poll_answered = context.get('poll_answered', False)
 
 
 @login_required
@@ -312,6 +315,7 @@ def detail(request: HttpRequest, pk: int) -> HttpResponse:
         "show_series": activity.series and activity.series.can_organize(request.user),
     }
     context.update(update_context(request, activity, organizer=activity.can_organize(request.user)))
+    context.update(poll_context(request,activity))
     return render(request, "activities/detail.html", context)
 
 
@@ -342,7 +346,11 @@ def create(request: HttpRequest) -> HttpResponse:
         if form.is_valid():
             activity = form.save(commit=False)
             activity.host = request.user
-            activity.save()
+            from django.db import transaction
+            with transaction.atomic():
+                activity.save()
+                if activity.is_date_planning:
+                    create_poll(activity,[form.cleaned_data[f'poll_date_{n}'] for n in range(1,4)])
             messages.success(request, 'Activity created!')
             return redirect('activities:detail', pk=activity.pk)
     else:
@@ -361,7 +369,8 @@ def create(request: HttpRequest) -> HttpResponse:
 def respond(request: HttpRequest, pk: int) -> HttpResponse:
     activity = get_object_or_404(visible_activities(request.user).select_related("host"), pk=pk)
     from .participation import change_response
-    notice = change_response(activity.pk, request.user, request.POST.get('status', ''), action=request.POST.get('action'), toggle=True)
+    notice = change_response(activity.pk, request.user, request.POST.get('status', ''), action=request.POST.get('action'),
+        confirmation_round=request.POST.get('confirmation_round'),toggle=True)
     activity.refresh_from_db()
     return _render_join_region(request, activity, notice)
 
@@ -371,7 +380,7 @@ def respond(request: HttpRequest, pk: int) -> HttpResponse:
 def join(request: HttpRequest, pk: int) -> HttpResponse:
     activity = get_object_or_404(visible_activities(request.user).select_related("host"), pk=pk)
     from .participation import change_response
-    notice = change_response(activity.pk, request.user)
+    notice = change_response(activity.pk, request.user,confirmation_round=request.POST.get('confirmation_round'))
     activity.refresh_from_db()
     return _render_join_region(request, activity, notice)
 
@@ -381,7 +390,7 @@ def join(request: HttpRequest, pk: int) -> HttpResponse:
 def leave(request: HttpRequest, pk: int) -> HttpResponse:
     activity = get_object_or_404(visible_activities(request.user).select_related("host"), pk=pk)
     from .participation import change_response
-    notice = change_response(activity.pk, request.user, remove=True)
+    notice = change_response(activity.pk, request.user,confirmation_round=request.POST.get('confirmation_round'),remove=True)
     activity.refresh_from_db()
     return _render_join_region(request, activity, notice)
 
@@ -580,7 +589,7 @@ def roster(request, pk):
 def _render_roster(request, activity, cancel_form=None, invite_form=None, group_invite_form=None, email_invite_form=None):
     from .invitations import DirectInviteForm, GroupInviteForm, EmailInviteForm
     _decorate_activity(activity)
-    responses = list(activity.responses.select_related('user__profile').order_by('created_at', 'pk'))
+    responses = responses_for(activity) if activity.is_date_planning else list(activity.responses.select_related('user__profile').order_by('created_at', 'pk'))
     for response in responses:
         response.participation_label = activity.response_label(response.status)
     counts = [{'label': activity.response_label(value), 'count': sum(r.status == value for r in responses)}
@@ -594,6 +603,7 @@ def _render_roster(request, activity, cancel_form=None, invite_form=None, group_
         'invite_form': invite_form if invite_form is not None else DirectInviteForm(activity=activity, organizer=request.user),
         'group_invite_form': group_invite_form if group_invite_form is not None else GroupInviteForm(activity=activity, initial={'invite_group_members': activity.invite_group_members}),
         **update_context(request, activity, organizer=True),
+        **poll_context(request,activity,organizer=True),
         'activity': activity, 'responses': responses, 'counts': counts,
         'committed_count': sum(r.status == ActivityResponseStatus.COMMITTED for r in responses),
         'cancel_form': cancel_form if cancel_form is not None else CancelActivityForm(), 'suppress_create': True,

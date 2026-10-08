@@ -1,14 +1,17 @@
 <div {% if variant == 'detail' %}id="participation-{{ activity.pk }}" aria-live="polite"{% endif %} class="w-full {% if variant == 'detail' %}space-y-3{% endif %}" aria-label="Participation in {{ activity.title }}">
   {% if variant == 'detail' %}
+    {% include 'activities/_date_poll.html' %}
     {% if invited %}<p class="text-sm font-semibold">You’re invited · {{ activity.participation_invitation_prompt }}</p>{% endif %}
     {% if activity.is_cancelled %}
       <p class="text-sm font-semibold">Cancelled · Participation is closed; responses are retained.</p>
+    {% elif date_poll and not confirmation_round %}
     {% elif not activity.accepts_responses %}
       <p class="text-sm">No response required.</p>
     {% elif response_options %}
       <form method="post" action="{% url 'activities:respond' activity.pk %}" hx-post="{% url 'activities:respond' activity.pk %}" hx-target="#participation-{{ activity.pk }}" hx-swap="outerHTML" class="participation__response ui-cluster">
         {% csrf_token %}
         <input type="hidden" name="variant" value="detail">
+        {% if activity.attendance_round %}<input type="hidden" name="confirmation_round" value="{{ activity.attendance_round.pk }}">{% endif %}
         <input type="hidden" name="next" value="{{ next_path }}">
         {% for option in response_options %}
           <button type="submit" name="{{ option.field }}" value="{{ option.value }}" aria-pressed="{% if current_status == option.status %}true{% else %}false{% endif %}"{% if option.disabled %} disabled{% endif %} class="ui-button ui-button--comfortable ui-response{% if current_status == option.status and option.status == 'committed' and not invited %} ui-response--confirmed{% endif %}">{% if current_status == option.status and option.value == 'join_now' %}Joining{% else %}{{ option.label }}{% endif %}{% if option.disabled %} · Full{% endif %}</button>
@@ -21,6 +24,8 @@
   {% else %}
     {% if activity.is_cancelled %}
       <a href="{% url 'activities:detail' activity.pk %}{% if next_path %}?discover={{ next_path|urlencode }}{% endif %}" class="ui-button ui-button--compact ui-response--card w-full" aria-label="Cancelled.{% if current_status %} Saved response: {{ current_status_label }}.{% endif %} View response in Details.">Cancelled</a>
+    {% elif activity.is_date_planning and not activity.attendance_round %}
+      <a href="{% url 'activities:detail' activity.pk %}{% if next_path %}?discover={{ next_path|urlencode }}{% endif %}" class="ui-button ui-button--compact ui-response--card w-full">{% if activity.j_poll_answered %}Poll answered / Edit answers{% else %}Answer poll{% endif %}</a>
     {% elif card_unmatched_response %}
       <details class="card-context-menu card-response-menu">
         <summary class="ui-button ui-button--compact ui-response--card card-response-menu__trigger" aria-label="Saved response: {{ current_status_label }}. Response options for {{ activity.title }}">{{ card_current_status_label }} <span aria-hidden="true">▾</span></summary>
@@ -37,6 +42,7 @@
     {% endif %}
   {% endif %}
   {% if variant == 'detail' %}
+    {% if date_poll and prior_responses %}<p class="text-sm">Prior response (separate from this confirmation): {% for response in prior_responses %}{{ response.get_status_display }}{% if response.note %} · {{ response.note }}{% endif %}{% endfor %}</p>{% endif %}
     {% if activity.participation_options %}<p class="text-sm">{% if activity.participation_config.pattern == 'immediate' %}Join now records your intent to join. Opening an external link does not join you or verify attendance.{% else %}Going records your intended attendance.{% endif %}</p>{% endif %}
     {% if participation_notice %}<p class="text-sm" role="status">{{ participation_notice }}</p>{% endif %}
     {% if activity.uses_legacy_participation and activity.capacity %}<p class="text-sm">{{ committed_count }} / {{ activity.capacity }} committed{% if capacity_reached %} · Full{% endif %}. Only Count me in uses a place.</p>{% elif activity.accepts_responses and activity.capacity %}<p class="text-sm">{{ committed_count }} / {{ activity.capacity }} places secured{% if capacity_reached %} · Full{% endif %}.</p>{% endif %}

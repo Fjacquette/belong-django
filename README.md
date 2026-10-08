@@ -632,7 +632,7 @@ recipient logic is separate from the email transport for later channels; only em
 exists now, and other channels require their own consent/privacy design.
 
 
-## Participation patterns (issue #74, slices A/B)
+## Participation patterns (issue #74 slices A/B, issue #75)
 
 Activity/Series `participation_config = NULL` retains the current response-choice
 flow, default Tell me more, invited RSVP and historical Interested read path.
@@ -663,6 +663,34 @@ Ordinary configured cards navigate to Details. Scheduled invitees receive attend
 confirmation/decline controls; immediate invitees receive only Join now. Invitation
 acceptance creates neither response nor Group membership. Historical/null/version 1
 records are not converted. Series copies are independent; response-based notification
-consent/eligibility and past delivery snapshots remain unchanged. Real polls/questions/
+consent/eligibility and past delivery snapshots remain unchanged. Questions/
 contact, enrollment/registration/payment and standing notification opt-ins remain
 later slices, not offered controls. See [the reviewed model](docs/PARTICIPATION_MODEL_PROPOSAL.md).
+
+
+### Tentative planning: three-date poll (#75)
+
+One-off creation offers a free three-date poll (configuration version 3), with no
+initial attendance date. Details records editable Yes/Maybe/No availability and
+retains every changed submission. Poll answers never create ActivityResponse or
+reserve seats. The organizer roster shows latest availability totals and history.
+Finalizing selects one future option on the same Activity and retains the poll,
+configuration and all previous evidence. It creates a fresh confirmation round and
+in-app invitation for every participant, even all-No people or previous invitees.
+Audience access still applies; no one becomes Going automatically.
+
+Explicit round answers own attendance and free capacity, preserving decline/removal
+as append-only history. Nonpoll participants may confirm normally. Cancellation closes
+both flows. A finalized date cannot be edited silently, and existing secured legacy
+responses prevent finalization pending a reviewed reconfirmation policy. This slice
+supports one round, not reopening, Series poll defaults, payments or standing opt-ins.
+
+Confirmation email uses the existing notification outbox/dispatch command, verified
+addresses, account Activity-email opt-in, visibility, verified authorized sender,
+shared abuse budgets and bounded retries. Its fixed canonical notice includes no poll
+answers or private Activity text. Failed/suppressed mail does not remove in-app
+invitations; answered or cancelled rounds suppress pending confirmation mail. Routine
+update/cancellation notices for these Activities target current affirmative round
+attendance only; voting alone subscribes to nothing. Existing response-based notices
+and old snapshots remain unchanged. External provider delivery still needs pilot
+validation; local console tests establish only application behavior.

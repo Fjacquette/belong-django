@@ -15,6 +15,7 @@
       <p class="text-sm">Participation is closed. Responses are retained.</p>
     </div>
   {% else %}<p>Active</p>{% endif %}
+  {% include 'activities/_poll_roster.html' %}
   <section class="space-y-3" aria-labelledby="roster-heading">
     <h2 id="roster-heading" class="text-xl font-display">Responses</h2>
     <p class="text-sm">{% for count in counts %}{{ count.label }}: {{ count.count }}{% if not forloop.last %} · {% endif %}{% endfor %}</p>
@@ -25,7 +26,7 @@
         <thead><tr><th scope="col">Person</th><th scope="col">Response</th></tr></thead>
         <tbody>{% for response in responses %}<tr><td>{{ response.user.profile.identity_label|default:response.user.username }}</td><td>{{ response.participation_label }}</td></tr>{% endfor %}</tbody>
       </table>
-    {% else %}<p class="text-sm">{% if activity.accepts_responses %}No responses yet.{% else %}No response required.{% endif %}</p>{% endif %}
+    {% else %}<p class="text-sm">{% if activity.is_date_planning %}No attendance answers yet.{% elif activity.accepts_responses %}No responses yet.{% else %}No response required.{% endif %}</p>{% endif %}
   </section>
   <section class="space-y-3" aria-labelledby="invitation-heading">
     <h2 id="invitation-heading" class="text-xl font-display">Invitations</h2>

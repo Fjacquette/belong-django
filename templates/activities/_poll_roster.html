@@ -1,0 +1,17 @@
+{% if date_poll %}
+<section class="space-y-3" aria-labelledby="poll-roster-heading">
+  <h2 id="poll-roster-heading" class="text-xl font-display">Date poll</h2>
+  <p class="text-sm">{{ poll_participant_count }} participant{{ poll_participant_count|pluralize }} · Poll answers do not reserve places.</p>
+  <ul class="space-y-2">{% for row in poll_rows %}<li>{{ row.option.starts_at|date:'D M j, Y, g:i A' }}{% if row.selected %} · Selected{% endif %}<p class="text-sm">{% for label, count in row.counts %}{{ label }}: {{ count }}{% if not forloop.last %} · {% endif %}{% endfor %}</p></li>{% endfor %}</ul>
+  {% if not poll_closed %}
+    <form method="post" action="{% url 'activities:poll_finalize' activity.pk %}" class="space-y-3">{% csrf_token %}
+      <label for="poll-selected-date">Select the date to finalize</label><select id="poll-selected-date" name="option" class="ui-field">{% for row in poll_rows %}<option value="{{ row.option.pk }}">{{ row.option.starts_at|date:'D M j, Y, g:i A' }}</option>{% endfor %}</select>
+      <p class="text-sm">Closes voting and invites every poll participant to confirm attendance, including people who answered No. No automatic RSVP.</p>
+      <button class="ui-button ui-button--primary ui-button--comfortable">Finalize date and invite to confirm</button>
+    </form>
+  {% elif confirmation_round %}<p class="text-sm">Finalized · {{ confirmation_invitation_count }} fresh confirmation invitation{{ confirmation_invitation_count|pluralize }}. Attendance below belongs to this selected date.</p>{% else %}<p class="text-sm">Cancelled · Poll history retained.</p>{% endif %}
+  {% if poll_history %}<details><summary class="ui-disclosure">Availability history</summary><ul class="space-y-3 mt-2">{% for submission in poll_history %}<li class="text-sm"><strong>{{ submission.user.profile.identity_label }}</strong> · {{ submission.created_at|date:'M j, Y, g:i a' }}{% for date, answer in submission.answers %}<p>{{ date|date:'D M j, g:i A' }}: {{ answer }}</p>{% endfor %}</li>{% endfor %}</ul></details>{% endif %}
+  {% if attendance_history %}<details><summary class="ui-disclosure">Attendance history</summary><ul class="space-y-2 mt-2">{% for answer in attendance_history %}<li class="text-sm">{{ answer.user.profile.identity_label }} · {{ answer.get_status_display }} · {{ answer.created_at|date:'M j, Y, g:i a' }}</li>{% endfor %}</ul></details>{% endif %}
+  {% if prior_responses %}<details><summary class="ui-disclosure">Prior response evidence</summary><ul>{% for response in prior_responses %}<li>{{ response.user.profile.identity_label }} · {{ response.get_status_display }}{% if response.note %} · {{ response.note }}{% endif %}</li>{% endfor %}</ul></details>{% endif %}
+</section>
+{% endif %}

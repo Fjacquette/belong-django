@@ -203,7 +203,7 @@ brand destination; unverified accounts retain Verify email / Logout only.
   while invitations/proofs retain explicit retries. Existing retained
   delivery records are backfilled. Provider webhook integration is still deployment work.
 
-## Participation patterns (slices A/B)
+## Participation patterns (slices A/B and #75)
 
 - #74 uses the reviewed [participation model](docs/PARTICIPATION_MODEL_PROPOSAL.md)
   from PR #79. Null configuration retains #60/#70 behavior and historical data.
@@ -222,11 +222,26 @@ brand destination; unverified accounts retain Verify email / Logout only.
 - Series defaults are copied independently. Existing Activity configuration is
   immutable; no bulk conversion/history rewrite. Default creation remains the
   legacy response-choice flow/More. No universal Interested or Willing response.
-  Real polls, enrollment, registration/payment and inquiry remain unavailable.
+  Enrollment, registration/payment and inquiry remain unavailable.
   #73's response-based notification eligibility/consent/history remains intact.
-- #75 proposes poll → finalize → new confirmation invitation → separate RSVP.
-  #76 designs free capacity, ongoing admission and payment/place policies; no payment
-  integration is authorized. Neither follow-up is started in this iteration.
+- #75 adds explicitly selected version 3, free three-date planning on one-off
+  Activities. Yes/Maybe/No availability submissions are append-only history, separate
+  from attendance. Finalization retains the Activity, configuration, options and
+  answers, sets its selected date, and creates a fresh confirmation round/invitation
+  for every poll participant, including all-No answers and users who lost access.
+  Audience checks still gate disclosure. Ordinary nonparticipants may also RSVP.
+- Only explicit round attendance (Going/declined/withdrawn history) owns these
+  Activities' capacity; no vote creates ActivityResponse or reserves a place.
+  Finalized dates cannot change without a reviewed new round. Existing legacy
+  responses remain prior evidence; secured commitments block finalization pending
+  the open reconfirmation policy. Cancellation freezes both workflows.
+- Confirmation notices reuse verified-address/default-off consent, visibility,
+  sender authority, fixed content, shared budgets and bounded audited retries.
+  Delivery failure does not remove in-app invitations. Poll-only participation
+  does not subscribe to routine updates; only current affirmative round attendance
+  qualifies on these Activities. Legacy notification behavior/history is unchanged.
+- #76 designs free capacity, ongoing admission and payment/place policies; no payment
+  integration is authorized and no #76 implementation is included.
 - #78’s spontaneous sandcastle scenario adds revocable standing permission for
   future outing invitations, separate from participation/enrollment/Group membership.
   Each fresh occurrence gets independently selected invitations and RSVPs; scope

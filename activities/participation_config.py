@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 
 CONFIG_VERSION = 1
 INTENT_VERSION = 2
+POLL_VERSION = 3
 PATTERNS = {
     'scheduled': ('Fixed / scheduled event', ('confirm_attendance', 'decline_attendance')),
     'immediate': ('Immediate activity', ('join_now',)),
@@ -27,7 +28,7 @@ INTENT_ACTIONS = {
 
 
 def make_config(pattern, *, actions=None, version=CONFIG_VERSION):
-    defaults = ['view_details'] + (list(INTENT_ACTIONS.get(pattern, {})) if version == INTENT_VERSION else [])
+    defaults = ['view_details'] + (list(INTENT_ACTIONS.get(pattern, {})) if version == INTENT_VERSION else ['answer_poll'] if version == POLL_VERSION else [])
     config = {'version': version, 'pattern': pattern,
               'actions': list(actions) if actions is not None else defaults}
     validate_config(config)
@@ -39,12 +40,16 @@ def validate_config(config):
         return  # The sole compatibility sentinel: legacy behavior is unchanged.
     if not isinstance(config, dict) or set(config) != {'version', 'pattern', 'actions'}:
         raise ValidationError('Choose a valid participation configuration.')
-    if type(config['version']) is not int or config['version'] not in (CONFIG_VERSION, INTENT_VERSION):
+    if type(config['version']) is not int or config['version'] not in (CONFIG_VERSION, INTENT_VERSION, POLL_VERSION):
         raise ValidationError('Unsupported participation configuration version.')
     if not isinstance(config['pattern'], str) or config['pattern'] not in PATTERNS:
         raise ValidationError('Unknown participation pattern.')
     actions = config['actions']
     required = INTENT_ACTIONS.get(config['pattern'], {}) if config['version'] == INTENT_VERSION else {}
+    if config['version'] == POLL_VERSION:
+        if config['pattern'] != 'planning':
+            raise ValidationError('Date polling requires the planning pattern.')
+        required = {'answer_poll': None}
     if config['version'] == INTENT_VERSION and not required:
         raise ValidationError('This version supports only scheduled/free and immediate participation.')
     allowed = (*NAVIGATION_ACTIONS, *required)
@@ -67,6 +72,14 @@ def intent_options(config):
     return [{'field': 'action', 'value': action, 'status': meanings[action][0],
              'label': meanings[action][1], 'state_label': meanings[action][2]}
             for action in config['actions'] if action in meanings]
+
+
+def is_date_planning(config):
+    try:
+        validate_config(config)
+    except ValidationError:
+        return False
+    return config is not None and config['version'] == POLL_VERSION
 
 
 def configured_pattern_label(config):

@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Exists, OuterRef, Q, Value, IntegerField
 from social.models import Friendship
 from groups.models import GroupMembership, MemberStatus
-from .models import ActivityInvitation
+from .models import ActivityInvitation, ConfirmationInvitation
 
 RSVP_LABELS = {'committed': "I'm coming", 'declined': "Can't make it"}
 
@@ -13,6 +13,7 @@ def with_invitation_state(queryset, user):
     return queryset.annotate(
         invitation_viewer_id=Value(user.pk, output_field=IntegerField()),
         direct_invited=Exists(ActivityInvitation.objects.filter(activity_id=OuterRef('pk'), user=user)),
+        confirmation_invited=Exists(ConfirmationInvitation.objects.filter(round__poll__activity_id=OuterRef('pk'),user=user)),
         group_invited=Exists(GroupMembership.objects.filter(group_id=OuterRef('group_id'), user=user, status=MemberStatus.ACTIVE)),
     )
 
@@ -21,8 +22,9 @@ def is_invited(activity, user):
     if not user.is_authenticated:
         return False
     if getattr(activity, 'invitation_viewer_id', None) == user.pk:
-        return activity.direct_invited or (activity.invite_group_members and activity.group_invited)
-    return (activity.direct_invitations.filter(user=user).exists()
+        return activity.direct_invited or activity.confirmation_invited or (activity.invite_group_members and activity.group_invited)
+    return (ConfirmationInvitation.objects.filter(round__poll__activity=activity,user=user).exists()
+            or activity.direct_invitations.filter(user=user).exists()
             or (activity.invite_group_members and activity.group_id
                 and GroupMembership.objects.filter(group_id=activity.group_id, user=user, status=MemberStatus.ACTIVE).exists()))
 
