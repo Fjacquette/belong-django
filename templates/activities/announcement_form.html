@@ -5,10 +5,12 @@
   <a href="{{ back_url }}" class="ui-link">← {{ context_object }}</a>
   <h1 class="text-3xl font-display">Post an update</h1>
   <p>{{ context_object }}</p>
-  <p class="text-sm">{% if is_group %}For active group members.{% else %}For people who have responded to this occurrence, except Cannot make it.{% endif %} Updates appear here in Belong; no email is sent.</p>
+  <p class="text-sm">{% if is_group %}For active group members.{% else %}For people who have responded to this occurrence, except Cannot make it.{% endif %} {% if is_group %}Updates appear here in Belong; no email is sent.{% else %}Updates appear in Belong. Participants with verified emails who opted in also receive an email notice linking to Details. Invited nonresponders are not emailed.{% if not user.profile.email_verified_at %} Verify your email before email notices can be sent.{% endif %}{% endif %}</p>
   <form method="post" class="space-y-3">
     {% csrf_token %}
     {{ form.non_field_errors }}
+    {{ form.submission_token }}
+    {% for error in form.submission_token.errors %}<p role="alert" class="text-sm">{{ error }}</p>{% endfor %}
     <label for="{{ form.body.id_for_label }}" class="block font-semibold">{{ form.body.label }}</label>
     {{ form.body }}
     {% for error in form.body.errors %}<p role="alert" class="text-sm">{{ error }}</p>{% endfor %}

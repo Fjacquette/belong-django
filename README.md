@@ -501,7 +501,7 @@ after the transaction commits. Delivery outcomes are durable and available read-
 in Django admin → Outbound email attempts (kind, actor, address/IP hashes, timestamp,
 Group/Activity reference, outcome/reason). No mail payloads, bearer tokens or provider secrets
 are stored in this journal. A crash after reservation is conservatively counted;
-there is no automatic sending/retry worker. Retry explicitly after the applicable
+for invitations/proofs there is no automatic sending/retry worker. Retry explicitly after the applicable
 cooldown, requesting a new link if necessary. A provider reporting success indicates
 provider handoff, not confirmed inbox delivery. `EMAIL_TIMEOUT` bounds SMTP calls.
 
@@ -565,3 +565,68 @@ tests and local browser presentation do not satisfy them.
 
 The neutral request surface and one-time proof model follow the
 [OWASP recovery guidance](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html).
+
+
+## Activity update and cancellation email
+
+Activity announcements and the first cancellation of an occurrence create durable
+notification events. Group announcements remain in-app. Emails contain fixed text
+and canonical sign-in-required Details links, never Activity names, locations,
+organizer-authored updates/reasons, participant lists or arbitrary URLs. Cancellation
+subjects say **Activity cancelled** and ask recipients to check before travelling.
+Other recipients are never disclosed (one message per person, no CC/BCC).
+
+**Consent and recipients:** Account settings → Activity emails is an explicit,
+default-off opt-in, covering both updates and cancellations. Only active accounts
+with a real, verified current email, current Activity audience access, and a saved
+non-declined response qualify. Count me in, questions, Tell me more, votes, and
+historical Interested are eligible; historical rows are not converted. Declined,
+removed responses, invited nonresponders, Group-only members and the sending actor
+are excluded. The sending organizer must also be active, currently authorized,
+email-verified and not outbound-mail suspended. Legacy local access is no bypass.
+The organizer can still publish/cancel in-app when email sending is disallowed.
+
+Events capture recipient consent and an address hash at publication/cancellation;
+new responders, later opt-ins and newly verified addresses do not receive old mail.
+Every attempt rechecks current access, response, consent, verification, sender
+privileges and that the address hash is unchanged. Address changes skip old mail
+rather than forwarding it to a different address. Queued pre-cancellation updates
+are superseded; new coordination updates posted after cancellation can still notify.
+Responses, existing updates, Group/Series and sibling occurrences stay unchanged.
+Migrations add default-off consent and an empty outbox; no old updates are replayed.
+
+SMTP runs after the source transaction commits, outside database locks. The first
+20 pending recipients are attempted immediately; the remaining queue and failures
+are drained with:
+
+```bash
+.venv/bin/python manage.py deliver_activity_notifications --limit 100
+```
+
+Schedule that command every minute under the deployed application's environment
+(e.g. systemd timer or cron); without it, queued remainder/retries wait. Cancellation
+is selected before routine updates even for small batches. Retries wait five
+minutes and stop after three reserved delivery attempts. Events expire after seven
+days. Updates share the 50-attempt/day invitation sender budget. Cancellation has a
+separate reserved 100-attempt/day budget. Both have a separate 3-attempt/recipient/hour
+ceiling; quota deferrals wait an hour, consume no delivery attempt, and remain
+journaled. Failed reservations count toward mail quotas. Daily/recipient deferrals
+are still subject to the seven-day event expiry. Configure pilot ceilings in
+`ACTIVITY_NOTIFICATION_LIMITS` and `EMAIL_LIMITS` before deployment.
+
+Django admin exposes read-only Activity notification events/deliveries and the
+shared Outbound email attempt journal. Inspect pending/failed/skipped/unknown
+status, reason, attempts, retry time and latest attempt ID. A crash after claiming
+SMTP or an ambiguous disconnect/timeout is marked **unknown**, never blindly
+resent. Reconcile with the provider first; if non-delivery is confirmed, an operator
+can return that delivery to failed with a due retry_at and fewer than three attempts
+using the Django shell. Provider handoff is not proof of inbox delivery; SMTP does
+not supply exactly-once delivery. No tracking pixels, read receipts or webhook
+integration are added. Do not delete quota records during their rolling window.
+
+Pilot deployment still requires the canonical HTTPS origin, real SMTP/provider
+configuration, sender/domain authentication, bounce handling and inbox/deliverability
+checks described above. Browser-test uses console mail; automated tests capture
+email locally. No real external recipient was contacted for validation. Event and
+recipient logic is separate from the email transport for later channels; only email
+exists now, and other channels require their own consent/privacy design.

@@ -160,3 +160,12 @@ class InterestsForm(forms.Form):
                 InterestSuggestion.objects.create(profile=self.profile, text=self.cleaned_data['suggestion'])
             self.profile.interests_prompt_pending = False
             self.profile.save(update_fields=['interests_prompt_pending'])
+
+
+class NotificationPreferencesForm(forms.ModelForm):
+    class Meta:
+        model = UserProfile
+        fields = ('activity_email_enabled',)
+        labels = {'activity_email_enabled': 'Email me Activity updates and cancellations'}
+        help_texts = {'activity_email_enabled': 'For Activities you have responded to, except Cannot make it. Requires a verified email. Invitations alone do not subscribe you.'}
+        widgets = {'activity_email_enabled': forms.CheckboxInput(attrs={'class': 'ui-check'})}
