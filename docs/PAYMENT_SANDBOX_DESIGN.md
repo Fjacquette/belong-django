@@ -1,6 +1,13 @@
 # D4 payment provider feasibility and sandbox design
 
-**Proposed for review, 2026-10-08; no payment implementation authorized by this document.**
+**Deferred documentation-only feasibility reference, 2026-10-08.**
+
+[#87’s Janine-first priority reset](https://github.com/Fjacquette/belong-django/issues/87)
+takes precedence: no provider sandbox experiment, payment implementation or D5 is
+authorized as the next task. [#68 past Activity review/clone/edit/publish](https://github.com/Fjacquette/belong-django/issues/68)
+and real Janine pilot walkthrough blockers now take priority. The technical findings
+and unresolved merchant/priority/refund decisions below are retained for future review,
+not an instruction to proceed with sandbox coding.
 For [issue #76](https://github.com/Fjacquette/belong-django/issues/76), under the
 [reservation policy proposal](RESERVATION_POLICY_PROPOSAL.md). Assessed source:
 master `0dddd0ca6a7d33c2a44eb2b864064206fd3a96ca`, including merged D3 / PR #86.
@@ -35,7 +42,8 @@ Review these decisions before coding:
 4. Approve retention of capacity during an uncertain capture, with operator escalation
    instead of automatic resale. No claim timeout may silently convert uncertainty
    into failure. A refund obligation remains visible until resolved.
-5. Authorize the bounded sandbox experiments below separately after review. Refund
+5. If payment work is separately reprioritized under #87, review and explicitly
+   authorize a bounded sandbox experiment then; it is not the next task. Refund
    terms, fees, cancellation rights, operator ownership and receipt/status access
    must be settled before any D5 paid launch, even if the sandbox succeeds.
 
@@ -256,7 +264,8 @@ D4 completion requires an evidence artifact containing commit/API versions,
 non-sensitive sandbox account identifiers, case-by-case actual IDs/statuses/request
 IDs, provider reads, local operation/claim history, command/test results and unresolved
 capability gaps. No credentials or raw payloads enter GitHub. All experiments are
-**not run** in this iteration. Review this design before authorizing implementation.
+**not run** in this iteration and remain deferred under #87; proceed with #68 and
+Janine pilot blockers rather than payment implementation.
 
 ## Official sources
 

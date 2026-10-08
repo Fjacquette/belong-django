@@ -11,7 +11,9 @@ D4 provider feasibility and the separately authorized sandbox experiment are pro
 in [PAYMENT_SANDBOX_DESIGN.md](PAYMENT_SANDBOX_DESIGN.md), assessed from merged D3
 master `0dddd0c`. The comparison uses official Stripe, Square and PayPal documentation;
 no sandbox transaction has been executed and no paid flow is enabled. Review that
-design before coding; D4 is not complete and D5 remains separately gated.
+design as a deferred reference under [#87](https://github.com/Fjacquette/belong-django/issues/87);
+no provider sandbox experiment, payment implementation or D5 is authorized as the
+next task. #68 and real Janine pilot blockers take priority.
 
 ## D1 implementation boundary
 
