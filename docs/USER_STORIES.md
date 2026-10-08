@@ -1,6 +1,6 @@
 # Belong — Revised User Stories and Pilot Scenarios
 
-**Status:** Proposed product design basis, October 2026. Review with product owner before treating unresolved choices as commitments.
+**Status:** Proposed product design basis, October 2026. The external Activity invitation, optional Group-join prompt, participant email notification, and reuse/clone requirements below are explicit current product-owner decisions; open design details remain marked as such.
 
 **Source lineage:** *Friendship Engine User Stories.docx* (older, group/event-centric); *Belong user stories.docx* (concrete named people and activity-card use cases); *Belong — Canonical Project Context*; current Django product decisions, especially issues #20 and #60. Historical examples are preserved as tests of the product model, **not** promises to implement every capability.
 
@@ -11,7 +11,7 @@ Belong helps people make and deepen friendships through things they do together.
 1. **No group-first dependency:** users may discover, create, respond to and participate in an otherwise visible Activity without joining a Group. Group membership is never itself a participation gate.
 2. **Low social cost:** a person may express interest before choosing date, venue, companions or precise plan. Do not force an RSVP when tentative interest is the actual question.
 3. **Different degrees of commitment:** ordinary Discover cards navigate to Details/RSVP; invited viewers get direct Coming/Can't make it responses, subject to capacity/cancellation. Details retains organizer-selected response vocabulary, including Interested. Inviting someone does not grant visibility.
-4. **Separate relations:** friendship, group membership, Activity visibility, invitation, and ActivityResponse are different facts. None silently implies another.
+4. **Separate relations:** friendship, group membership, Activity visibility, invitation, and ActivityResponse are different facts. None silently implies another. Activity RSVPs must not silently join a Group; where the Group accepts members, offer an optional join action after a nonmember responds.
 5. **Accessible, safe by design:** preserve useful privacy, reporting/blocking, suitability, and trust questions; do not assume every real-world interaction is equally low-risk.
 6. **Lightweight coordination rather than a social-media feed:** announcements, updates and eventual messaging serve shared activities; avoid mandatory discussion boards, status competition or engagement farming.
 7. **Open versus implemented:** scenarios below test the long-term model; Pilot 0 scope is identified explicitly. Do not read every future-story interaction as an existing endpoint.
@@ -95,7 +95,7 @@ Each story states a human outcome, not a preferred form or database schema. “A
 - Existing users can accept appropriately; new users can establish accounts and accept without a separate administrator workflow.
 - Private/unlisted Group discovery and token handling do not expose group context to unrelated people.
 - Pending, accepted, invalid/expired and revoked invitation states are intelligible.
-- An invitation to **join the Group** is different from an invitation to **RSVP to a particular Activity**.
+- An invitation to **join the Group** is different from an invitation to **RSVP to a particular Activity**. An organizer must also be able to invite someone *outside Belong* to a specific Activity by entering their real-world email address; the invitation supplies an account onboarding path without requiring Group membership.
 
 ### P0-07 — Reuse a recurring plan without duplicating RSVPs
 
@@ -116,6 +116,7 @@ Each story states a human outcome, not a preferred form or database schema. “A
 - The occurrence roster distinguishes current response states and counts committed places accurately.
 - Organizer can add/remove eligible direct in-app Activity invitees and change the explicit group-invite mode; this sends no activity-invitation email in the current slice.
 - An existing response survives revoking a direct invite or losing Group membership.
+- When a nonmember responds to a Group-associated Activity, and that Group's current access/join rules admit new members, offer an optional, clearly separate invitation to join the Group. Do not force membership, alter their RSVP, or pretend membership is active until the Group's normal join/approval flow completes.
 - Organizers cannot silently change unrelated people's response history.
 - Capacity and cancellation are enforced on the server even if two people respond simultaneously.
 
@@ -126,7 +127,8 @@ Each story states a human outcome, not a preferred form or database schema. “A
 **Acceptance**
 - Updates are associated with the correct Activity or Group and readable in that context by authorized recipients.
 - Cancelling an occurrence preserves its identity, response history and sibling occurrences; optional reason is visible to permitted viewers.
-- A cancellation is communicated in the interface. **Reliable proactive notification to every affected person is an unresolved pilot requirement**: current context updates alone do not guarantee delivery or attention.
+- Activity participants must receive proactive notifications for relevant organizer updates and cancellation, **starting with email**. Delivery failures, preferences, timing and what counts as an affected participant require explicit design; posting to Details alone is insufficient.
+- Delivery architecture should permit future opt-in channels (SMS/text, Discord, mobile push) without implementing them now or coupling them to the activity model.
 - Cancelled Activity cards show cancellation rather than RSVP controls.
 
 ### P0-10 — Personal control and safety
@@ -165,6 +167,12 @@ Each story states a human outcome, not a preferred form or database schema. “A
 
 **Checkpoint:** test at least one existing user, one new user and one invitation that is expired/revoked or used on the wrong account. Do not import a Meetup member list or send mass emails without consent and a clear operational plan.
 
+### J-03A — Janine invites a non-Belong friend to a particular hike
+
+**Given** Janine knows someone's email but that person has no Belong account, **when** she invites them to a specific Activity, **then** they receive an account-safe invitation and can sign up, view the intended visible Activity, and respond. They are not automatically invited into or enrolled in its Group. For an existing user, the same invitation should attach to their correct account.
+
+**Checkpoint:** verify email ownership, intended-recipient binding, expiration/revocation, duplicate/rate-limited delivery, no audience bypass, and continuation after signup/login. A Group invitation is a separate operation.
+
 ### J-04 — Members arrive in useful context
 
 **Given** a recipient follows a valid Group invitation, **when** signup/login is complete, **then** the recipient can see the intended Group context and discover its accessible Activities without being forced to complete a lengthy profile or build a friend network first.
@@ -189,6 +197,12 @@ Each story states a human outcome, not a preferred form or database schema. “A
 
 **Checkpoint:** the ordinary viewer can still participate where the Activity audience allows. Leaving the Group removes group-derived direct RSVP affordance, not existing response history. A direct invitation can coexist with group-derived invitation.
 
+### J-07A — Nonmembers are offered Group membership after RSVP
+
+**Given** a person responds to a Group-associated hike without belonging to its Group, **when** the Group currently admits new members, **then** Belong offers an optional “Join this group” step. Declining it leaves their ActivityResponse unchanged; accepting it uses the Group's existing membership/approval workflow. No join prompt appears when that Group's policy prohibits joining.
+
+**Checkpoint:** test open, approval-required, unlisted and private policies as appropriate; ensure neither RSVP nor direct Activity invitation silently bypasses Group admission.
+
 ### J-08 — Janine handles space and attendance
 
 **Given** the hike has a limited number of spaces, **when** people commit concurrently, **then** only available places are consumed. **When** full, another invited member cannot commit, but can decline; existing valid choices and response history remain coherent.
@@ -199,13 +213,19 @@ Each story states a human outcome, not a preferred form or database schema. “A
 
 **Given** a change of weather or meeting location, **when** Janine posts an Activity-specific update, **then** permitted responders can see it in that Activity and Group members do not automatically receive an unrelated global post.
 
-**Pilot blocker to investigate:** how will participants become aware of time-sensitive updates? If an actual trail outing depends on an email or other notification, scope and test that explicitly. An update visible only to people who return to Details may not meet real-world safety expectations.
+**Committed pilot requirement:** send email notifications to affected activity participants for changes, organizer updates and cancellations. The current in-context announcement mechanism does not by itself satisfy this requirement. Design recipient snapshots, consent/preferences, safe delivery/retry handling and the minimum cancellation urgency semantics; leave SMS, Discord and mobile push as later channels.
 
 ### J-10 — Janine cancels one hike and schedules the next
 
 **Given** a storm cancellation, **when** Janine cancels Saturday's hike with a reason, **then** its card/Details mark it cancelled and prior replies survive. The Group and Series remain intact; she can create a replacement/next outing from the Series without re-entering every default.
 
-**Checkpoint:** cancellation awareness, response preservation, and no accidental cancellation of other occurrences.
+**Checkpoint:** proactive cancellation email to affected participants, response preservation, and no accidental cancellation of other occurrences. Janine must also be able to review a past hike and clone it as a draft, modify the copied details, and publish a new Activity with a new independent response history. Do not copy past RSVPs or invitations blindly.
+
+### J-10A — Janine reuses a successful hike
+
+**Given** a past hike, **when** Janine opens it and chooses to clone it, **then** a new editable draft has sensible copied details (including trailhead and logistics) but no prior responses or attendance. She adjusts time, meeting instructions, capacity and invitation choices, then explicitly publishes the new Activity.
+
+**Checkpoint:** historical outing remains unchanged, drafts do not accidentally appear in Discover, and Group/Series associations and invitee defaults are deliberate.
 
 ### J-11 — Janine delegates and maintains the group
 
@@ -287,9 +307,11 @@ A Series stores reusable defaults. It does not automatically schedule recurring 
 
 A Group association does not itself decide who may see or answer the Activity. The Activity's own audience remains authoritative. Any future Group-only visibility mode needs explicit product/authorization design.
 
-### 6.7 Editing and cancellation awareness — still open for a real pilot
+### 6.7 Editing, cloning and participant notifications — current product requirements
 
-The original stories assume users can modify/delete cards and that a cancellation reaches affected people. Confirm the exact present edit capabilities, and test whether update/cancellation awareness is operationally adequate for real hikes. Do not claim “notification” merely because an update is stored.
+Organizers need to **view past Activities, clone one into an editable draft, modify it, and publish a new Activity**. Preserve useful logistics and defaults but create an independent Activity identity, fresh response/attendance history, and explicit invitation choices. The existing Series flow remains useful but is not a substitute for cloning a real past hike.
+
+Organizer updates and cancellation must **push email notifications** to affected Activity participants, beyond merely displaying an announcement on Details. Provide room for later text/SMS, Discord and mobile-app push channels; only email is in the initial delivery scope. Delivery consent, preferences, non-delivery, and safe retry/deduplication are implementation decisions to resolve.
 
 ### 6.8 Open-ended activity lifecycle — open, issue #48
 
@@ -299,15 +321,17 @@ Expiration, sort order and visibility of dateless or stale Activity opportunitie
 
 Verify reporting, blocking, private profiles, moderation, consent, data retention, invitations and safeguards rather than treating the old feature inventory as proof of implementation. The older proposed ability for administrators to read message history is especially sensitive and must be narrowed by clear policy and authorization.
 
-### 6.10 Janine's pilot access and external email — open operational gate
+### 6.10 Janine's pilot access and external email — current requirement, open operational gate
 
-Current repository status is not proof that Janine can receive signup and invitation email from the intended deployment. Validate signup-domain, external email delivery, HTTPS origin, access restrictions and account recovery end-to-end before calling her pilot ready.
+An existing user must be able to invite a real-world email address to **a particular Activity and therefore Belong**, not merely to a Group. Invitees may already have an account or need to establish one; the incoming Activity invitation must survive onboarding and lead to the intended Activity without bypassing audience controls. Invitees must not be forced into the associated Group.
+
+Current repository status is not proof that Janine can receive signup, Group invitation and Activity invitation emails from the intended deployment. Validate external email delivery, origin, access restrictions, response flow and account recovery end-to-end before calling the pilot ready.
 
 ## 7. Proposed implementation/validation sequence
 
 **Stage A — Janine's first real walkthrough:** external signup, Group creation, real invitations and acceptance, Series creation, first hike, invitation-based and ordinary RSVP, roster, update, cancellation, next hike. Reuse existing Django functionality; **file issues only for evidenced gaps**. Test with Janine and a few actual hikers before broadening.
 
-**Stage B — Fix what the walkthrough exposes:** simplify Group/Activity create flows, any missing practical hike details, direct invitation convenience, attendee update awareness, edit/replan behavior, safety and pilot reliability.
+**Stage B — Implement identified pilot requirements:** email-based Activity invitation/onboarding, an optional Group-join prompt after a nonmember's RSVP, reliable participant email notifications, and view/clone/edit/publish reuse of past Activities. Then simplify create flows and resolve other evidenced pilot gaps.
 
 **Stage C — Expand proto-intent:** Bobby's time-TBD planning, Greg/Peter immediate activities, Jake persistent openness, and gentle introductions. Observe actual participation before constructing a complex relationship graph.
 
