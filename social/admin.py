@@ -58,7 +58,7 @@ class OutboundEmailAttemptAdmin(admin.ModelAdmin):
     list_display = ('kind', 'actor', 'recipient_hash', 'created_at', 'outcome', 'reason')
     list_filter = ('kind', 'outcome', 'reason')
     search_fields = ('recipient_hash', 'actor__username')
-    readonly_fields = ('kind', 'actor', 'recipient_hash', 'ip_hash', 'group_reference', 'created_at', 'outcome', 'reason')
+    readonly_fields = ('kind', 'actor', 'recipient_hash', 'ip_hash', 'group_reference', 'activity_reference', 'created_at', 'outcome', 'reason')
 
     def has_add_permission(self, request):
         return False

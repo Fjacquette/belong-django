@@ -67,6 +67,60 @@ def reserve_own_mail(request, email, kind, actor=None):
         return own_mail_reservation(request, email, kind, actor)
 
 
+def invitation_reservation(request, inviter, email, *, group=None, activity=None):
+    """Caller holds the control lock and a fresh target row; share actor quotas across both kinds."""
+    from social.models import UserProfile
+    target = group if group is not None else activity
+    scope = {'group_reference': group.pk} if group is not None else {'activity_reference': activity.pk}
+    profile = UserProfile.objects.select_for_update().get(user=inviter)
+    now = timezone.now()
+    limits = settings.EMAIL_LIMITS
+    recipient = address_hash(email)
+    attempts = OutboundEmailAttempt.objects.filter(kind='invitation').exclude(outcome='blocked')
+    recent = attempts.filter(actor=inviter, created_at__gt=now-timedelta(days=1))
+    previous = attempts.filter(**scope, recipient_hash=recipient,
+                               created_at__gt=now-timedelta(days=limits['invitation_cooldown_days']))
+    reason = ''
+    if not target.can_organize(inviter):
+        reason = 'not_organizer'
+    elif not profile.user.is_active:
+        reason = 'account_inactive'
+    elif not profile.email_verified_at:
+        reason = 'unverified_account'
+    elif profile.outbound_mail_suspended:
+        reason = 'outbound_suspended'
+    elif getattr(target, 'is_cancelled', False):
+        reason = 'activity_cancelled'
+    elif previous.filter(outcome__in=['reserved', 'sent']).exists():
+        reason = 'recipient_cooldown'
+    elif previous.filter(outcome='failed', created_at__gt=now-timedelta(seconds=limits['invitation_failure_retry_seconds'])).exists():
+        reason = 'delivery_backoff'
+    elif (not recent.filter(recipient_hash=recipient).exists()
+          and recent.values('recipient_hash').distinct().count() >= limits['invitation_unique_day']):
+        reason = 'unique_day'
+    elif recent.count() >= limits['invitation_attempts_day']:
+        reason = 'attempts_day'
+    attempt = OutboundEmailAttempt.objects.create(kind='invitation', actor=inviter,
+        recipient_hash=recipient, ip_hash=request_ip_hash(request), **scope,
+        outcome='blocked' if reason else 'reserved', reason=reason)
+    return attempt, reason
+
+
+def invitation_error(reason):
+    from django.core.exceptions import ValidationError
+    messages = {
+        'unverified_account': 'Verify your email before inviting people.',
+        'account_inactive': 'This account cannot send invitations.',
+        'outbound_suspended': 'Outbound invitations are suspended for this account.',
+        'recipient_cooldown': 'An invitation was already emailed to this address within seven days.',
+        'delivery_backoff': 'Please wait before retrying this delivery.',
+        'not_organizer': 'Only current organizers may invite people.',
+        'blocked_member': 'This address belongs to a blocked member. Unblock membership first.',
+        'activity_cancelled': 'This activity is cancelled; no new email invitations can be sent.',
+    }
+    return ValidationError(messages.get(reason, 'Your daily invitation limit has been reached. Try again later.'))
+
+
 def owned_url(name, *args):
     origin = settings.BELONG_PUBLIC_ORIGIN
     if not origin and settings.ENVIRONMENT in {'dev', 'test'}:

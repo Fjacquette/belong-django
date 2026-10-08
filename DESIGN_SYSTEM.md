@@ -756,4 +756,15 @@ These POST/CSRF forms reuse standard fields, checkbox, and comfortable action fa
 Group-context creation defaults the explicit group-invite choice on; Series copies
 that choice into occurrences. Loss/removal changes affordances, never response history.
 Ordinary creator-selected vocabulary and its existing Interested default remain
-unchanged; historical Interested records stay valid. No outbound activity email.
+unchanged; historical Interested records stay valid.
+
+Occurrence management has a separate single-address **Invite by email** form using
+the same `ui-field`, comfortable button and inline error families. It lists address
+and delivery-invitation state with a POST Revoke action, never bearer links/digests.
+Unverified/suspended organizers and cancelled Activities show the relevant reason
+instead of a send form. Incoming Activity invitation pages reuse focused account
+forms/links and suppress floating Create. Show Activity title/description only after
+matching-account verification and audience checks; anonymous/wrong-account or denied
+viewers get a context-free sign-in/signup/access explanation. Acceptance leads to
+Details/RSVP without an automatic response or Group join. Group invitations remain
+a distinct operation.

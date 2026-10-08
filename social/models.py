@@ -204,6 +204,7 @@ class OutboundEmailAttempt(models.Model):
     recipient_hash = models.CharField(max_length=64, db_index=True)
     ip_hash = models.CharField(max_length=64, db_index=True)
     group_reference = models.PositiveBigIntegerField(null=True, blank=True, db_index=True)
+    activity_reference = models.PositiveBigIntegerField(null=True, blank=True, db_index=True)
     created_at = models.DateTimeField(default=timezone.now, db_index=True)
     outcome = models.CharField(max_length=24, default='reserved')
     reason = models.CharField(max_length=80, blank=True)

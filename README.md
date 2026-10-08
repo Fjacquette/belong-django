@@ -439,7 +439,7 @@ invitation ID after explicit acceptance consent, never a bearer token. Migration
 
 ## Outbound email controls and production readiness
 
-Only email-verified organizers can send group invitations, including in dev/test:
+Only email-verified organizers can send Group or Activity invitations, including in dev/test:
 legacy access and Organization status do not bypass sending controls. Django admin
 → User profiles → Outbound mail suspended disables third-party invitation and
 email-change delivery while retaining account access and self-address recovery.
@@ -453,13 +453,13 @@ email-change delivery while retaining account access and self-address recovery.
 | Signup, verification and recovery combined per address | 3/hour, with 60 seconds between messages |
 | Signup, verification and recovery combined per IP | 10/hour |
 | Authenticated verification messages per account | 10/24 hours |
-| Explicit invitation batch | 20 recipients |
+| Explicit Group invitation batch | 20 recipients (Activity email form sends one at a time) |
 | Invitations per verified account | 50 unique recipients/24 hours; also 50 delivery attempts/24 hours |
-| Group → recipient invitation cooldown | 7 days across organizers, revocation and recreation |
+| Group/Activity → recipient invitation cooldown | 7 days across organizers, revocation and recreation |
 | Explicit retry after failed invitation delivery | At least 5 minutes, still consuming daily quota |
 
 The extra total-attempt ceiling prevents sending unlimited mail to the same 50
-addresses through many groups. Accepted reservations, including provider failures,
+addresses through many Groups/Activities. Both share the same sender ceilings. Accepted reservations, including provider failures,
 consume limits; denied requests are also journaled but do not extend a cooldown.
 Attempts and hashes persist in the database, so restarts do not reset quotas.
 Migration 0009 carries retained old proof/invitation deliveries into the journal;
@@ -471,13 +471,13 @@ A seeded control row serializes quota reservation and token creation, with SQLit
 IMMEDIATE transactions and row locking on databases that support it. SMTP runs only
 after the transaction commits. Delivery outcomes are durable and available read-only
 in Django admin → Outbound email attempts (kind, actor, address/IP hashes, timestamp,
-group reference, outcome/reason). No mail payloads, bearer tokens or provider secrets
+Group/Activity reference, outcome/reason). No mail payloads, bearer tokens or provider secrets
 are stored in this journal. A crash after reservation is conservatively counted;
 there is no automatic sending/retry worker. Retry explicitly after the applicable
 cooldown, requesting a new link if necessary. A provider reporting success indicates
 provider handoff, not confirmed inbox delivery. `EMAIL_TIMEOUT` bounds SMTP calls.
 
-All mail has fixed Belong-owned copy; group/display text and arbitrary user links
+All mail has fixed Belong-owned copy; Group/Activity/display text and arbitrary user links
 are never interpolated. `BELONG_PUBLIC_ORIGIN` specifies the canonical origin, for
 example `https://belong.example`; HTTPS and a bare origin are required in production.
 Request Host/forwarded headers cannot change outbound URLs. Dev/test defaults are
@@ -501,5 +501,39 @@ provider, configure connection credentials outside source control, and verify:
 Provider webhook ingestion and automatic bounce/complaint reconciliation remain a
 production integration requirement; this slice does not implement them. The app
 controls do not replace provider suppression, domain authentication, or edge limits.
+
+### Activity invitation pilot
+
+An email-verified Activity organizer opens the occurrence’s roster and uses **Invite
+by email** for one consenting recipient. Pending deliveries appear there with their
+status and a Revoke action. The link expires after seven days; revocation does not
+reset the delivery cooldown. Acceptance requires the invited email account, follows
+the existing signup/email verification flow for new people, and creates only a
+direct Activity invitation. The recipient still chooses an RSVP separately; no
+Group membership is created and the Activity’s audience still applies.
+
+Before enabling this outside a controlled pilot, test with consenting real inboxes
+and the configured provider (console/file backend tests do not establish delivery):
+
+1. From a verified organizer, invite an existing account and a new email address to
+   an Everyone Activity. Confirm inbox delivery, fixed Belong copy, the canonical
+   HTTPS link, and the sender’s SPF/DKIM/DMARC results in received headers.
+2. Accept as the existing recipient, then independently RSVP. For the new recipient,
+   complete the signup proof email and account setup, including the optional interests
+   step. Confirm both arrive at the occurrence without joining its Group.
+3. Open a link anonymously and under the wrong account: Activity details stay hidden;
+   switching accounts retains acceptance consent. Invite a person outside a restricted
+   audience and confirm the access explanation reveals no Activity details.
+4. Revoke an unused invitation and check its old link fails. Check an expired link,
+   duplicate-send rejection, sender suspension, and shared Group/Activity quotas using
+   controlled test accounts; confirm the durable journal outcomes. Exercise provider
+   rejection and explicit retry after the backoff without replaying real recipients.
+
+Record the deployment commit, provider/domain, consenting test accounts, received
+header checks, flow results and journal outcomes in the deployment review without
+publishing bearer links or credentials. Real inbox delivery, provider suppression,
+and the production integration requirements above remain deployment gates; automated
+tests and local browser presentation do not satisfy them.
+
 The neutral request surface and one-time proof model follow the
 [OWASP recovery guidance](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html).

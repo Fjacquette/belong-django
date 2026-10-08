@@ -22,7 +22,7 @@ class VerifiedEmailMiddleware:
             request.user.profile = profile
         if not profile.can_use_belong:
             allowed = {reverse('verification_status'), reverse('logout')}
-            if request.path not in allowed and request.resolver_match.view_name not in {'verify_email', 'complete_signup', 'complete_recovery', 'password_reset', 'account_email_requested', 'groups:invitation', 'groups:pending_invitation'}:
+            if request.path not in allowed and request.resolver_match.view_name not in {'verify_email', 'complete_signup', 'complete_recovery', 'password_reset', 'account_email_requested', 'groups:invitation', 'groups:pending_invitation', 'activities:email_invitation', 'activities:pending_email_invitation'}:
                 response = redirect('verification_status')
                 if request.headers.get('HX-Request') == 'true':
                     response['HX-Redirect'] = reverse('verification_status')

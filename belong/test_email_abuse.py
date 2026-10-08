@@ -316,6 +316,8 @@ from django.test import RequestFactory
 from django.utils import timezone
 from groups.models import Group, GroupMembership
 from groups.invitations import issue_invitation
+from activities.models import Activity
+from activities.email_invitations import issue_invitation as issue_activity_invitation
 from social.models import OutboundEmailAttempt, AccountEmailProof
 from belong.email_verification import digest
 from belong.account_email import complete_signup
@@ -324,6 +326,7 @@ u = get_user_model().objects.create_user('quota-owner', email='owner@example.com
 u.profile.email_verified_at = timezone.now(); u.profile.save()
 g = Group.objects.create(name='Quota group', owner=u)
 GroupMembership.objects.create(group=g, user=u, role='organizer')
+a = Activity.objects.create(host=u, group=g, title='Quota activity')
 settings.EMAIL_LIMITS = {**settings.EMAIL_LIMITS, 'invitation_unique_day': 1, 'invitation_attempts_day': 1, 'creation_ip_hour': 1}
 barrier = Barrier(2)
 def send(subject, body, sender, recipients, **kwargs):
@@ -332,7 +335,10 @@ def send(subject, body, sender, recipients, **kwargs):
 def invite(i):
     barrier.wait(timeout=10)
     try:
-        issue_invitation(g, u, f'p{i}@example.com', RequestFactory().post('/'))
+        if i:
+            issue_activity_invitation(a, u, f'p{i}@example.com', RequestFactory().post('/'))
+        else:
+            issue_invitation(g, u, f'p{i}@example.com', RequestFactory().post('/'))
         return 'sent'
     except ValidationError:
         return 'limited'
@@ -343,6 +349,8 @@ with patch('belong.email_controls.send_mail', side_effect=send):
         outcomes = list(pool.map(invite, range(2)))
 assert sorted(outcomes) == ['limited', 'sent'], outcomes
 assert OutboundEmailAttempt.objects.filter(kind='invitation', outcome='sent').count() == 1
+assert OutboundEmailAttempt.objects.filter(activity_reference=a.pk).count() == 1
+assert OutboundEmailAttempt.objects.filter(group_reference=g.pk).count() == 1
 for i in range(2):
     AccountEmailProof.objects.create(email=f'new{i}@example.com', purpose='signup', token_digest=digest(f'proof{i}'), expires_at=timezone.now()+timedelta(hours=1))
 barrier = Barrier(2)

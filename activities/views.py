@@ -554,14 +554,17 @@ def roster(request, pk):
     return _render_roster(request, _organizer_activity(request.user, pk))
 
 
-def _render_roster(request, activity, cancel_form=None, invite_form=None, group_invite_form=None):
-    from .invitations import DirectInviteForm, GroupInviteForm
+def _render_roster(request, activity, cancel_form=None, invite_form=None, group_invite_form=None, email_invite_form=None):
+    from .invitations import DirectInviteForm, GroupInviteForm, EmailInviteForm
     _decorate_activity(activity)
     responses = list(activity.responses.select_related('user__profile').order_by('created_at', 'pk'))
     counts = [{'label': label, 'count': sum(r.status == value for r in responses)}
               for value, label in ActivityResponseStatus.choices
               if value in activity.active_responses() or any(r.status == value for r in responses)]
     return render(request, 'activities/roster.html', {
+        'email_invite_form': email_invite_form if email_invite_form is not None else EmailInviteForm(),
+        'email_invitations': activity.email_invitations.all(),
+        'can_send_email_invitations': request.user.profile.email_verified_at and not request.user.profile.outbound_mail_suspended and not activity.is_cancelled,
         'direct_invitees': activity.direct_invitations.select_related('user__profile'),
         'invite_form': invite_form if invite_form is not None else DirectInviteForm(activity=activity, organizer=request.user),
         'group_invite_form': group_invite_form if group_invite_form is not None else GroupInviteForm(activity=activity, initial={'invite_group_members': activity.invite_group_members}),

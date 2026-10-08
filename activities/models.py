@@ -190,6 +190,10 @@ class Activity(models.Model):
     def is_cancelled(self):
         return self.status == ActivityStatus.CANCELLED
 
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('activities:detail', args=[self.pk])
+
     def can_organize(self, user):
         return user.is_authenticated and (self.host_id == user.pk or bool(self.group_id and self.group.can_organize(user)))
 
@@ -367,3 +371,30 @@ class ActivityInvitation(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=['activity', 'user'], name='unique_activity_invitee')]
+
+
+class ActivityEmailInvitation(models.Model):
+    activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name='email_invitations')
+    email = models.EmailField()
+    inviter = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='sent_activity_email_invitations')
+    token_digest = models.CharField(max_length=64, unique=True)
+    status = models.CharField(max_length=12, choices=[('pending', 'Pending'), ('accepted', 'Accepted'), ('revoked', 'Revoked')], default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    expires_at = models.DateTimeField()
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    accepted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='accepted_activity_email_invitations')
+
+    class Meta:
+        ordering = ['-updated_at']
+        constraints = [
+            models.UniqueConstraint(fields=['activity', 'email'], name='unique_activity_invitation_email'),
+            models.CheckConstraint(condition=models.Q(status__in=['pending', 'accepted', 'revoked']), name='activity_email_invitation_valid_status'),
+        ]
+
+    @property
+    def display_status(self):
+        from django.utils import timezone
+        if self.status == 'pending' and self.expires_at <= timezone.now():
+            return 'Expired'
+        return self.get_status_display()

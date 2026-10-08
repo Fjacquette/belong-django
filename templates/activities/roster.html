@@ -29,7 +29,7 @@
   </section>
   <section class="space-y-3" aria-labelledby="invitation-heading">
     <h2 id="invitation-heading" class="text-xl font-display">Invitations</h2>
-    <p class="text-sm">Invitations ask for an RSVP in Belong; they do not change who can see this activity. No email is sent.</p>
+    <p class="text-sm">Invitations ask for an RSVP; they do not change who can see this activity or join anyone to a Group.</p>
     {% if activity.group_id %}
       <p class="text-sm">Group invitations: {% if activity.invite_group_members %}active members of {{ activity.group.name }}{% else %}off{% endif %}</p>
       <form method="post" action="{% url 'activities:manage_invitations' activity.pk %}" class="ui-cluster">
@@ -53,6 +53,30 @@
         <button class="ui-button ui-button--quiet ui-button--comfortable">Remove invitation</button>
       </form>
     {% empty %}<p class="text-sm">No direct invitees.</p>{% endfor %}
+    <h3 class="text-lg font-display">Invite by email</h3>
+    <p class="text-sm">Invite someone to this activity, whether or not they already use Belong. They can RSVP after signing in or creating an account. Activity audience rules still apply.</p>
+    {% if can_send_email_invitations %}
+      <form method="post" action="{% url 'activities:send_email_invitation' activity.pk %}" class="space-y-3">
+        {% csrf_token %}
+        <label for="{{ email_invite_form.email.id_for_label }}">{{ email_invite_form.email.label }}</label>
+        {{ email_invite_form.email }}
+        {% for error in email_invite_form.email.errors %}<p role="alert">{{ error }}</p>{% endfor %}
+        {% for error in email_invite_form.non_field_errors %}<p role="alert">{{ error }}</p>{% endfor %}
+        <button class="ui-button ui-button--secondary ui-button--comfortable">Send activity invitation</button>
+      </form>
+    {% elif activity.is_cancelled %}<p class="text-sm">This activity is cancelled; no new email invitations can be sent.</p>
+    {% elif user.profile.outbound_mail_suspended %}<p class="text-sm">Outbound invitations are suspended for this account.</p>
+    {% else %}<p class="text-sm"><a class="ui-link" href="{% url 'account_settings' %}">Verify your email</a> before inviting people by email.</p>{% endif %}
+    {% for invitation in email_invitations %}
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <span class="min-w-0 break-words">{{ invitation.email }} · {{ invitation.display_status }}</span>
+        {% if invitation.status == 'pending' %}
+          <form method="post" action="{% url 'activities:revoke_email_invitation' activity.pk invitation.pk %}">
+            {% csrf_token %}<button class="ui-button ui-button--quiet ui-button--comfortable">Revoke email invitation</button>
+          </form>
+        {% endif %}
+      </div>
+    {% empty %}<p class="text-sm">No email invitations yet.</p>{% endfor %}
   </section>
   {% include 'activities/_announcements.html' %}
   {% if not activity.is_cancelled %}
