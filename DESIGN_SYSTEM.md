@@ -43,6 +43,8 @@ Email acceptance requests the Activity's pattern action without setting intent.
 Visibility and Group membership remain independent. Validate keyboard/no-JS,
 filtered returns, 320/375px card geometry and capacity/cancellation races. Rich
 admission/place/payment policies and standing permissions remain scoped under #76/#78.
+The [#76 policy proposal](docs/RESERVATION_POLICY_PROPOSAL.md) describes future
+Details/roster labels for review; it enables no controls or visual changes.
 
 Planning creation shows three native future date/time fields; the finalized schedule
 stays unset. Progressive enhancement hides these fields for other patterns; no-JS

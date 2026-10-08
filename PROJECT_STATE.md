@@ -240,8 +240,11 @@ brand destination; unverified accounts retain Verify email / Logout only.
   Delivery failure does not remove in-app invitations. Poll-only participation
   does not subscribe to routine updates; only current affirmative round attendance
   qualifies on these Activities. Legacy notification behavior/history is unchanged.
-- #76 designs free capacity, ongoing admission and payment/place policies; no payment
-  integration is authorized and no #76 implementation is included.
+- #76 has a [reservation-policy proposal](docs/RESERVATION_POLICY_PROPOSAL.md)
+  for review: unchanged free capacity, separately scoped ongoing approval/enrollment,
+  registration, payment priority, holds/waitlists and provider recovery. Policy choices,
+  expiry/refund terms and ongoing scope remain proposed. Review precedes separately
+  authorized milestones; no payment/reservation infrastructure is implemented.
 - #78’s spontaneous sandcastle scenario adds revocable standing permission for
   future outing invitations, separate from participation/enrollment/Group membership.
   Each fresh occurrence gets independently selected invitations and RSVPs; scope
