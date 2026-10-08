@@ -109,6 +109,45 @@ class ActivityInvitationTests(TestCase):
         self.post('declined')
         self.assertFalse(ActivityResponse.objects.exists())
 
+    def test_selected_invited_rsvp_is_not_repeated_in_card_body(self):
+        self.invite()
+        for status in ['committed', 'declined']:
+            with self.subTest(status=status):
+                fragment = self.post(status)
+                for result in [fragment, self.card()]:
+                    self.assertContains(result, f'value="{status}" aria-pressed="true"')
+                    self.assertNotContains(result, 'card-current-response')
+
+    def test_card_body_keeps_responses_without_a_selected_direct_choice(self):
+        invitation = self.invite()
+        for invited in [True, False]:
+            if not invited:
+                invitation.delete()
+            for status, label in [('interested', 'Interested'), ('question', 'I have a question'),
+                                  ('committed', 'Count me in'), ('declined', 'Cannot make it')]:
+                if invited and status in ['committed', 'declined']:
+                    continue
+                with self.subTest(invited=invited, status=status):
+                    ActivityResponse.objects.update_or_create(
+                        activity=self.activity, user=self.viewer, defaults={'status': status})
+                    card = self.card()
+                    self.assertContains(card, 'card-current-response', count=1)
+                    self.assertContains(card, f'aria-label="You: {label}"')
+                    self.assertContains(card, f'>You: {label}</p>')
+
+    def test_cancelled_invited_rsvp_remains_visible_in_card_body(self):
+        self.invite()
+        self.activity.status = 'cancelled'
+        self.activity.save()
+        for status, label in [('committed', 'Count me in'), ('declined', 'Cannot make it')]:
+            with self.subTest(status=status):
+                ActivityResponse.objects.update_or_create(
+                    activity=self.activity, user=self.viewer, defaults={'status': status})
+                card = self.card()
+                self.assertContains(card, 'Cancelled')
+                self.assertNotContains(card, 'name="status"')
+                self.assertContains(card, f'>You: {label}</p>')
+
     def test_full_capacity_rejects_invited_commitment_retaining_previous_response(self):
         self.invite();self.activity.capacity=1;self.activity.save()
         ActivityResponse.objects.create(activity=self.activity,user=self.other,status='committed')

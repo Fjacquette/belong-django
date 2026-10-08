@@ -145,7 +145,7 @@ def _build_join_context(request: HttpRequest, activity: Activity) -> Dict[str, o
         )
 
     current_status = current_response.status if current_response else None
-    card_response_options = response_options[:2] if invited else []
+    card_response_options = response_options[:2] if invited and not activity.is_cancelled else []
     card_current_status_label = (
         RESPONSE_LABELS.get(current_status, "")
         if current_status and current_status not in [option["value"] for option in card_response_options]
