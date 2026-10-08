@@ -110,6 +110,9 @@ Additional current decisions:
 - The top one or two card bands must show the core decision facts when known: activity name, organizer, audience, cost, time/date, and location/online state.
 - Truncated card text must expose the full value on hover/focus.
 - Navigation is link semantics; state changes are button semantics.
+- Discover's existing kebab offers enhanced Share activity: native sharing or copy
+  of the canonical Details URL, with accessible feedback and a manual-copy fallback.
+  Without JavaScript only Share is omitted; other menu actions remain usable.
 - Mobile is a first-class layout, not desktop compressed narrower.
 
 ## Current implementation baseline

@@ -116,6 +116,7 @@
   .activity-card > .activity-card__band-1 { overflow: visible; }
   [data-stack-item]:has(.card-context-menu[open]) { z-index: 200 !important; }
   .ui-context-action { @apply flex items-center min-h-10 w-full rounded-lg px-2 text-left text-sm text-belong-purple hover:bg-belong-purple/10; }
+  .ui-context-action[hidden] { display: none; }
   .ui-context-action:focus-visible { outline: 2px solid #843A96; outline-offset: 2px; }
   .discovery-facets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .ui-facet { position: relative; min-width: 0; }

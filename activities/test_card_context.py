@@ -1,5 +1,6 @@
 from belong.test_helpers import create_legacy_user
 from datetime import datetime, timezone
+from html import escape
 from urllib.parse import parse_qs, urlsplit
 
 from django.contrib.auth import get_user_model
@@ -69,9 +70,31 @@ class CardContextTests(TestCase):
         self.assertContains(response, 'More from this organizer')
         self.assertContains(response, 'context_time=')
         self.assertContains(response, 'cost=free')
+        self.assertContains(response, f'data-share-url="{reverse("activities:detail", args=[self.first.pk])}" hidden')
         plain = self.client.post(reverse('activities:respond', args=[self.first.pk]),
                                  {'status': 'interested', 'variant': 'card', 'next': destination})
         self.assertRedirects(plain, destination)
+
+    def test_share_uses_details_url_and_escaped_activity_title(self):
+        self.first.title = 'A walk "together" <outside>'
+        self.first.save()
+        response = self.client.get('/', {'q': 'walk', 'cost': ['free', '1_10'], 'page': '2'})
+        url = reverse('activities:detail', args=[self.first.pk])
+        self.assertContains(response, f'data-share-title="{escape(self.first.title)}" data-share-url="{url}" hidden')
+        self.assertContains(response, 'data-share-feedback role="status"')
+        self.assertContains(response, 'aria-label="Activity link"')
+        self.assertContains(response, 'More from this organizer')
+        self.assertContains(response, 'Hide this activity')
+        self.assertContains(response, "Hide this organizer's activities")
+
+    def test_share_does_not_disclose_an_invisible_activity(self):
+        response = self.client.get('/')
+        url = reverse('activities:detail', args=[self.private.pk])
+        self.assertNotContains(response, f'data-share-url="{url}"')
+        fragment = self.client.post(reverse('activities:respond', args=[self.private.pk]),
+                                    {'status': 'interested', 'variant': 'card'}, HTTP_HX_REQUEST='true')
+        self.assertEqual(fragment.status_code, 404)
+        self.assertNotContains(fragment, 'data-share-activity', status_code=404)
 
     def test_organizer_hiding_is_private_idempotent_reversible_and_preserves_responses(self):
         ActivityResponse.objects.create(user=self.viewer, activity=self.first, status='interested')
