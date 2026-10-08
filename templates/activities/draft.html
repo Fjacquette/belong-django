@@ -14,12 +14,11 @@
         <div class="space-y-5">{% for field in section.fields %}{% include 'activities/_draft_field.html' %}{% endfor %}</div>
       {% else %}
         <details{% if form.is_bound and section.open %} open{% endif %}>
-          <summary class="ui-disclosure">{{ section.label }} <span aria-hidden="true">▾</span></summary>
+          <summary class="ui-disclosure">{{ section.label }}</summary>
           <div class="space-y-5 mt-4">{% for field in section.fields %}{% include 'activities/_draft_field.html' %}{% endfor %}</div>
         </details>
       {% endif %}
     {% endfor %}
-    <p class="text-sm">Series association does not reload its defaults. This draft retains the copied occurrence values; you can change them independently.</p>
     <div class="ui-cluster">
       <button class="ui-button ui-button--secondary ui-button--comfortable" name="action" value="save" type="submit">Save draft</button>
       <button class="ui-button ui-button--primary ui-button--comfortable" name="action" value="publish" type="submit">Publish new activity</button>

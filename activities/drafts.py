@@ -96,6 +96,8 @@ class DraftForm(ActivityForm):
         super().__init__(*args, user=user, initial={**values, 'revision': draft.revision},
             instance=Activity(participation_config=deepcopy(values.get('participation_config'))), **kwargs)
         groups = self.fields['group'].queryset
+        self.fields['location_instructions'].widget.attrs['rows'] = 3
+        self.fields['capacity'].help_text = 'Optional place limit. Ongoing enrollment and meeting attendance have separate limits.'
         self.fields['series'] = forms.ModelChoiceField(required=False,
             queryset=ActivitySeries.objects.filter(Q(owner=user, group__isnull=True) | Q(group__in=groups)).distinct(),
             label='Series (optional)', widget=forms.Select(attrs={'class':'ui-field'}),
