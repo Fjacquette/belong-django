@@ -391,3 +391,16 @@ That should be enough to resume work without carrying a giant chat forward.
   cleanup guarantees capacity without a worker. Durable offer notices reuse existing
   consent/access/mail controls and do not subscribe queue participants to updates.
   See docs/RESERVATION_POLICY_PROPOSAL.md for exact boundaries.
+
+## Payment provider feasibility (#76 D4, proposed for review)
+
+- docs/PAYMENT_SANDBOX_DESIGN.md compares documented Stripe, Square and PayPal
+  authorization/capture/void/refund, idempotency and callback/reconciliation contracts.
+  Stripe manual capture with one sandbox merchant, USD and cards is the provisional
+  candidate; merchant responsibility and priority/recovery decisions remain for review.
+- Proposed sandbox experiments require durable capture claims, operation/inbox history,
+  uncertainty quarantine, compensating refunds and bidirectional reconciliation.
+  Free D1–D3 authorities/data remain unchanged; no payment code, provider account/API
+  mutation, sandbox evidence or paid registration enabling is part of this iteration.
+- Review the design before authorizing sandbox coding. D4 is not complete; D5 paid
+  pilot remains separately gated by terms, merchant/account readiness and recovery.

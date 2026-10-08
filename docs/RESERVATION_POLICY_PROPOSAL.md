@@ -7,6 +7,12 @@ original design master `b2fd166`, including #75 / PR #82; D1 builds from master
 `63aefd9` (merged proposal PR #83). D2 builds from merged D1 master `9a3fbd0`.
 D3 builds from merged D2 master `d59afed`. No payment processing or existing-data conversion is implemented. Paid hold/queue/provider terms below remain proposals.
 
+D4 provider feasibility and the separately authorized sandbox experiment are proposed
+in [PAYMENT_SANDBOX_DESIGN.md](PAYMENT_SANDBOX_DESIGN.md), assessed from merged D3
+master `0dddd0c`. The comparison uses official Stripe, Square and PayPal documentation;
+no sandbox transaction has been executed and no paid flow is enabled. Review that
+design before coding; D4 is not complete and D5 remains separately gated.
+
 ## D1 implementation boundary
 
 An explicitly selected version 4 ongoing Activity hosts one OngoingOpportunity
