@@ -3,12 +3,13 @@
   <h2 id="registration-heading-{{ activity.pk }}" class="text-xl font-display">Registration</h2>
   <p class="text-sm">{{ registration_target.get_admission_display }} · {{ registration_target.get_allocation_display }}.</p>
   <p class="text-sm">Terms: {% if registration_target.amount %}{{ registration_target.currency }} {{ registration_target.amount }} · Payment required. Payments are unavailable; no paid registration or place can be confirmed.{% else %}Free. Registration is separate from attendance.{% endif %}</p>
-  <p class="text-sm">{{ registration_count }}{% if registration_target.capacity %} / {{ registration_target.capacity }}{% endif %} registered{% if registration_full %} · Full{% elif not registration_target.capacity %} · Unlimited{% endif %}.</p>
+  <p class="text-sm">{{ registration_count }}{% if registration_capacity %} / {{ registration_capacity }}{% endif %} registered{% if registration_full %} · Full{% elif not registration_capacity %} · Unlimited{% endif %}.</p>
   {% if activity.is_cancelled %}<p class="font-semibold">Cancelled · History is retained; registration is closed.</p>{% endif %}
   {% if registration_facts %}
     <p class="font-semibold">You: {{ registration_state }}{% if activity.is_cancelled %} (before cancellation){% endif %}</p>
-    <p class="text-sm">Admission: {{ registration_facts.admission }} · Place: {{ registration_facts.place }} · Payment: {{ registration_facts.payment }}.</p>
+    <p class="text-sm">Admission: {{ registration_facts.admission }} · {% if reservation_pool %}Secured place{% else %}Place{% endif %}: {{ registration_facts.place }} · Payment: {{ registration_facts.payment }}.</p>
   {% endif %}
+  {% include 'activities/_reservations.html' %}
   {% if not activity.is_cancelled %}
     {% if registration_request and not registration_request.closed_at %}
       {% if registration_facts.can_claim %}{% include 'activities/_registration_form.html' with action='claim' label='Claim free place' %}{% endif %}

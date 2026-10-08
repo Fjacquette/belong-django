@@ -36,7 +36,17 @@ def eligibility(event, user, *, expected_hash=None):
         return 'recipient_address_changed'
     if not visible_activities(user).filter(pk=event.activity_id).exists():
         return 'recipient_no_access'
-    if event.kind == 'confirmation':
+    if event.kind == 'place_offer':
+        from .reservations import pool_for
+        from .registration import eligible
+        hold = event.reservation_hold
+        if event.activity.is_cancelled:
+            return 'superseded_by_cancellation'
+        if not hold or hold.user_id != user.pk or hold.ended_at or hold.expires_at <= timezone.now():
+            return 'offer_ended'
+        if not pool_for(hold.request.target) or not eligible(hold.request, event.activity):
+            return 'offer_ineligible'
+    elif event.kind == 'confirmation':
         if event.activity.is_cancelled:
             return 'superseded_by_cancellation'
         if not event.confirmation_round or not event.confirmation_round.invitations.filter(user=user).exists():
@@ -59,16 +69,16 @@ def sender_reason(event):
     return ''
 
 
-def queue_event(activity, actor, kind, *, announcement=None, confirmation_round=None):
+def queue_event(activity, actor, kind, *, announcement=None, confirmation_round=None, reservation_hold=None):
     """Caller holds the occurrence lock. Snapshot consent and addresses at event time."""
     event, created = ActivityNotificationEvent.objects.get_or_create(
-        **({'confirmation_round':confirmation_round} if confirmation_round else {'announcement': announcement} if announcement else {'activity': activity, 'kind': kind}),
+        **({'reservation_hold':reservation_hold} if reservation_hold else {'confirmation_round':confirmation_round} if confirmation_round else {'announcement': announcement} if announcement else {'activity': activity, 'kind': kind}),
         defaults={'activity': activity, 'actor': actor, 'kind': kind})
     if not created:
         return event
-    ids = set(confirmation_round.invitations.values_list('user_id',flat=True)) if confirmation_round else recipient_ids(activity)
+    ids = {reservation_hold.user_id} if reservation_hold else set(confirmation_round.invitations.values_list('user_id',flat=True)) if confirmation_round else recipient_ids(activity)
     recipients = get_user_model().objects.filter(pk__in=ids).select_related('profile')
-    if kind != 'confirmation':
+    if kind not in {'confirmation', 'place_offer'}:
         recipients = recipients.exclude(pk=actor.pk)
     reason = sender_reason(event)
     for user in recipients:
@@ -167,6 +177,10 @@ def email_transport(event, attempt, email):
         ending = 'Leaving ongoing enrollment stops future notices for this opportunity.'
     if event.activity.is_registration:
         ending = 'Withdrawing registration stops future notices for this Activity.'
+    if event.kind == 'place_offer':
+        subject = 'Free place offered — Belong'
+        text = 'A free place is offered to you until ' + timezone.localtime(event.reservation_hold.expires_at).isoformat() + '. Review the offer and explicitly confirm before its fixed deadline. You are not registered yet.'
+        ending = 'This offer does not subscribe you to routine Activity updates. Leaving the waitlist ends this offer.'
     return dispatch(attempt, subject, f'{text}\n\nDetails (sign-in required): {link}\n\n'
                     f'You opted in to Activity emails. Change your preference: {preferences}\n' + ending, email)
 

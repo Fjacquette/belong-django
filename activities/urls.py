@@ -1,7 +1,7 @@
 from django.urls import path
 
 from . import views
-from . import polls, enrollment, registration
+from . import polls, enrollment, registration, reservations
 from . import email_invitations
 from . import group_offers
 from .announcements import activity_announce
@@ -9,6 +9,8 @@ from .announcements import activity_announce
 app_name = "activities"
 
 urlpatterns = [
+    path('activities/<int:pk>/reservations/capacity/', reservations.reservation_capacity, name='reservation_capacity'),
+    path('activities/<int:pk>/reservations/<str:action>/', reservations.reservation_action, name='reservation_action'),
     path('activities/<int:pk>/registration/<int:request_pk>/decide/', registration.decide_registration, name='decide_registration'),
     path('activities/<int:pk>/registration/<str:action>/', registration.registration_action, name='registration_action'),
     path('activities/<int:pk>/enrollment/request/', enrollment.request_enrollment, name='request_enrollment'),

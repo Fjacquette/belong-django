@@ -1,11 +1,11 @@
 # Capacity, admission, registration and payment policies — proposal for review
 
-**Status: D1 ongoing enrollment and D2 registration eligibility implemented; financial policies remain proposed.** Design basis for
+**Status: D1/D2 and D3 free holds/optional waitlists implemented; financial policies remain proposed.** Design basis for
 [#76](https://github.com/Fjacquette/belong-django/issues/76), using the reviewed
 [#74 participation model](PARTICIPATION_MODEL_PROPOSAL.md). Assessed baseline:
 original design master `b2fd166`, including #75 / PR #82; D1 builds from master
 `63aefd9` (merged proposal PR #83). D2 builds from merged D1 master `9a3fbd0`.
-No payments, holds, waitlists or existing-data conversion are implemented; the financial/expiry/queue terms below remain proposals.
+D3 builds from merged D2 master `d59afed`. No payment processing or existing-data conversion is implemented. Paid hold/queue/provider terms below remain proposals.
 
 ## D1 implementation boundary
 
@@ -88,6 +88,68 @@ access and sender controls. Pending, approved eligibility-only, invitation and p
 requests alone do not subscribe. Admission decisions do not create new email events.
 Organizer revocation, policy editing, Series registration and financial/queue/expiry
 infrastructure remain later milestones. All D2 audit models are read-only in admin.
+
+## D3 implementation boundary — free reservations only
+
+Creators may explicitly opt into **10-minute free reservation holds**, with an optional
+**FIFO waitlist / 24-hour offers**, on a newly created capped free Registration target
+with eligibility-only admission. FreeReservationPool is a separate capability; no
+existing target acquires it and no ordinary RSVP, poll or D1 enrollment is changed.
+Paid, unlimited and approval-secures-place targets cannot enable this variant. Quote,
+admission, allocation and waitlist selection remain immutable. One place per person;
+no checkout, money, payment-ready claim or provider operation exists.
+
+A hold counts against capacity but is not FreeRegistration, secured allocation or
+attendance. Explicit confirmation atomically ends that exact live hold/offer and
+creates free registration plus its secured place. Acquisition/confirmation/expiry/
+release/promotion/cancellation serialize on the owning Activity, before touching
+registration, queue and hold records. Limited capacity enforces secured places +
+live holds/offers <= current pool limit. The D2 claim endpoint cannot bypass holds.
+`now < expires_at` is live; equality is expired. Deadlines and identities cannot be
+edited or renewed. GET derives expiry without writing or promoting; every valid
+reservation/registration mutation reclaims expiry and promotes before allocation.
+**Check availability** is an explicit POST for queued people. Worker delay cannot
+trap capacity or let newcomers pass eligible FIFO entries.
+
+Queue joining is explicit, available when full, and requires current admission and
+audience access. Pending approval, a full failure or an invitation never queues anyone.
+Server-assigned entry ID supplies FIFO order, independent of registration timestamp.
+On release/expiry/capacity increase, oldest eligible queued people receive protected
+24-hour offer holds, never automatic confirmation. Decline/withdrawal/expiry records
+closure and promotes the next eligible person. Lost admission/access closes unconfirmed
+holds/entries with an ineligible reason; secured registrations survive invitation loss.
+Expired offers do not regain priority: explicit rejoin creates a new tail entry (or an
+explicit new direct hold may compete when no eligible queue exhausts available capacity).
+Stale hold/entry/request IDs cannot change newer attempts. Repeated acquisition,
+promotion, acceptance, release and cleanup preserve identity/deadline and outcomes.
+
+FreeWaitlistEntry and FreeReservationHold retain deadlines, creation/closure timestamps,
+reasons and links to the immutable registration request. Activity cancellation ends
+unconfirmed holds/offers/queue entries with cancellation context and prevents promotion;
+secured free registrations and all historical evidence remain retained under D2's
+cancellation qualification. Existing pending registrations remain historical requests.
+
+Only D3 pool capacity can be managed: authorized organizers submit the current pool
+revision; reductions below secured places + live holds/offers are rejected. Increasing
+capacity promotes without confirmation. FreePoolCapacityChange retains actor, prior/
+new limit, revision and time; the target's original quote/capacity snapshot is unchanged.
+Other policy editing and revocation remain unavailable. All new models are read-only
+in admin; supported mutations go through the serialized services.
+
+Offers have one durable ActivityNotificationEvent per hold, in addition to their in-app
+history/deadline. Email uses existing default-off consent, verified-address, audience,
+sender authority, shared quota and bounded-retry controls. Failed/opted-out delivery
+never extends or retracts an offer. Dispatch rechecks its deadline and admission;
+late or ended offers are skipped. An offer alone does not subscribe to routine updates
+or cancellation notices; only confirmed free registrations retain that D2 authority.
+
+`python manage.py expire_reservations` optionally records expiry and promotes without
+participant traffic; run periodically for proactive offers. It processes at most 1,000
+pools by default, with `--limit` and `--after` cursor for larger installations. No daemon,
+queue server or schedule is installed by this milestone. Correct allocation still
+works without it. Details/roster show secured vs held/offered counts, actual capacity,
+fixed deadlines, independent admission, and retained queue/hold history. Cards navigate
+with concise Held/Offered/Waitlisted state; image/description bands stay unchanged.
 
 ## Recommendation and decisions to review
 
@@ -390,7 +452,7 @@ ordinary Activity mail or a public roster.
 | D0: this proposal | Review policies, priority, terms, scope and unresolved decisions | Documentation consistency and existing free-capacity regressions; no schema/UI/runtime change |
 | D1: free ongoing approval/enrollment implemented | Explicit new opportunity, one cohort pool, no money/holds/queue; approval-secures-place only if approved | Two requests/one approval place; authorize organizer; decline/withdraw; unlimited cohort; independent next-session RSVP; optional Group; history and migration preservation |
 | D2: registration eligibility | Explicit new registration target/quote, independent admission and derived readiness, no payment promise | Open/request/invitation modes; approval-allocates versus eligibility-only; immutable terms; no fake paid/confirmed records; Details/roster/no-JS/access/notification adapters |
-| D3: reservation policy, no real payment | Only approved hold/queue variants; explicit supported free-use cases, never fake paid checkout | Last claim, expire/claim race, stale-version/idempotent actions, cleanup without worker, duplicate promotion, offer accept/expire race, capacity reduction, cancellation races; expiry UI |
+| D3: free reservation policy implemented | Explicit new capped/free eligibility-only targets; fixed 10-minute holds and optional FIFO/24-hour offers; no paid checkout | Last claim, expire/claim race, stale-version/idempotent actions, cleanup without worker, duplicate promotion, offer accept/expire race, capacity reduction, cancellation races; expiry UI |
 | D4: provider feasibility and separately authorized sandbox | Prove authorization/capture/void/refund/reconciliation contracts before production infrastructure | Signed/reordered/duplicate/missing callbacks; incorrect amount/currency; definitive failure and timeout; retry/crash recovery; duplicate browser requests; no new charge on replay |
 | D5: separately authorized paid-class pilot | Only reviewed terms, provider and operator recovery; explicit first-pay or checkout-hold policy | 12 seats/13 ready requests: at most 12 capture claims and confirmed places; losing authorization voided without capture; last-place capture/cancel/expiry races; ambiguous capture quarantined; late-capture refund; failed refund visible; no oversell/replayed notice |
 

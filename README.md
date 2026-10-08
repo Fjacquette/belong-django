@@ -735,3 +735,24 @@ Details/roster retain admission/confirmation/place history, native/HTMX safe ret
 and existing consent/access notification controls for confirmed free registrations only.
 Migration 0027 is additive; it does not backfill or reinterpret existing data.
 See [the D2 boundary](docs/RESERVATION_POLICY_PROPOSAL.md).
+
+### Free reservation holds and optional waitlists (#76 D3)
+
+On new capped/free Registration targets with separate claims, creators may select
+10-minute nonrenewable holds and an optional FIFO waitlist with 24-hour offers. Neither
+hold nor offer is confirmed registration or attendance; users explicitly confirm.
+Admission/audience is checked at acquisition, queue joining and confirmation. Full
+failure never opts someone in. Expiry/release promotes the oldest eligible queued
+person; expired offers need explicit rejoin with a new tail identity. Existing targets,
+RSVPs, polls and D1 enrollment are not converted. Paid targets cannot use these flows.
+
+Expiry is reclaimed under the Activity lock before every allocation, so no worker is
+needed for safe capacity. GET only derives deadline state. For proactive cleanup and
+offers, periodically run `python manage.py expire_reservations` in the intended database
+environment. Default limit is 1,000 pools; use `--limit N --after LAST_POOL_ID` to resume
+larger batches and restart at zero for the next sweep. No scheduler is installed.
+Email offers reuse consent, verification, shared quotas and outbox retry guards;
+notification failure never changes the deadline. Queue/hold participation alone does
+not subscribe to updates. Organizers may change D3 capacity under a revision guard;
+reductions below secured places + live holds/offers are rejected and changes audited.
+Migration 0028 is additive; preserve all local databases/configuration while applying it.
