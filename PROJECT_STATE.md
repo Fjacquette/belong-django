@@ -263,6 +263,16 @@ brand destination; unverified accounts retain Verify email / Logout only.
 
 ## Current implementation sequence
 
+### Janine-first priority reset (#87)
+
+[Issue #87](https://github.com/Fjacquette/belong-django/issues/87) supersedes the
+previous implementation ordering. Prioritize real J-01–J-12 pilot walkthrough
+blockers and [#68 past Activity review/clone/edit/publish](https://github.com/Fjacquette/belong-django/issues/68).
+Distinguish local tests from external signup/inbox delivery and human usability
+evidence. Existing D1–D3 remain functional, but payment infrastructure is deferred:
+no provider sandbox experiment, payment implementation or D5 is authorized as the
+next task. Beta access #77 supports pilot timing; broader follow-ups come afterward.
+
 ### Discovery iteration
 
 **#19 is complete and merged.**
@@ -391,3 +401,19 @@ That should be enough to resume work without carrying a giant chat forward.
   cleanup guarantees capacity without a worker. Durable offer notices reuse existing
   consent/access/mail controls and do not subscribe queue participants to updates.
   See docs/RESERVATION_POLICY_PROPOSAL.md for exact boundaries.
+
+## Payment provider feasibility (#76 D4, proposed for review)
+
+- docs/PAYMENT_SANDBOX_DESIGN.md compares documented Stripe, Square and PayPal
+  authorization/capture/void/refund, idempotency and callback/reconciliation contracts.
+  Stripe manual capture with one sandbox merchant, USD and cards is the provisional
+  candidate; merchant responsibility and priority/recovery decisions remain for review.
+- Proposed sandbox experiments require durable capture claims, operation/inbox history,
+  uncertainty quarantine, compensating refunds and bidirectional reconciliation.
+  Free D1–D3 authorities/data remain unchanged; no payment code, provider account/API
+  mutation, sandbox evidence or paid registration enabling is part of this iteration.
+- Under [#87’s Janine-first priority reset](https://github.com/Fjacquette/belong-django/issues/87),
+  D4 is a deferred documentation-only feasibility reference. No provider sandbox
+  experiment, payment implementation or D5 is authorized as the next task; #68 and
+  real Janine pilot walkthrough blockers take priority. Retain unresolved merchant,
+  priority/refund and recovery decisions for separately reprioritized future work.
