@@ -17,22 +17,31 @@
   const tokens = getComputedStyle(root);
   const number = name => parseFloat(tokens.getPropertyValue(name));
   const width = number('--card-min-width'), gap = number('--stack-gap');
-  const offset = number('--band-1') + number('--band-2'), cardHeight = number('--card-height');
-  let mode = narrow.matches ? 'all' : 'moving';
+  const cardHeight = number('--card-height');
+  const read = key => { try { return localStorage.getItem(key); } catch { return null; } };
+  const save = (key, value) => { try { localStorage.setItem(key, value); } catch { /* Storage is optional. */ } };
+  const savedMode = read('belong-prototype-card-view');
+  let explicitMode = ['moving','paged','stacked','all'].includes(savedMode);
+  let mode = explicitMode ? savedMode : narrow.matches ? 'all' : 'moving';
+  let density = read('belong-prototype-stack-density') === 'tight' ? 'tight' : 'regular';
+  let offset = number('--band-1') + (density === 'regular' ? number('--band-2') : 0);
+  let hovered, hoverFit = false;
   let items = [], columns = 1, slots = 0, pageStart = 0, generation = 0, frame;
   let stage, selected, pointerSelection, fitSelected = false, wanted = 0, started, firstDisplay, actualStack = false;
   controls.querySelector('[data-prototype-modes]').hidden = false;
   controls.querySelector('[data-prototype-simulation]').hidden = false;
+  controls.querySelector('[data-prototype-density]').hidden = false;
   function report() {
     firstDisplay ??= Math.round(performance.now() - started);
     const real = items.filter(item => !item.hasAttribute('data-simulated')).length;
-    metrics.textContent = `${real} real + ${items.length-real} demo cards (${items.length}/${wanted} loaded); ${root.querySelectorAll('.activity-card').length} attached; first layout ${firstDisplay}ms. Demo cards have no actions.`;
+    metrics.textContent = `${real} real + ${items.length-real} demo cards (${items.length}/${wanted} loaded); ${root.querySelectorAll('.activity-card').length} attached; first layout ${firstDisplay}ms. Demo cards have no actions.${Number(root.dataset.available) < cardHeight && mode !== 'all' ? ' Short stage: full-card scrolling fallback.' : ''}`;
   }
   function choose(item, fit = true) {
     selected?.removeAttribute('data-selected');
     selected = item; fitSelected = fit;
     item.dataset.selected = '';
     if (stage && fit) draw();
+    else if (!stage) paint();
   }
   function prepare(item) {
     if (item.dataset.prototypePrepared) return;
@@ -56,6 +65,18 @@
       }
     });
   }
+  // Pointer emphasis is earned by movement, never by scroll-driven :hover.
+  function paint() {
+    root.querySelectorAll('[data-stack-item]').forEach(item => {
+      const foreground = item.hasAttribute('data-foreground');
+      const active = foreground || item === selected || item === hovered || item.contains(document.activeElement);
+      item.toggleAttribute('data-covered', !active && root.dataset.renderedMode !== 'all');
+      item.toggleAttribute('data-pointer-active', item === hovered);
+      const fitted = !stage || (parseFloat(item.style.getPropertyValue('--prototype-y')) >= 0 &&
+        parseFloat(item.style.getPropertyValue('--prototype-y')) + cardHeight <= stage.clientHeight);
+      item.toggleAttribute('data-prototype-raised', active && !foreground && fitted && pointerSelection !== item);
+    });
+  }
   function draw() {
     frame = null;
     if (!stage) return;
@@ -64,7 +85,10 @@
     const row = mode === 'moving' ? Math.min(maxRow, Math.floor(relative / offset)) : Math.floor(pageStart / columns);
     const fraction = mode === 'moving' && row < maxRow ? relative % offset : 0;
     const end = Math.min(items.length, (row + slots + 1) * columns);
-    const visible = items.slice(row * columns, Math.min(items.length, end + (fraction > 0 ? columns : 0)));
+    const visibleEnd = Math.min(items.length, end + (fraction > 0 ? columns : 0));
+    const visible = items.slice(row * columns, visibleEnd);
+    const front = new Map();
+    visible.forEach(item => front.set(items.indexOf(item) % columns, item));
     // Do not detach keyboard focus while native scroll advances the window.
     const focused = items.find(item => item.contains(document.activeElement));
     const retainedFocus = focused && !visible.includes(focused) ? focused : null;
@@ -73,8 +97,13 @@
     stage.querySelectorAll('[data-stack-item]').forEach(item => { if (!keep.has(item)) item.remove(); });
     visible.forEach(item => {
       const index = items.indexOf(item), local = Math.floor(index / columns) - row;
+      const foreground = front.get(index % columns) === item;
+      item.toggleAttribute('data-foreground', foreground);
       let y = local * offset - fraction;
-      if (pointerSelection !== item && ((fitSelected && item === selected) || item === retainedFocus))
+      // Only covered headers may enter/leave clipped. Let the complete
+      // foreground move continuously once it reaches the fitting boundary.
+      if (foreground) y = Math.max(0, Math.min(stage.clientHeight-cardHeight, y));
+      if (pointerSelection !== item && ((fitSelected && item === selected) || item === retainedFocus || (hoverFit && item === hovered)))
         y = Math.max(0, Math.min(stage.clientHeight-cardHeight, y));
       item.className = 'prototype-item';
       item.style.setProperty('--prototype-y', `${y}px`);
@@ -84,7 +113,8 @@
     });
     root.dataset.firstIndex = row * columns;
     root.dataset.fraction = fraction;
-    position.textContent = `${row * columns + 1}–${end} / ${items.length}`;
+    position.textContent = `${row * columns + 1}–${visibleEnd} / ${items.length}${retainedFocus ? ` · focused #${items.indexOf(retainedFocus)+1}` : ''}`;
+    paint();
     previous.disabled = pageStart === 0;
     next.disabled = end >= items.length;
     report();
@@ -92,7 +122,11 @@
   function layout() {
     if (!root.clientWidth || !viewport.clientHeight) return;
     const focus = document.activeElement, oldScroll = viewport.scrollTop;
-    const anchor = Number(root.dataset.firstIndex || 0), fraction = Number(root.dataset.fraction || 0);
+    const oldOffset = offset;
+    const anchor = stage ? Number(root.dataset.firstIndex || 0) : Math.floor(oldScroll / oldOffset) * columns;
+    const fraction = stage ? Number(root.dataset.fraction || 0) / oldOffset : oldScroll % oldOffset / oldOffset;
+    offset = number('--band-1') + (density === 'regular' ? number('--band-2') : 0);
+    root.style.setProperty('--stack-offset', `${offset}px`);
     const oldColumns = columns, hadStage = !!stage;
     columns = Math.max(1, Math.min(Number(root.dataset.maxColumns), Math.floor((root.clientWidth + gap) / (width + gap))));
     const style = getComputedStyle(viewport);
@@ -105,10 +139,12 @@
     navigation.hidden = mode !== 'paged';
     previous.disabled = !actualStack; next.disabled = !actualStack;
     root.dataset.mode = mode;
+    root.dataset.renderedMode = available < cardHeight ? 'all' : mode;
+    root.dataset.density = density;
     root.dataset.columns = columns;
     root.dataset.strips = slots;
     root.dataset.available = available;
-    items.forEach(item => { prepare(item); item.className = ''; item.style.removeProperty('--prototype-y'); });
+    items.forEach((item,index) => { prepare(item); item.dataset.prototypeIndex=index+1; item.className = ''; item.removeAttribute('data-foreground'); item.style.removeProperty('--prototype-y'); });
     if (actualStack) {
       const track = document.createElement('div'); track.className = 'prototype-track';
       stage = document.createElement('div'); stage.className = 'prototype-stage';
@@ -121,22 +157,23 @@
       for (let i=0;i<columns;i++) { const c=document.createElement('div'); c.className='prototype-column'; stage.append(c); }
       track.append(stage); root.append(track);
       if (mode === 'paged') {
+        pageStart = Math.floor(pageStart / (columns*(slots+1))) * columns*(slots+1);
         pageStart = Math.min(pageStart, Math.floor(Math.max(0,items.length-1)/(columns*(slots+1)))*columns*(slots+1));
         viewport.scrollTop = 0;
       } else {
-        const desired = hadStage && columns !== oldColumns ? Math.floor(anchor/columns)*offset+fraction : oldScroll;
+        const desired = hadStage && (columns !== oldColumns || offset !== oldOffset) ? Math.floor(anchor/columns)*offset+fraction*offset : oldScroll;
         viewport.scrollTop = Math.min(maxRow*offset, desired);
       }
       draw();
-    } else if (mode === 'stacked') {
+    } else if (mode === 'stacked' && available >= cardHeight) {
       for(let c=0;c<columns;c++) {
         const stack=document.createElement('div'); stack.className='activity-stack';
         const bucket=items.filter((_,i)=>i%columns===c);
         stack.style.setProperty('--stack-depth',bucket.length-1);
-        bucket.forEach((item,i)=>{ item.className='activity-stack__layer'; item.style.setProperty('--stack-index',i); item.style.setProperty('--stack-z',i+1); stack.append(item); });
+        bucket.forEach((item,i)=>{ item.className='activity-stack__layer'; item.style.setProperty('--stack-index',i); item.style.setProperty('--stack-z',i+1); item.toggleAttribute('data-foreground',i===bucket.length-1); stack.append(item); });
         root.append(stack);
       }
-      viewport.scrollTop = oldScroll;
+      viewport.scrollTop = Math.floor(anchor/columns)*offset+fraction*offset;
       position.textContent = `${items.length} cards`;
     } else {
       root.append(...items); viewport.scrollTop = oldScroll;
@@ -144,13 +181,22 @@
     }
     if (focus && root.contains(focus)) focus.focus({preventScroll:true});
     controls.querySelectorAll('[name=prototype-mode]').forEach(input=>input.checked=input.value===mode);
-    report();
+    controls.querySelectorAll('[name=prototype-density]').forEach(input=>input.checked=input.value===density);
+    paint(); report();
   }
   document.addEventListener('pointerup', () => { pointerSelection = null; });
   document.addEventListener('pointercancel', () => { pointerSelection = null; });
   viewport.addEventListener('scroll', () => {
+    hovered = null; hoverFit = false; paint();
     if (!frame) frame = requestAnimationFrame(draw);
   }, {passive:true});
+  viewport.addEventListener('pointermove', event => {
+    if (event.pointerType !== 'mouse' || (!event.movementX && !event.movementY) || pointerSelection) return;
+    hovered = event.target.closest('[data-stack-item]');
+    hoverFit = !event.target.closest('a,button,input,summary,label');
+    if (stage) draw(); else paint();
+  });
+  viewport.addEventListener('pointerleave', () => { hovered=null; hoverFit=false; if(stage)draw();else paint(); });
   function jump(direction) {
     const size = columns * (slots + 1);
     pageStart = Math.max(0, Math.min(Math.floor((items.length-1)/size)*size, pageStart + direction*size));
@@ -159,7 +205,10 @@
   previous.addEventListener('click',()=>jump(-1));
   next.addEventListener('click',()=>jump(1));
   controls.querySelectorAll('[name=prototype-mode]').forEach(input=>input.addEventListener('change',()=>{
-    mode=input.value; pageStart=0; viewport.scrollTop=0; layout();
+    mode=input.value; explicitMode=true; save('belong-prototype-card-view',mode); hovered=null; pageStart=0; viewport.scrollTop=0; layout();
+  }));
+  controls.querySelectorAll('[name=prototype-density]').forEach(input=>input.addEventListener('change',()=>{
+    density=input.value; save('belong-prototype-stack-density',density); hovered=null; layout();
   }));
   const names = ['Creek trail walk', 'Board games together', 'Coffee and sketching', 'Riverside bike ride',
     'Park picnic', 'Evening book chat', 'Garden volunteer morning', 'Local photography stroll'];
@@ -174,7 +223,7 @@
     item.querySelectorAll('[hx-get],[hx-post]').forEach(node=>{node.removeAttribute('hx-get');node.removeAttribute('hx-post');});
     item.querySelectorAll('a').forEach(a=>a.removeAttribute('href'));
     item.querySelectorAll('button,input,summary').forEach(node=>{node.tabIndex=-1;if('disabled' in node)node.disabled=true;});
-    const title = `Demo ${index+1}: ${names[index % names.length]}`;
+    const title = `Demo ${items.length+1}: ${names[index % names.length]}`;
     const heading = item.querySelector('h2 a'); heading.textContent=title; heading.dataset.fullText=title;
     item.querySelector('.activity-card__cta').textContent='Demo only · no actions';
     item.querySelector('.activity-card').removeAttribute('aria-live');
@@ -201,6 +250,6 @@
   countInput.addEventListener('change',collection); batches.addEventListener('change',collection);
   window.addEventListener('belong:discovery-layout',layout);
   new ResizeObserver(layout).observe(viewport);
-  narrow.addEventListener('change',()=>{mode=narrow.matches?'all':'moving';viewport.scrollTop=0;layout();});
+  narrow.addEventListener('change',()=>{if(!explicitMode)mode=narrow.matches?'all':'moving';layout();});
   collection();
 })();

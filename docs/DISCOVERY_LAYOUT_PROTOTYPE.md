@@ -1,107 +1,109 @@
 # Discover layout experiment (#92 / PR #94)
 
-Review only; **leave unmerged for human UI judgment**. Open `/?prototype=stack` in
-dev/test and scroll over the cards immediately. No simulation selection or paging
-is needed. Production rejects the flag, even with DEBUG enabled; normal Discover
-still uses its existing 12-card pagination, templates, permissions and preference.
+Review only; **leave unmerged for human UI judgment**. Open `/?prototype=stack`.
+Production rejects the flag even with DEBUG enabled; normal Discover retains its
+12-card pagination, card template, permissions, business logic and preferences.
 
-## Default collection and controls
+## Collection and controls
 
-The experimental view renders all matching, authorized real Activities up to a
-300-record safety limit, preserving the current filters, ordering, decoration and
-card template. The ordinary server page links are absent in the prototype. When
-fewer than 64 match, JavaScript supplements with distinguishable **Demo N** cards
-in browser memory. Real cards retain Details, menus and participation actions.
-Demo copies remove forms, navigational targets and menus before attachment, and
-show **Demo only · no actions**. With zero matches, the source is an unsaved neutral
-card in an inert HTML template; no fabricated target becomes actionable.
+The prototype renders matching authorized real Activities, up to 300, with the
+existing filters and ordering. With fewer than 64 matches, JavaScript supplements
+with labeled **Demo N** cards in memory. Demo numbers now match collection indices,
+rather than restarting after the real cards. Copies remove forms, menus and
+navigation targets before attachment and show **Demo only · no actions**. An empty
+result uses an unsaved neutral source in an inert template, never a fabricated
+activity link. No-JS shows only full real cards, without demos.
 
-Filters, comparison controls and range remain **outside** the deck's scroll area.
-Filters opens the existing search/facet form; Prototype opens optional load-test
-settings, counts, timings and Exit. Neither disclosure changes deck height when
-opened. A simple visible range communicates progress; only Paged has set buttons.
-Friends sizing/switching and Create retain their existing behavior. The deck's
-scrollbar reaches the right browser edge, with gutters inside its content.
-No-JS renders the real collection as full cards (up to 300); it adds no demos.
+Filters, mode/density, progress and optional load-test controls stay outside the
+scrolling results stage. Disclosures overlay it. Friends sizing and Create retain
+existing behavior; gutters sit inside the pane, keeping the scrollbar at the right
+browser edge. Optional real-only/8/48/150/300 collections and delayed 24-card
+batches are browser simulation knobs, not product pagination or network metrics.
 
-## Interaction and geometry
+## Four modes and experimental density
 
-- **Moving (F):** native wheel, trackpad, scrollbar and touch drag continuously
-  translate the exposed headers and entering foreground row. There is no Next set
-  control, wheel interception, snapping or automatic animation. Scroll directly to
-  any position; previously unseen cards enter without changing pages.
-- **Paged (A):** native wheel does not advance its collection. Explicit arrow
-  buttons (Previous set / Next set) advance by the geometry-derived set capacity.
-- **Stacked:** the current unbounded pile, on the same collection, for comparison.
-- **Spread out:** ordinary continuous full cards, default below 640px. If the actual
-  viewport cannot fit one full card, Moving/Paged also fall back to a full-card grid.
+- **Moving:** native wheel, trackpad, scrollbar and touch scroll continuously move
+  covered headers. Each incoming row becomes the complete foreground, fitted
+  inside the visible stage even at fractional positions. No interception or snapping.
+- **Paged:** only Previous set / Next set advances the collection, by calculated
+  capacity. Native wheel does not advance to another set.
+- **Stacked:** the unbounded classic pile, with prototype-only pointer safeguards
+  and covered-card treatment applied to the same collection.
+- **Spread out:** continuous full cards. First-time mobile defaults here.
 
-Read card dimensions and combined top-band height from the existing CSS design
-variables, rather than hard-coding a 12-card layout unit or card pixel constants.
-After fixed controls/context and Create clearance, let H be the actual scrolling
-viewport's available height, C the card height, and S the combined top-band height.
-Exposed strips per column = `max(0, floor((H-C)/S))`; set capacity = column count ×
-(strips + one full card). Column count follows the results width after Friends
-resizing and the actual scrollbar/gutters. The final native scroll position lands
-on the final result window, without a trailing empty result page.
+Regular exposes Bands 1+2; optional experimental Tight exposes Band 1 only.
+Foreground cards keep all five bands. Existing CSS tokens determine card height C
+and overlap S. Available stage H subtracts controls/context/Create clearance:
+`strips = max(0, floor((H-C)/S))`; capacity is columns × (strips + one full card).
+Columns follow actual results width, gutters and Friends resizing. Density/resize
+recompute capacity while retaining the browsing anchor and fractional progress;
+Paged re-partitions contiguous sets around its anchor. Neither changes the collection.
 
-Click/tap non-navigation content or focus a card to bring it forward. Keyboard
-Enter/Space on the card selects it; real title/Details/actions retain their native
-behavior. Selected/focused content fits within the visible stage; pointer focus
-alone does not move a navigation target before its click completes. Focused cards
-remain attached if their window scrolls away. Resizing preserves the browsing
-anchor; delayed appends retain existing nodes and native scroll offset.
+Click/tap non-navigation content or keyboard focus brings a card forward.
+Enter/Space selects the wrapper; real links/menu/actions retain native behavior.
+Pointer focus does not relocate a navigation target before activation. Focused
+cards remain attached when their window scrolls away, with the retained index
+reported separately. Progress includes incoming rows, not just the base window.
 
-## Evidence: one unchanged default collection, 0% / 50% / 100%
+Covered cards use opaque neutral title/logistics surfaces (#45404a/white and
+#edeaf0/black), with lower-band saturation reduced. Active, selected, focused and
+intentionally hovered cards retain the original palette. No opacity reduction
+causes bleed-through. Scroll clears pointer emphasis; actual subsequent mouse
+movement restores it. Shared native hover/focus stacking is overridden only in
+this prototype. Hover over navigation targets does not relocate them.
 
-Headless Chromium, reduced motion; same 64-card collection across all viewports:
-19 authorized real matches + 45 in-memory demos in the local review environment.
-No source records or assets were changed. Screenshots were inspected at each of
-these positions; state snapshots below make the comparison reproducible without
-committing local user data/images. Counts vary if matching records or filters change.
+Mode/density persist in prototype-only browser keys `belong-prototype-card-view`
+and `belong-prototype-stack-density`. Mode values retain ordinary `all`/`stacked`
+terminology, but normal `belong-card-view` is never written. Explicit choices
+survive resize and filter changes. If H cannot fit one full card, all overlap modes
+use full-card scrolling without replacing the saved choice; it resumes when feasible.
 
-| Viewport | Available H | Columns × cards/column | Scroll 0% | Scroll 50% | Scroll 100% | Paged Next set |
-|---|---:|---:|---|---|---|---|
-| 1440×1000 | 774px | 4 × 3 | 1–12 (0px) | 25–36 (884px) | 53–64 (1768px) | 13–24 |
-| 1024×700 | 474px | 2 × 1 | 1–2 (0px) | 31–32 (2108px) | 63–64 (4216px) | 3–4 |
-| 768×900 | 616px | 2 × 2 | 1–4 (0px) | 31–34 (2040px) | 61–64 (4080px) | 5–8 |
+## Browser evidence for this iteration
 
-A native 17px wheel increment changed header/card positions by 17px without moving
-controls. After eight additional 25px increments, each view had advanced one result
-row (first card 1 → 5 desktop, 1 → 3 short desktop/tablet). Paged wheel input kept
-its initial set and scroll offset zero; its Next button produced the sets above.
-Friends resizing changed columns 4 → 3 on desktop and 2 → 1 on short desktop,
-while the scrollbar remained at the right edge. The 375×812 and 320×740 views used
-single-column Spread out with all 64 cards reachable through native scrolling.
+Chromium checked the same 64-card collection (19 real + 45 inert demos), with
+reduced motion, at fractions 0, .017, .18, .503, .777, .999 and 1 in both densities.
+Every full foreground/raised card stayed inside its stage. Attached indices were
+unique and matched the visible range; no backend ordering/index masking was used.
 
-Browser checks also cover keyboard selection, touch selection and real menus,
-real Details, a partially scrolled title's direct navigation, native wheel/touch
-drag, no-JS full real collection/Details, empty-query-result safe demos, and delayed
-append stability through card 300. Demo forms/navigation targets are absent.
-These checks demonstrate mechanics and reachability, **not proof of usability**.
-Human trackpad feel, legibility and preference remain the review decision.
+| Viewport | Available H | Columns | Regular / Tight cards per column | Moving rendering |
+|---|---:|---:|---:|---|
+| 1440×900 | 674px | 4 | 2 / 4 | moving |
+| 1024×700 | 474px | 2 | 1 / 1 | moving |
+| 768×900 | 616px | 2 | 2 / 3 | moving |
+| 375×812 | 434px | 1 | 1 / 1 | all |
+| 1024×600 | 374px | 2 | 1 / 1 | all |
 
-## Optional load experiment and compromises
+375×812 (H=434px) and 1024×600 (H=374px) cannot fit a 440px card: they use
+normal full-card scrolling, retaining the requested mode. Covered incoming/outgoing
+headers may clip; complete foreground cards may not. With zero extra strips, the
+moving effect is successive full cards per column rather than a multi-header pile.
 
-Prototype's collection settings offer real-only and 8/48/150/300 fully simulated
-sets. Delayed 24-card / 300ms batches are test knobs, not product decisions or
-measurements of network/query throughput. Default collection construction/layout
-was roughly 10–14ms for the three wide views and 36–51ms on narrow full grids in
-this local run; timings exclude server/network and do not establish user experience.
+Native wheel checks parked the pointer on Moving and Stacked and confirmed no
+successive hover activation; deliberate movement restored emphasis. Paged sets
+had non-overlapping indices; Spread out exposed all 64 cards. Preferences survived
+reload, search and desktop-to-mobile resize; a sentinel normal Discover preference
+remained unchanged. Screenshots and state snapshots stay outside Git because they
+contain local review data.
 
-- Appending does not require changes to `_card.html` or business logic. Only the
-  moving window plus focus is attached; other card nodes remain in memory. Production
-  fetching/virtualization is not implemented or justified by this bounded experiment.
-- Between row boundaries an entering card is partially clipped; selecting/focusing
-  it reveals the full card. At the short height no extra header strip fits, so the
-  effect is sliding single cards per column rather than a multi-header pile.
-- Token sizing can leave less than one top-band strip of spare vertical space,
-  in addition to the explicit Create clearance. It does not grow with result count.
-- Retained keyboard focus may overlay the foreground until focus leaves. Choosing
-  a new mode/collection resets its comparison position intentionally; native scroll
-  and batch arrival do not reset it. Resizing can change the window capacity.
-- Demos reuse authorized cards' visual/logistics content with labeled synthetic
-  titles. They do not prove real-world result diversity, query cost or ranking.
-- No schema, production pagination, ranking (#48), permissions, RSVP/invitation/
-  notification, beta admission or payment changes. No seed/reseed/reset, persisted
-  Activity/user rewrite, or original asset replacement.
+Additional browser checks passed touch selection/menu, real Details, partially
+scrolled title navigation, native wheel/touch drag, no-JS real cards/Details,
+empty-result safe demos, and delayed append stability through card 300. The 36
+relevant Django tests and `manage.py check` passed. These checks establish mechanics
+and reachability; human trackpad feel, legibility and mode preference remain the
+review decision.
+
+## Compromises and boundaries
+
+- Covered headers translate continuously, while the complete foreground changes
+  when an incoming row enters. Token sizing can leave less than one overlap strip
+  of spare space, plus explicit Create clearance.
+- Retained selection/focus can overlay the default foreground. Mode/collection
+  changes intentionally reset comparison position; density, resize and appends
+  retain the browsing anchor. First-layout timings exclude server/network.
+- Demos reuse authorized card visuals/logistics with synthetic labeled titles;
+  they do not establish real result diversity, query cost or ranking quality.
+- Only Moving's window plus retained focus is attached; other nodes stay in memory.
+  Production fetching/virtualization is not implemented by this experiment.
+- No schema, production pagination/ranking, RSVP/permissions/invitations,
+  notifications, beta admission or payment changes. No reseed/reset, source user
+  or Activity rewrite, or original asset replacement.

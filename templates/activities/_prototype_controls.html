@@ -8,10 +8,17 @@
       <label><input type="radio" name="prototype-mode" value="all" class="sr-only"><span class="ui-segment">Spread out</span></label>
     </div>
   </fieldset>
+  <fieldset data-prototype-density hidden>
+    <legend class="sr-only">Experimental overlap density</legend>
+    <div class="ui-segmented">
+      <label><input type="radio" name="prototype-density" value="regular" class="sr-only" checked><span class="ui-segment">Regular</span></label>
+      <label><input type="radio" name="prototype-density" value="tight" class="sr-only"><span class="ui-segment">Tight</span></label>
+    </div>
+  </fieldset>
   <details class="prototype-options">
     <summary class="ui-disclosure">Prototype</summary>
     <div class="prototype-options-panel ui-menu-panel space-y-2">
-      <p class="text-sm">Moving scrolls continuously; Paged advances with Next set. Real cards work; labeled demo cards are inert browser-only supplements.</p>
+      <p class="text-sm">Regular exposes title and logistics; Tight exposes titles only. Moving scrolls continuously; Paged advances with Next set. Real cards work; labeled demo cards are inert browser-only supplements.</p>
       <div data-prototype-simulation hidden>
         <label>Collection <select class="ui-field" data-simulation-count><option value="0">Default: real + demo (64 minimum)</option><option value="real">Real matches only</option><option>8</option><option>48</option><option>150</option><option>300</option></select></label>
         <label class="ui-facet__option"><input type="checkbox" data-simulation-batches> Delayed demo batches (24 / 300ms)</label>

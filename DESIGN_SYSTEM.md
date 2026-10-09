@@ -945,3 +945,14 @@ inside the pane so its scrollbar meets the browser edge. Default browser-only De
 supplements are clearly labeled, have no actions, and never write data. Normal
 Discover is unchanged. See docs/DISCOVERY_LAYOUT_PROTOTYPE.md for state snapshots,
 selection/focus behavior, mobile full-grid fallback and review compromises.
+
+Within this experiment only, Regular overlap exposes Bands 1+2; optional Tight
+exposes Band 1. Both use existing band tokens and keep every foreground card's
+five bands intact. Moving pins the current full foreground within the visible
+stage while covered headers continue translating at fractional scroll positions.
+Covered titles/logistics use opaque neutral surfaces (#45404a/white and
+#edeaf0/black); other covered bands reduce saturation. Active, selected, focused,
+and intentionally hovered cards retain the original palette. No card opacity is
+reduced. Prototype hover promotion requires actual pointer movement after scroll;
+shared native hover/focus stacking is overridden only inside the experiment.
+Prototype-local mode/density preferences never write normal Discover's preference.

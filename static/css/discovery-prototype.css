@@ -29,11 +29,18 @@
 .prototype-stage { position:sticky; top:0; display:grid; gap:var(--stack-gap); isolation:isolate; overflow:clip; }
 .prototype-column { position:relative; height:100%; }
 .prototype-item { position:absolute; left:0; width:100%; top:var(--prototype-y); z-index:var(--prototype-z); }
-.prototype-item:hover, .prototype-item[data-selected] { z-index:100; }
+/* Override shared native hover only inside the experiment. */
+.prototype-main .activity-stack__layer:hover, .prototype-main .activity-stack__layer:focus-within { z-index:var(--stack-z,1); }
+.prototype-main [data-stack-item][data-prototype-raised] { z-index:100; }
+.prototype-main [data-covered] .activity-card__band-1 { background:#45404a; }
+.prototype-main [data-covered] .activity-card__band-2 { background:#edeaf0; }
+.prototype-main [data-covered] .activity-card__band-3,
+.prototype-main [data-covered] .activity-card__band-4,
+.prototype-main [data-covered] .activity-card__band-5 { filter:saturate(.35); }
 .prototype-item:focus-visible { outline:3px solid #843a96; border-radius:22px; }
 [data-simulated] .activity-card { pointer-events:none; }
 [data-simulated] { cursor:default; }
-[data-prototype-navigation][hidden], [data-prototype-modes][hidden], [data-prototype-simulation][hidden] { display:none; }
+[data-prototype-navigation][hidden], [data-prototype-density][hidden], [data-prototype-modes][hidden], [data-prototype-simulation][hidden] { display:none; }
 
 [data-simulated] .activity-card__cta { color:white; }
 @media (max-width:639px) {

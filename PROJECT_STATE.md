@@ -461,4 +461,8 @@ That should be enough to resume work without carrying a giant chat forward.
 - Optional 8/48/150/300-card simulations and delayed batches write no data;
   production defaults/ranking/pagination are unchanged. Mobile defaults to full cards
   in the experiment. Leave its PR unmerged pending human UI review.
-- Comparison, indicative performance and compromises: docs/DISCOVERY_LAYOUT_PROTOTYPE.md.
+- All four modes remain available. Experimental Regular/Tight overlap and mode
+  persist in prototype-only browser storage; short stages use full-card scrolling.
+  Moving keeps full foreground cards fitted at fractional positions and suppresses
+  stationary-pointer hover; covered cards use opaque neutral de-emphasis.
+- Comparison, geometry evidence and compromises: docs/DISCOVERY_LAYOUT_PROTOTYPE.md.
