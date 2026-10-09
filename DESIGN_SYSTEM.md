@@ -957,10 +957,14 @@ white). These are prototype tuning values, not approved production tokens.
 Other covered bands retain modest saturation/brightness reduction.
 In browse mode the natural foreground retains its original palette. While a card
 is explicitly exposed, only that card has full-color emphasis; closing restores
-the natural foreground. Hover/focus alone never raises or expands cards. The noninteractive
-header surface toggles exposure; a quiet borderless chevron button, separate from
-the title link and kebab, provides native Enter/Space and aria-expanded state.
-Its 14px icon sits in a 40×44px target without enlarging the reserved title gutter. Its close
-control stays on the raised card. Deliberate browse scrolling dismisses exposure;
+the natural foreground. Hover/focus alone never raises or expands cards.
+Only the existing noninteractive header surface toggles exposure: no injected
+button, icon, chevron, glyph or other visible header indicator. The existing card
+is a focusable group, with Enter/Space handling only on the group itself; its title
+link, menu and actions retain their own semantics. Off-header screen-reader-only
+instructions and a status announcement describe exposure/return. A group is used
+instead of a button role to avoid flattening/nesting its interactive descendants.
+The same header surface stays reachable to return the raised card to the stack.
+Deliberate browse scrolling dismisses exposure;
 programmatic scroll and resize do not. Paged set changes dismiss it too.
 Prototype-local mode/density preferences never write normal Discover's preference.

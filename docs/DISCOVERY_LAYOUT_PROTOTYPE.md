@@ -39,21 +39,30 @@ Columns follow actual results width, gutters and Friends resizing. Density/resiz
 recompute capacity while retaining the browsing anchor and fractional progress;
 Paged re-partitions contiguous sets around its anchor. Neither changes the collection.
 
-Click/tap the noninteractive exposed header surface to open/close one full card.
-A quiet borderless 14px chevron in a 40×44px native button provides a discoverable
-keyboard alternative without heavy header chrome. Neither surface activation nor
-the button intercepts the title Details link, kebab or response action. Enter/Space toggles with aria-expanded and an accessible action
-name. The same surface and upward chevron remain reachable on the raised card; activating it restores the
-resting stack and B/C headers. Selecting another card transfers exposure. Keyboard
-focus alone never exposes a card. HTMX response swaps restore the control/state.
+Click/tap the existing noninteractive exposed header surface to open/close one
+full card. No button, icon, chevron, glyph or visible header indicator is injected.
+The title Details link, kebab and response actions remain independent.
 
-Hover never changes z-order or geometry. Intentional movement may outline the
-small disclosure control; scrolling clears this pointer indication. Moving and
+Keyboard users focus the existing card group and press Enter/Space to toggle it.
+Its accessible label announces In stack / Shown in full; off-header, screen-reader-
+only instructions and a live status announce exposure/return. Descendant links,
+menus and actions keep native keyboard behavior. The tradeoff is a focusable group
+with explained keyboard shortcuts rather than a native disclosure button: applying
+button semantics to the parent would flatten/conflict with interactive descendants,
+and aria-expanded is not applied to a group. Keyboard focus alone never exposes.
+No new always-visible focus/selection decoration is added to the header.
+
+The same existing surface returns the raised card to its resting stack and
+restores B/C access; selecting another card transfers exposure. HTMX response
+swaps retain the group keyboard/surface behavior. Spread out remains unchanged.
+
+Hover never changes z-order or geometry and adds no header indicator. Existing
+link hover styling and the surface pointer cursor retain their native meaning. Moving and
 classic Stacked dismiss exposure on deliberate wheel/touch/keyboard/scrollbar
 browsing input before motion; Paged dismisses on set changes. Resize, reflow and
 programmatic scroll do not dismiss it. Moving retains selected/focused nodes if
 needed and reports out-of-window indices separately, without focus promotion.
-Spread out and the short-stage full-card fallback show no exposure controls.
+Spread out and the short-stage full-card fallback do not toggle exposure.
 
 Covered cards recede as opaque pastels: header stops mix their existing colors
 with 70% white, with dark #35173c title/link/menu text. Band 2 mixes per-card
@@ -92,7 +101,7 @@ headers may clip; complete foreground cards may not. With zero extra strips, the
 moving effect is successive full cards per column rather than a multi-header pile.
 
 Native wheel checks parked the pointer on Moving and Stacked and confirmed no
-successive hover activation; deliberate movement indicated the selectable control. Paged sets
+successive hover activation; no pointer exposure occurs. Paged sets
 had non-overlapping indices; Spread out exposed all 64 cards. Preferences survived
 reload, search and desktop-to-mobile resize; a sentinel normal Discover preference
 remained unchanged. Screenshots and state snapshots stay outside Git because they
@@ -114,30 +123,29 @@ remain unfiltered. Native-wheel parked-pointer suppression remains; hover no
 longer raises cards. The 36 relevant tests and system check passed.
 
 The click-to-expose iteration checked A/open/close → B/open/close → C/open/close
-in one column without leaving it, by mouse, touch and native keyboard buttons,
+in one column without leaving it, by mouse, touch and keyboard group activation,
 across Moving/Paged/Stacked × Regular/Tight. One exposure transfers correctly,
 remains fitted, survives programmatic scroll/resize and dismisses on user wheel
 or set advance. Moving touch drag and keyboard PageDown also dismiss naturally
 in both densities. Single-activation title Details and kebab remain independent.
 A real RSVP POST in a disposable database saved with one activation and retained
-exposure/control after its HTMX replacement; no preview participation data changed.
-Spread out retains original cards/colors without visible exposure controls.
+exposure after its HTMX replacement; no preview participation data changed.
+Spread out retains original cards/colors without exposure behavior.
 
-The header-surface/chevron correction checked surface open/close and native
-Enter/Space through A/B/C, plus independent menu and title navigation, across
-Moving/Paged/Stacked × Regular/Tight at 1440×1100, 768×1100 (touch) and 375×1300
-(touch). The narrow tall stage permits three headers for this sequence; shorter
-stages retain their measured smaller capacity or full-card fallback. Header
-screenshots, including long real titles and visible menus, were inspected. The
-chevron target stays outside the title bounds and adds no visible border or +/−
-glyph. Demo header surfaces also toggle locally without server actions.
+The zero-header-UI correction checked surface click/tap and group Enter/Space
+through A/B/C, plus independent menu/title navigation, in Moving/Paged/Stacked ×
+Regular/Tight at 1440×1100, 768×1100 touch and 375×1300 touch. Header screenshots,
+including long real titles and menus, were inspected. Header child structure
+remains the original title zone and native menu, with no injected control/icon.
+The tall narrow stage allows several headers; shorter stages retain their measured
+capacity or full-card fallback. Demo surfaces toggle locally without server actions.
 
 ## Compromises and boundaries
 
 - Covered headers translate continuously, while the complete foreground changes
   when an incoming row enters. Token sizing can leave less than one overlap strip
   of spare space, plus explicit Create clearance.
-- Explicit exposure can overlay the natural foreground, with its own close button.
+- Explicit exposure can overlay the natural foreground, with return available on the same header surface.
   Retained keyboard focus alone does not raise a card. Mode/collection
   changes intentionally reset comparison position; density, resize and appends
   retain the browsing anchor. First-layout timings exclude server/network.

@@ -464,8 +464,9 @@ That should be enough to resume work without carrying a giant chat forward.
 - All four modes remain available. Experimental Regular/Tight overlap and mode
   persist in prototype-only browser storage; short stages use full-card scrolling.
   Moving keeps full foreground cards fitted at fractional positions and suppresses
-  hover promotion; header-surface clicks and quiet chevron controls toggle one card with
-  reachable dismissal. Deliberate browsing scroll/set changes dismiss exposure;
+  hover promotion; existing header-surface clicks toggle one card with reachable
+  dismissal and no new visible header UI. Keyboard Enter/Space on the existing
+  card group has screen-reader instructions/state announcements. Deliberate browsing scroll/set changes dismiss exposure;
   resize/programmatic scroll preserve it. Covered cards retain light hue-preserving
   pastels and dark top-band text; Spread out remains unchanged.
 - Comparison, geometry evidence and compromises: docs/DISCOVERY_LAYOUT_PROTOTYPE.md.

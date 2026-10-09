@@ -10,6 +10,7 @@
   const batches = controls.querySelector('[data-simulation-batches]');
   const metrics = controls.querySelector('[data-prototype-metrics]');
   const position = controls.querySelector('[data-prototype-position]');
+  const exposureStatus = controls.querySelector('[data-prototype-exposure-status]');
   const navigation = controls.querySelector('[data-prototype-navigation]');
   const previous = controls.querySelector('[data-prototype-previous]');
   const next = controls.querySelector('[data-prototype-next]');
@@ -28,6 +29,8 @@
   let hovered;
   let items = [], columns = 1, slots = 0, pageStart = 0, generation = 0, frame;
   let stage, selected, wanted = 0, started, firstDisplay, actualStack = false;
+  controls.querySelector('#prototype-exposure-help').hidden = false;
+  exposureStatus.hidden = false;
   controls.querySelector('[data-prototype-modes]').hidden = false;
   controls.querySelector('[data-prototype-simulation]').hidden = false;
   controls.querySelector('[data-prototype-density]').hidden = false;
@@ -40,36 +43,39 @@
     if (!selected) return;
     if (moveFocus && selected.contains(document.activeElement)) viewport.focus({preventScroll:true});
     selected.querySelectorAll('details[open]').forEach(menu => { menu.open = false; });
+    exposureStatus.textContent = `${selected.dataset.prototypeTitle} returned to stack.`;
     selected.removeAttribute('data-selected');
     selected = null;
   }
   function toggle(item) {
     const closing = selected === item;
     dismiss();
-    if (!closing) { selected = item; item.dataset.selected = ''; }
+    if (!closing) {
+      selected = item; item.dataset.selected = '';
+      exposureStatus.textContent = `${item.dataset.prototypeTitle} shown in full. Activate the same header again to return to stack.`;
+    }
     if (stage) draw(); else paint();
   }
   function prepare(item) {
-    if (item.querySelector('[data-prototype-expose]')) return;
-    item.dataset.prototypePrepared = 'true';
-    item.removeAttribute('tabindex');
-    item.setAttribute('role', 'group');
-    const title = item.querySelector('h2').textContent.trim();
-    item.setAttribute('aria-label', title);
-    // A separate native button keeps title links, menus and response actions honest.
-    const button = document.createElement('button');
-    button.type = 'button'; button.className = 'ui-disclosure prototype-expose';
-    button.dataset.prototypeExpose = '';
-    button.dataset.cardTitle = title;
-    button.addEventListener('click', () => toggle(item));
-    button.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
     const header = item.querySelector('.activity-card__band-1');
-    header.append(button);
+    if (header.dataset.exposurePrepared) return;
+    header.dataset.exposurePrepared = 'true';
+    item.dataset.prototypeTitle = item.querySelector('h2').textContent.trim();
+    // Keep a group with native interactive descendants, not a button containing
+    // links/menus. The existing card surface is the keyboard focus target.
+    item.setAttribute('role', 'group');
     header.addEventListener('click', event => {
       if (root.dataset.renderedMode === 'all' || event.target.closest('a,button,input,summary,label,details,form')) return;
       toggle(item);
     });
   }
+  root.addEventListener('keydown', event => {
+    const item = event.target.closest('[data-stack-item]');
+    if (event.target !== item || root.dataset.renderedMode === 'all') return;
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault(); event.stopPropagation(); toggle(item);
+    }
+  });
   function paint() {
     root.querySelectorAll('[data-stack-item]').forEach(item => {
       prepare(item);
@@ -78,11 +84,15 @@
       item.toggleAttribute('data-covered', overlap && !active);
       item.toggleAttribute('data-pointer-active', overlap && item === hovered);
       item.toggleAttribute('data-prototype-raised', overlap && item === selected);
-      const button = item.querySelector('[data-prototype-expose]');
       const expanded = item === selected;
-      button.setAttribute('aria-expanded', String(expanded));
-      button.setAttribute('aria-label', `${expanded ? 'Return card to stack' : 'Show full card'}: ${button.dataset.cardTitle}`);
-      button.title = expanded ? 'Return card to stack' : 'Show full card';
+      item.tabIndex = overlap ? 0 : -1;
+      item.setAttribute('aria-label', overlap ? `${item.dataset.prototypeTitle}. ${expanded ? 'Shown in full' : 'In stack'}.` : item.dataset.prototypeTitle);
+      if (overlap) {
+        item.setAttribute('aria-describedby', 'prototype-exposure-help');
+        item.setAttribute('aria-keyshortcuts', 'Enter Space');
+      } else {
+        item.removeAttribute('aria-describedby'); item.removeAttribute('aria-keyshortcuts');
+      }
       // Classic stacks keep their natural geometry except for the one explicit
       // exposure, fitted to the current visible viewport. Closing removes it.
       item.style.removeProperty('top');
@@ -248,8 +258,8 @@
   function demo(index) {
     const source = originals.length ? originals[index % originals.length] : fallback;
     const item = source.cloneNode(true);
-    item.removeAttribute('data-prototype-prepared'); item.removeAttribute('data-selected');
-    item.querySelector('[data-prototype-expose]')?.remove();
+    item.removeAttribute('data-selected');
+    item.querySelector('.activity-card__band-1').removeAttribute('data-exposure-prepared');
     item.dataset.simulated = 'true';
     item.querySelectorAll('[id]').forEach(node=>node.removeAttribute('id'));
     item.querySelectorAll('form').forEach(form=>form.remove());
