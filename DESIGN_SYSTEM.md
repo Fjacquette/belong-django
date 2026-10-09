@@ -907,3 +907,16 @@ History uses native disclosure. Roster separates admission, secured places, hold
 FIFO entries, with a versioned capacity form that cannot evict places. Cards navigate
 with Place held / Place offered / Waitlisted / Offer expired state; no timer, mutation
 or badge in the image/description bands, and no change to fixed card geometry.
+
+
+### Contextual Activity email consent (#90)
+
+Details shows a compact global-email opt-in beside eligible saved participation.
+Discover uses one secondary prompt outside the card bands, updated out of band
+following card RSVP. Copy states that Activity update/cancellation email consent
+applies to all Activities the user participates in; a comfortable secondary POST
+button enables it. Account settings remains the opt-out destination. No checkbox
+is preselected, and no participation action enables consent. Reuse `text-sm`,
+`space-y-2`, `ui-link` and existing secondary controls; native POST works without
+JavaScript. Declines, poll votes alone, pending enrollment and cancelled Activities
+do not offer participant notices; enabled accounts are not prompted again.
