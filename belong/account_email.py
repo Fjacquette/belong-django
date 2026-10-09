@@ -3,6 +3,7 @@ import secrets
 import uuid
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -13,7 +14,7 @@ from .email_controls import lock_controls, own_mail_reservation, owned_url, disp
 from .email_verification import digest
 
 
-def request_account_email(request, email, purpose):
+def request_account_email(request, email, purpose, *, beta_code='', strict_beta=False):
     if purpose not in {'signup', 'recovery'}:
         raise ValueError('Unsupported account email purpose.')
     email = email.strip().lower()
@@ -24,17 +25,33 @@ def request_account_email(request, email, purpose):
             return
         user = get_user_model().objects.filter(email__iexact=email).first()
         claimable = user is None or (user.is_active and not user.profile.email_verified_at and not user.profile.legacy_access)
+        admission = None
+        beta_denied = False
+        if settings.BETA_MODE and (claimable or strict_beta):
+            from .beta_admission import resolve
+            try:
+                admission = resolve(request, email, code=beta_code)
+            except ValidationError:
+                # Recovery and authenticated verification remain neutral. No setup
+                # credential is minted through an alternate registration path.
+                claimable = False
+                beta_denied = True
+                if strict_beta:
+                    attempt.outcome, attempt.reason = 'denied', 'beta_admission_required'
+                    attempt.save(update_fields=['outcome', 'reason'])
         if claimable and (purpose == 'signup' or user is not None):
             token = secrets.token_urlsafe(32)
             # Keep earlier links valid until one succeeds; retries cannot invalidate an owner's inbox.
-            AccountEmailProof.objects.create(email=email, purpose='signup', token_digest=digest(token), expires_at=timezone.now()+timedelta(hours=24))
+            AccountEmailProof.objects.create(email=email, purpose='signup', beta_admission=admission, token_digest=digest(token), expires_at=timezone.now()+timedelta(hours=24))
             route = ('complete_signup', token)
-        elif purpose == 'recovery' and user and user.is_active:
+        elif purpose == 'recovery' and user and user.is_active and (user.profile.email_verified_at or user.profile.legacy_access):
             token = secrets.token_urlsafe(32)
             AccountEmailProof.objects.create(email=email, purpose=purpose, user=user, token_digest=digest(token), expires_at=timezone.now()+timedelta(hours=1))
             route = ('complete_recovery', token)
         else:
             route = ('login',) if purpose == 'signup' else ('signup',)
+    if strict_beta and beta_denied:
+        return False
     try:
         url = owned_url(*route)
     except Exception:
@@ -70,6 +87,10 @@ def complete_signup(request, token, data):
         user = get_user_model().objects.select_for_update().filter(email__iexact=proof.email).first()
         if user and (not user.is_active or user.profile.email_verified_at or user.profile.legacy_access):
             raise ValidationError('Please sign in or request account recovery to continue.')
+        admission = None
+        if settings.BETA_MODE:
+            from .beta_admission import resolve
+            admission = resolve(request, proof.email, code=data.get('beta_code', ''), existing=proof.beta_admission)
         if user is None:
             if not creation_allowed(request):
                 raise ValidationError('Please wait before creating another account. You can use this link later.')
@@ -87,6 +108,12 @@ def complete_signup(request, token, data):
         profile.account_type = data['account_type']
         profile.interests_prompt_pending = True
         profile.save(update_fields=['email_verified_at', 'legacy_access', 'pending_email', 'display_name', 'account_type', 'interests_prompt_pending'])
+        if admission:
+            from .beta_admission import redeem
+            redeem(admission, user)
+            proof.beta_admission = admission
+        proof.user = user
+        proof.save(update_fields=['user', 'beta_admission'])
         # Invalidate all proofs for this address, including old provisional-account proofs.
         AccountEmailProof.objects.filter(email__iexact=proof.email, used_at__isnull=True).update(used_at=timezone.now())
         EmailVerification.objects.filter(user=user, used_at__isnull=True).update(used_at=timezone.now())

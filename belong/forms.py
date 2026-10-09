@@ -31,9 +31,12 @@ class StyledAuthenticationForm(AuthenticationForm):
 class SignupEmailForm(forms.Form):
     email = forms.EmailField(max_length=254, widget=forms.EmailInput(attrs={'autocomplete': 'email'}))
 
-    def __init__(self, *args, invited_email=None, **kwargs):
+    def __init__(self, *args, invited_email=None, beta_mode=False, beta_invited=False, **kwargs):
         self.invited_email = invited_email
         super().__init__(*args, **kwargs)
+        if beta_mode and not beta_invited:
+            self.fields['beta_code'] = forms.CharField(label='Beta invitation code', max_length=100, required=True,
+                widget=forms.PasswordInput(attrs={'autocomplete':'off'}))
         if invited_email:
             self.fields['email'].initial = invited_email
             self.fields['email'].widget.attrs['readonly'] = True
@@ -53,9 +56,13 @@ class AccountSetupForm(forms.Form):
     password1 = forms.CharField(label='Password', widget=forms.PasswordInput(attrs={'autocomplete': 'new-password'}))
     password2 = forms.CharField(label='Confirm password', widget=forms.PasswordInput(attrs={'autocomplete': 'new-password'}))
 
-    def __init__(self, *args, email, **kwargs):
+    def __init__(self, *args, email, beta_mode=False, **kwargs):
         self.email = email
         super().__init__(*args, **kwargs)
+        if beta_mode:
+            self.fields['beta_code'] = forms.CharField(label='Beta invitation code (if requested)', max_length=100, required=False,
+                help_text='Leave empty if your account link already includes a valid beta invitation.',
+                widget=forms.PasswordInput(attrs={'autocomplete':'off'}))
         style_fields(self)
 
     def clean_password2(self):
@@ -130,8 +137,11 @@ class EmailChangeForm(forms.Form):
 class VerificationEmailForm(forms.Form):
     email = forms.EmailField(max_length=254, label='Email address')
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, beta_mode=False, **kwargs):
         super().__init__(*args, **kwargs)
+        if beta_mode:
+            self.fields['beta_code'] = forms.CharField(label='Beta invitation code (or use your invitation link)', max_length=100, required=False,
+                widget=forms.PasswordInput(attrs={'autocomplete':'off'}))
         style_fields(self)
 
 

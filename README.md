@@ -106,6 +106,16 @@ After initial setup:
 For a new checkout, the launcher handles setup; no manual secret generation or
 file copying is needed. Production/Sage setup is deferred to a later issue.
 
+## Invitation-only beta signup
+
+Beta deployments must set `BELONG_BETA_MODE=true`; ordinary signup deployments
+must set it to `false`. Production requires an explicit value. Existing dev/test
+configuration defaults to false. Codes are seven-day, email-bound and single-use;
+superusers issue them once through Admin → Social → Beta admissions and distribute
+them privately. Valid Group/Activity email invitations include beta admission but
+still require email proof and preserve their original permission boundaries.
+See [beta operations and signup policy](docs/BETA_SIGNUP.md).
+
 ## Seeding Notes
 
 Demo seeding is an explicit command; launchers never run it automatically.

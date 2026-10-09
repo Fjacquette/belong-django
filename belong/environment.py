@@ -4,6 +4,7 @@ import shlex
 
 CONFIG_KEYS = (
     "BELONG_ENV",
+    "BELONG_BETA_MODE",
     "DJANGO_DEBUG",
     "DJANGO_ALLOWED_HOSTS",
     "DJANGO_DB_PATH",
