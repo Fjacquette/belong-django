@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Activity draft · Belong{% endblock %}
+{% block content %}
+<div class="max-w-2xl">
+  <a class="ui-link" href="{% url 'activities:history' %}">← Past activities &amp; drafts</a>
+  <h1 class="text-2xl font-semibold my-4">Edit activity draft</h1>
+  <p class="mb-4 break-words">Copied from {{ draft.source_title }}. Only you can see this draft. Choose a new date before publishing a scheduled outing.</p>
+  <p class="mb-4">No responses, updates or invitations were copied. Group invitations start off; turn them on explicitly below to invite current active members when you publish. Publishing sends no email invitations.</p>
+  <form method="post" class="space-y-5 bg-white rounded-xl shadow p-6">
+    {% csrf_token %}{{ form.revision }}{{ form.revision.errors }}{{ form.non_field_errors }}
+    {% for section in form.sections %}
+      {% if forloop.first %}
+        <div class="space-y-5">{% for field in section.fields %}{% include 'activities/_draft_field.html' %}{% endfor %}</div>
+      {% else %}
+        <details{% if form.is_bound and section.open %} open{% endif %}>
+          <summary class="ui-disclosure">{{ section.label }}</summary>
+          <div class="space-y-5 mt-4">{% for field in section.fields %}{% include 'activities/_draft_field.html' %}{% endfor %}</div>
+        </details>
+      {% endif %}
+    {% endfor %}
+    <div class="ui-cluster">
+      <button class="ui-button ui-button--secondary ui-button--comfortable" name="action" value="save" type="submit">Save draft</button>
+      <button class="ui-button ui-button--primary ui-button--comfortable" name="action" value="publish" type="submit">Publish new activity</button>
+    </div>
+  </form>
+</div>
+<script src="{% static 'js/activity-form.js' %}?v=reservation-1" defer></script>
+{% endblock %}

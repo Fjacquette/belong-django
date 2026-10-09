@@ -1,0 +1,7 @@
+<div{% if field.name == 'available_responses' %} data-legacy-response-choices{% endif %}{% if field.name|slice:':10' == 'poll_date_' %} data-poll-date{% endif %}{% if field.name|slice:':13' == 'registration_' %} data-registration-policy{% endif %}>
+  <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-slate-700">{{ field.label }}</label>
+  {{ field }}
+  {% if field.help_text %}<p id="{{ field.auto_id }}_helptext" class="text-xs text-slate-500 mt-1">{{ field.help_text }}</p>{% endif %}
+  {% if field.name == 'title' or field.name == 'location_name' %}<p id="{{ field.auto_id }}_counter" class="ui-character-counter" data-counter-for="{{ field.auto_id }}" data-limit="{{ field.field.max_length }}" aria-live="polite">{{ field.value|default:''|length }} / {{ field.field.max_length }}</p>{% endif %}
+  {% for error in field.errors %}<p class="text-sm text-red-600 mt-1">{{ error }}</p>{% endfor %}
+</div>

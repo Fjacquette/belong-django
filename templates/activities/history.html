@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Past activities &amp; drafts · Belong{% endblock %}
+{% block content %}
+<div class="max-w-3xl">
+  <h1 class="text-2xl font-semibold mb-4">Past activities &amp; drafts</h1>
+  {% if drafts %}<section class="mb-6"><h2 class="text-xl font-semibold mb-3">Your private drafts</h2><ul class="space-y-3">
+    {% for draft in drafts %}<li class="break-words"><a class="ui-link inline-flex min-h-11 items-center" href="{% url 'activities:draft' draft.pk %}">{{ draft.values.title }}</a></li>{% endfor %}
+  </ul></section>{% endif %}
+  <p class="mb-4">Review an outing you organized, then copy it into a private draft for a new activity.</p>
+  <form method="get" class="ui-cluster mb-4"><label class="sr-only" for="past-query">Search past activities</label><input id="past-query" class="ui-field" type="search" name="q" value="{{ query }}" placeholder="Search past activities"><button class="ui-button ui-button--primary" type="submit">Search</button></form>
+  <ul class="space-y-4">
+    {% for activity in activities %}<li class="border-b border-slate-200 pb-4 break-words">
+      <a class="ui-link inline-flex min-h-11 items-center" href="{{ activity.get_absolute_url }}">{{ activity.title }}</a>
+      <p>{% if activity.is_cancelled %}Cancelled · {% endif %}{% if activity.starts_at %}<time datetime="{{ activity.starts_at|date:'c' }}">{{ activity.starts_at|date:'M j, Y, g:i a' }}</time>{% else %}No date{% endif %}</p>
+      <form action="{% url 'activities:clone' activity.pk %}" method="post" class="mt-2">{% csrf_token %}<button class="ui-button ui-button--secondary ui-button--comfortable" type="submit">Copy to a new draft</button></form>
+    </li>{% empty %}<li>No matching past activities you can organize.</li>{% endfor %}
+  </ul>
+  <nav class="ui-cluster mt-4" aria-label="Past activities pages">{% if activities.has_previous %}<a class="ui-link" href="?q={{ query|urlencode }}&amp;page={{ activities.previous_page_number }}">Newer</a>{% endif %}{% if activities.has_next %}<a class="ui-link" href="?q={{ query|urlencode }}&amp;page={{ activities.next_page_number }}">Older</a>{% endif %}</nav>
+</div>
+{% endblock %}

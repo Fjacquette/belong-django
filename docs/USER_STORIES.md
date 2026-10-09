@@ -227,6 +227,14 @@ Each story states a human outcome, not a preferred form or database schema. “A
 
 **Checkpoint:** historical outing remains unchanged, drafts do not accidentally appear in Discover, and Group/Series associations and invitee defaults are deliberate.
 
+**Implemented #68 boundary:** account menu → Past activities & drafts → Copy to a
+new draft → Save draft / Publish new activity. A private creator-owned snapshot
+retains occurrence logistics, clears dates and invitations, and creates the fresh
+Activity only on publication. Group invitations require explicit new selection;
+Series association never reapplies its current defaults. Published logistics editing
+remains separate. See [ACTIVITY_REUSE.md](ACTIVITY_REUSE.md); external Janine/hiker
+walkthrough and actual inbox delivery remain pilot evidence, not local-test claims.
+
 ### J-11 — Janine delegates and maintains the group
 
 **Given** Janine needs help, **when** she authorizes another active organizer, **then** that organizer can perform only intended Group/occurrence management actions. Members can leave; Janine can handle membership requests and inappropriate participants.

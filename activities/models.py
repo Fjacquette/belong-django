@@ -365,6 +365,20 @@ class Activity(ParticipationConfigurationMixin, models.Model):
         return None
 
 
+class ActivityDraft(models.Model):
+    """Private copied defaults; an Activity exists only after explicit publication."""
+    creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='activity_drafts')
+    source = models.ForeignKey(Activity, null=True, blank=True, on_delete=models.SET_NULL, related_name='copied_drafts')
+    source_title = models.CharField(max_length=160)
+    values = models.JSONField(default=dict)
+    requires_schedule = models.BooleanField(default=False)
+    revision = models.PositiveIntegerField(default=1)
+    published_activity = models.OneToOneField(Activity, null=True, blank=True, on_delete=models.SET_NULL, related_name='published_draft')
+    published_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
 class ActivityResponse(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     activity = models.ForeignKey(

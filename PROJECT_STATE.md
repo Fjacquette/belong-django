@@ -273,6 +273,20 @@ evidence. Existing D1–D3 remain functional, but payment infrastructure is defe
 no provider sandbox experiment, payment implementation or D5 is authorized as the
 next task. Beta access #77 supports pilot timing; broader follow-ups come afterward.
 
+### Past Activities and private reuse drafts (#68)
+
+- Account menu → Past activities & drafts lists accessible past/cancelled outings
+  the user organizes. Details/list POST copying creates a private creator-owned
+  ActivityDraft snapshot; no published Activity exists until explicit publication.
+- Copy occurrence logistics/current defaults and manageable Group/Series associations;
+  clear schedule and all invitation/response/update/cancellation/participation history.
+  Group invitation opt-in starts off; current Series defaults are never reapplied.
+- Native disclosed editing saves privately or validates/publishes a fresh Activity.
+  Revision checks and serialized publication prevent stale overwrites/duplicate outings.
+  Existing free capacity, poll/enrollment/registration authorities and data stay intact.
+- Published logistics editing is outside this slice. See docs/ACTIVITY_REUSE.md for
+  exact exclusions and pilot evidence gaps; payment infrastructure remains deferred.
+
 ### Discovery iteration
 
 **#19 is complete and merged.**
