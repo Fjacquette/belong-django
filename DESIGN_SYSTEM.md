@@ -955,8 +955,11 @@ color / 70% white), with dark belong-purpleDark title/link/menu ink. Covered
 logistics use a lighter coordinating primary/secondary tint (10% color / 90%
 white). These are prototype tuning values, not approved production tokens.
 Other covered bands retain modest saturation/brightness reduction.
-Active, selected, focused,
-and intentionally hovered cards retain the original palette. No card opacity is
-reduced. Prototype hover promotion requires actual pointer movement after scroll;
-shared native hover/focus stacking is overridden only inside the experiment.
+In browse mode the natural foreground retains its original palette. While a card
+is explicitly exposed, only that card has full-color emphasis; closing restores
+the natural foreground. Hover/focus alone never raises or expands cards. A compact
++/− header disclosure button, separate from the title link and kebab, toggles one
+fully fitted exposure, with native Enter/Space and aria-expanded state. Its close
+control stays on the raised card. Deliberate browse scrolling dismisses exposure;
+programmatic scroll and resize do not. Paged set changes dismiss it too.
 Prototype-local mode/density preferences never write normal Discover's preference.

@@ -39,22 +39,30 @@ Columns follow actual results width, gutters and Friends resizing. Density/resiz
 recompute capacity while retaining the browsing anchor and fractional progress;
 Paged re-partitions contiguous sets around its anchor. Neither changes the collection.
 
-Click/tap non-navigation content or keyboard focus brings a card forward.
-Enter/Space selects the wrapper; real links/menu/actions retain native behavior.
-Pointer focus does not relocate a navigation target before activation. Focused
-cards remain attached when their window scrolls away, with the retained index
-reported separately. Progress includes incoming rows, not just the base window.
+The +/− header disclosure button explicitly opens/closes one full card. It is a
+separate native button, never a substitute for the title Details link, kebab or
+response action. Enter/Space toggles with aria-expanded and an accessible action
+name. The − remains reachable on the raised card; activating it restores the
+resting stack and B/C headers. Selecting another card transfers exposure. Keyboard
+focus alone never exposes a card. HTMX response swaps restore the control/state.
+
+Hover never changes z-order or geometry. Intentional movement may outline the
+small disclosure control; scrolling clears this pointer indication. Moving and
+classic Stacked dismiss exposure on deliberate wheel/touch/keyboard/scrollbar
+browsing input before motion; Paged dismisses on set changes. Resize, reflow and
+programmatic scroll do not dismiss it. Moving retains selected/focused nodes if
+needed and reports out-of-window indices separately, without focus promotion.
+Spread out and the short-stage full-card fallback show no exposure controls.
 
 Covered cards recede as opaque pastels: header stops mix their existing colors
 with 70% white, with dark #35173c title/link/menu text. Band 2 mixes per-card
 primary/secondary colors with 90% white and keeps black logistics text. These
 percentages are visual tuning hypotheses, not production tokens. Other covered
 bands retain the earlier modest saturation/brightness adjustment.
-Active, selected, focused and
-intentionally hovered cards retain the original palette. No opacity reduction
-causes bleed-through. Scroll clears pointer emphasis; actual subsequent mouse
-movement restores it. Shared native hover/focus stacking is overridden only in
-this prototype. Hover over navigation targets does not relocate them.
+In browse mode natural foreground cards retain the original palette. While one
+card is explicitly exposed, it alone has full-color emphasis; covered cards stay
+pastel. Closing restores the correct natural foreground. No wrapper opacity or
+neighboring-band bleed-through is introduced.
 
 Mode/density persist in prototype-only browser keys `belong-prototype-card-view`
 and `belong-prototype-stack-density`. Mode values retain ordinary `all`/`stacked`
@@ -83,7 +91,7 @@ headers may clip; complete foreground cards may not. With zero extra strips, the
 moving effect is successive full cards per column rather than a multi-header pile.
 
 Native wheel checks parked the pointer on Moving and Stacked and confirmed no
-successive hover activation; deliberate movement restored emphasis. Paged sets
+successive hover activation; deliberate movement indicated the selectable control. Paged sets
 had non-overlapping indices; Spread out exposed all 64 cards. Preferences survived
 reload, search and desktop-to-mobile resize; a sentinel normal Discover preference
 remained unchanged. Screenshots and state snapshots stay outside Git because they
@@ -101,21 +109,31 @@ with at least three different exposed covered palettes per comparison and six
 hues overall. Side-by-side screenshots were inspected. Browser-resolved title
 contrast and calculated tinted logistics contrast exceeded 4.5:1 throughout the
 sampled collection. Covered titles/menu icons use dark ink; foreground bands
-remain unfiltered. Native-wheel parked-pointer suppression and intentional hover
-still work. The 36 relevant tests and system check passed. This correction changes
-only covered palette styling, its CSS cache version and corresponding guidance.
+remain unfiltered. Native-wheel parked-pointer suppression remains; hover no
+longer raises cards. The 36 relevant tests and system check passed.
+
+The click-to-expose iteration checked A/open/close → B/open/close → C/open/close
+in one column without leaving it, by mouse, touch and native keyboard buttons,
+across Moving/Paged/Stacked × Regular/Tight. One exposure transfers correctly,
+remains fitted, survives programmatic scroll/resize and dismisses on user wheel
+or set advance. Moving touch drag and keyboard PageDown also dismiss naturally
+in both densities. Single-activation title Details and kebab remain independent.
+A real RSVP POST in a disposable database saved with one activation and retained
+exposure/control after its HTMX replacement; no preview participation data changed.
+Spread out retains original cards/colors without visible exposure controls.
 
 ## Compromises and boundaries
 
 - Covered headers translate continuously, while the complete foreground changes
   when an incoming row enters. Token sizing can leave less than one overlap strip
   of spare space, plus explicit Create clearance.
-- Retained selection/focus can overlay the default foreground. Mode/collection
+- Explicit exposure can overlay the natural foreground, with its own close button.
+  Retained keyboard focus alone does not raise a card. Mode/collection
   changes intentionally reset comparison position; density, resize and appends
   retain the browsing anchor. First-layout timings exclude server/network.
 - Demos reuse authorized card visuals/logistics with synthetic labeled titles;
   they do not establish real result diversity, query cost or ranking quality.
-- Only Moving's window plus retained focus is attached; other nodes stay in memory.
+- Only Moving's window plus retained selection/focus is attached; other nodes stay in memory.
   Production fetching/virtualization is not implemented by this experiment.
 - No schema, production pagination/ranking, RSVP/permissions/invitations,
   notifications, beta admission or payment changes. No reseed/reset, source user

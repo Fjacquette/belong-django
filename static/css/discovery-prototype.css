@@ -60,3 +60,11 @@
   .prototype-options { position:static; }
   .prototype-options-panel { left:0; right:auto; }
 }
+
+/* Explicit exposure is separate from Details and menu navigation. */
+.prototype-expose { position:absolute; left:0; top:10px; width:36px; min-height:44px;
+  padding:0; justify-content:center; font-size:24px; color:inherit; background:transparent; }
+.prototype-expose:focus-visible { outline:2px solid currentColor; outline-offset:-3px; }
+.prototype-main [data-pointer-active] .prototype-expose { box-shadow:inset 0 0 0 1px currentColor; }
+[data-stack-root][data-rendered-mode="all"] .prototype-expose { display:none; }
+[data-simulated] .prototype-expose { pointer-events:auto; }

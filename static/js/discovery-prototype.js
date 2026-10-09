@@ -25,9 +25,9 @@
   let mode = explicitMode ? savedMode : narrow.matches ? 'all' : 'moving';
   let density = read('belong-prototype-stack-density') === 'tight' ? 'tight' : 'regular';
   let offset = number('--band-1') + (density === 'regular' ? number('--band-2') : 0);
-  let hovered, hoverFit = false;
+  let hovered;
   let items = [], columns = 1, slots = 0, pageStart = 0, generation = 0, frame;
-  let stage, selected, pointerSelection, fitSelected = false, wanted = 0, started, firstDisplay, actualStack = false;
+  let stage, selected, wanted = 0, started, firstDisplay, actualStack = false;
   controls.querySelector('[data-prototype-modes]').hidden = false;
   controls.querySelector('[data-prototype-simulation]').hidden = false;
   controls.querySelector('[data-prototype-density]').hidden = false;
@@ -36,45 +36,56 @@
     const real = items.filter(item => !item.hasAttribute('data-simulated')).length;
     metrics.textContent = `${real} real + ${items.length-real} demo cards (${items.length}/${wanted} loaded); ${root.querySelectorAll('.activity-card').length} attached; first layout ${firstDisplay}ms. Demo cards have no actions.${Number(root.dataset.available) < cardHeight && mode !== 'all' ? ' Short stage: full-card scrolling fallback.' : ''}`;
   }
-  function choose(item, fit = true) {
-    selected?.removeAttribute('data-selected');
-    selected = item; fitSelected = fit;
-    item.dataset.selected = '';
-    if (stage && fit) draw();
-    else if (!stage) paint();
+  function dismiss(moveFocus = false) {
+    if (!selected) return;
+    if (moveFocus && selected.contains(document.activeElement)) viewport.focus({preventScroll:true});
+    selected.querySelectorAll('details[open]').forEach(menu => { menu.open = false; });
+    selected.removeAttribute('data-selected');
+    selected = null;
+  }
+  function toggle(item) {
+    const closing = selected === item;
+    dismiss();
+    if (!closing) { selected = item; item.dataset.selected = ''; }
+    if (stage) draw(); else paint();
   }
   function prepare(item) {
-    if (item.dataset.prototypePrepared) return;
+    if (item.querySelector('[data-prototype-expose]')) return;
     item.dataset.prototypePrepared = 'true';
-    item.tabIndex = 0;
+    item.removeAttribute('tabindex');
     item.setAttribute('role', 'group');
-    item.setAttribute('aria-label', `Examine ${item.querySelector('h2').textContent.trim()}`);
-    item.addEventListener('click', event => {
-      if (!actualStack) return;
-      choose(item);
-      if (!event.target.closest('a,button,input,summary,label')) item.focus({preventScroll:true});
-    });
-    // Pointer focus precedes mouseup: raise now, fit after click so the
-    // navigation target cannot move out from under the pointer. Keyboard
-    // focus can fit immediately.
-    item.addEventListener('pointerdown', () => { pointerSelection = item; }, {capture:true});
-    item.addEventListener('focusin', () => choose(item, pointerSelection !== item));
-    item.addEventListener('keydown', event => {
-      if (event.target === item && (event.key === 'Enter' || event.key === ' ')) {
-        event.preventDefault(); choose(item);
-      }
-    });
+    const title = item.querySelector('h2').textContent.trim();
+    item.setAttribute('aria-label', title);
+    // A separate native button keeps title links, menus and response actions honest.
+    const button = document.createElement('button');
+    button.type = 'button'; button.className = 'ui-disclosure prototype-expose';
+    button.dataset.prototypeExpose = '';
+    button.dataset.cardTitle = title;
+    button.addEventListener('click', () => toggle(item));
+    item.querySelector('.activity-card__band-1').append(button);
   }
-  // Pointer emphasis is earned by movement, never by scroll-driven :hover.
   function paint() {
     root.querySelectorAll('[data-stack-item]').forEach(item => {
-      const foreground = item.hasAttribute('data-foreground');
-      const active = foreground || item === selected || item === hovered || item.contains(document.activeElement);
-      item.toggleAttribute('data-covered', !active && root.dataset.renderedMode !== 'all');
-      item.toggleAttribute('data-pointer-active', item === hovered);
-      const fitted = !stage || (parseFloat(item.style.getPropertyValue('--prototype-y')) >= 0 &&
-        parseFloat(item.style.getPropertyValue('--prototype-y')) + cardHeight <= stage.clientHeight);
-      item.toggleAttribute('data-prototype-raised', active && !foreground && fitted && pointerSelection !== item);
+      prepare(item);
+      const overlap = root.dataset.renderedMode !== 'all';
+      const active = selected ? item === selected : item.hasAttribute('data-foreground');
+      item.toggleAttribute('data-covered', overlap && !active);
+      item.toggleAttribute('data-pointer-active', overlap && item === hovered);
+      item.toggleAttribute('data-prototype-raised', overlap && item === selected);
+      const button = item.querySelector('[data-prototype-expose]');
+      const expanded = item === selected;
+      button.setAttribute('aria-expanded', String(expanded));
+      button.setAttribute('aria-label', `${expanded ? 'Return card to stack' : 'Show full card'}: ${button.dataset.cardTitle}`);
+      button.title = expanded ? 'Return card to stack' : 'Show full card';
+      button.textContent = expanded ? '−' : '+';
+      // Classic stacks keep their natural geometry except for the one explicit
+      // exposure, fitted to the current visible viewport. Closing removes it.
+      item.style.removeProperty('top');
+      if (!stage && overlap && expanded) {
+        const top = viewport.getBoundingClientRect().top - item.parentElement.getBoundingClientRect().top;
+        const rest = Number(item.style.getPropertyValue('--stack-index')) * offset;
+        item.style.top = `${Math.max(top, Math.min(top + Number(root.dataset.available) - cardHeight, rest))}px`;
+      }
     });
   }
   function draw() {
@@ -89,7 +100,9 @@
     const visible = items.slice(row * columns, visibleEnd);
     const front = new Map();
     visible.forEach(item => front.set(items.indexOf(item) % columns, item));
-    // Do not detach keyboard focus while native scroll advances the window.
+    const retainedSelection = selected && !visible.includes(selected) ? selected : null;
+    if (retainedSelection) visible.push(retainedSelection);
+    // Retain keyboard focus without automatically exposing that card.
     const focused = items.find(item => item.contains(document.activeElement));
     const retainedFocus = focused && !visible.includes(focused) ? focused : null;
     if (retainedFocus) visible.push(retainedFocus);
@@ -103,7 +116,7 @@
       // Only covered headers may enter/leave clipped. Let the complete
       // foreground move continuously once it reaches the fitting boundary.
       if (foreground) y = Math.max(0, Math.min(stage.clientHeight-cardHeight, y));
-      if (pointerSelection !== item && ((fitSelected && item === selected) || item === retainedFocus || (hoverFit && item === hovered)))
+      if (item === selected)
         y = Math.max(0, Math.min(stage.clientHeight-cardHeight, y));
       item.className = 'prototype-item';
       item.style.setProperty('--prototype-y', `${y}px`);
@@ -113,7 +126,7 @@
     });
     root.dataset.firstIndex = row * columns;
     root.dataset.fraction = fraction;
-    position.textContent = `${row * columns + 1}–${visibleEnd} / ${items.length}${retainedFocus ? ` · focused #${items.indexOf(retainedFocus)+1}` : ''}`;
+    position.textContent = `${row * columns + 1}–${visibleEnd} / ${items.length}${retainedSelection ? ` · exposed #${items.indexOf(retainedSelection)+1}` : ''}${retainedFocus ? ` · focused #${items.indexOf(retainedFocus)+1}` : ''}`;
     paint();
     previous.disabled = pageStart === 0;
     next.disabled = end >= items.length;
@@ -184,20 +197,35 @@
     controls.querySelectorAll('[name=prototype-density]').forEach(input=>input.checked=input.value===density);
     paint(); report();
   }
-  document.addEventListener('pointerup', () => { pointerSelection = null; });
-  document.addEventListener('pointercancel', () => { pointerSelection = null; });
   viewport.addEventListener('scroll', () => {
-    hovered = null; hoverFit = false; paint();
+    hovered = null; paint();
     if (!frame) frame = requestAnimationFrame(draw);
   }, {passive:true});
   viewport.addEventListener('pointermove', event => {
-    if (event.pointerType !== 'mouse' || (!event.movementX && !event.movementY) || pointerSelection) return;
+    if (event.pointerType !== 'mouse' || (!event.movementX && !event.movementY)) return;
     hovered = event.target.closest('[data-stack-item]');
-    hoverFit = !event.target.closest('a,button,input,summary,label');
-    if (stage) draw(); else paint();
+    paint();
   });
-  viewport.addEventListener('pointerleave', () => { hovered=null; hoverFit=false; if(stage)draw();else paint(); });
+  viewport.addEventListener('pointerleave', () => { hovered=null; paint(); });
+  // Dismiss on user intent before scrolling. Scroll events alone also come
+  // from resize/reflow/programmatic positioning and must not dismiss exposure.
+  function browse() {
+    if (mode !== 'moving' && mode !== 'stacked') return;
+    dismiss(true); hovered = null;
+    if (stage) draw(); else paint();
+  }
+  viewport.addEventListener('wheel', event => { if (event.deltaY && !event.ctrlKey) browse(); }, {passive:true});
+  viewport.addEventListener('touchmove', browse, {passive:true});
+  viewport.addEventListener('keydown', event => {
+    if (event.target.closest('input,select,textarea')) return;
+    if (event.key === ' ' && event.target.closest('button,a,summary')) return;
+    if (['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' '].includes(event.key)) browse();
+  });
+  viewport.addEventListener('pointerdown', event => {
+    if (event.clientX >= viewport.getBoundingClientRect().left + viewport.clientWidth) browse();
+  });
   function jump(direction) {
+    dismiss(); hovered = null;
     const size = columns * (slots + 1);
     pageStart = Math.max(0, Math.min(Math.floor((items.length-1)/size)*size, pageStart + direction*size));
     draw();
@@ -205,7 +233,7 @@
   previous.addEventListener('click',()=>jump(-1));
   next.addEventListener('click',()=>jump(1));
   controls.querySelectorAll('[name=prototype-mode]').forEach(input=>input.addEventListener('change',()=>{
-    mode=input.value; explicitMode=true; save('belong-prototype-card-view',mode); hovered=null; pageStart=0; viewport.scrollTop=0; layout();
+    dismiss(); mode=input.value; explicitMode=true; save('belong-prototype-card-view',mode); hovered=null; pageStart=0; viewport.scrollTop=0; layout();
   }));
   controls.querySelectorAll('[name=prototype-density]').forEach(input=>input.addEventListener('change',()=>{
     density=input.value; save('belong-prototype-stack-density',density); hovered=null; layout();
@@ -216,6 +244,7 @@
     const source = originals.length ? originals[index % originals.length] : fallback;
     const item = source.cloneNode(true);
     item.removeAttribute('data-prototype-prepared'); item.removeAttribute('data-selected');
+    item.querySelector('[data-prototype-expose]')?.remove();
     item.dataset.simulated = 'true';
     item.querySelectorAll('[id]').forEach(node=>node.removeAttribute('id'));
     item.querySelectorAll('form').forEach(form=>form.remove());
@@ -232,7 +261,7 @@
   }
   function collection() {
     const token=++generation, setting=countInput.value;
-    selected?.removeAttribute('data-selected'); selected=null;
+    dismiss();
     pageStart=0; viewport.scrollTop=0; root.dataset.firstIndex=0; root.dataset.fraction=0;
     started=performance.now(); firstDisplay=undefined;
     items = setting === '0' || setting === 'real' ? [...originals] : [];
@@ -247,6 +276,9 @@
     }
     append();
   }
+  document.addEventListener('htmx:afterSwap', event => {
+    if (root.contains(event.target)) { if (stage) draw(); else paint(); }
+  });
   countInput.addEventListener('change',collection); batches.addEventListener('change',collection);
   window.addEventListener('belong:discovery-layout',layout);
   new ResizeObserver(layout).observe(viewport);
