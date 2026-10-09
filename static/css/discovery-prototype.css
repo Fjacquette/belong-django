@@ -32,11 +32,16 @@
 /* Override shared native hover only inside the experiment. */
 .prototype-main .activity-stack__layer:hover, .prototype-main .activity-stack__layer:focus-within { z-index:var(--stack-z,1); }
 .prototype-main [data-stack-item][data-prototype-raised] { z-index:100; }
-.prototype-main [data-covered] .activity-card__band-1 { background:#45404a; }
-.prototype-main [data-covered] .activity-card__band-2 { background:#edeaf0; }
+/* Dim the existing palette, never replace its hue or reduce card opacity. */
+.prototype-main [data-covered] .activity-card__band-1 {
+  background:linear-gradient(90deg,
+    color-mix(in srgb, var(--card-header-left) 88%, black),
+    color-mix(in srgb, var(--card-header-right) 88%, black));
+}
+.prototype-main [data-covered] .activity-card__band-2,
+.prototype-main [data-covered] .activity-card__band-4 { filter:saturate(.9) brightness(.97); }
 .prototype-main [data-covered] .activity-card__band-3,
-.prototype-main [data-covered] .activity-card__band-4,
-.prototype-main [data-covered] .activity-card__band-5 { filter:saturate(.35); }
+.prototype-main [data-covered] .activity-card__band-5 { filter:saturate(.9) brightness(.94); }
 .prototype-item:focus-visible { outline:3px solid #843a96; border-radius:22px; }
 [data-simulated] .activity-card { pointer-events:none; }
 [data-simulated] { cursor:default; }

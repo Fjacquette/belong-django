@@ -45,8 +45,11 @@ Pointer focus does not relocate a navigation target before activation. Focused
 cards remain attached when their window scrolls away, with the retained index
 reported separately. Progress includes incoming rows, not just the base window.
 
-Covered cards use opaque neutral title/logistics surfaces (#45404a/white and
-#edeaf0/black), with lower-band saturation reduced. Active, selected, focused and
+Covered cards retain their own palettes: title gradients mix the existing
+`--card-header-left/right` colors with 12% black, keeping white title text intact.
+Other bands retain their primary/secondary colors with saturation .9 and modest
+brightness reduction (.97 on logistics/description; .94 on image/action).
+Active, selected, focused and
 intentionally hovered cards retain the original palette. No opacity reduction
 causes bleed-through. Scroll clears pointer emphasis; actual subsequent mouse
 movement restores it. Shared native hover/focus stacking is overridden only in
@@ -91,6 +94,16 @@ empty-result safe demos, and delayed append stability through card 300. The 36
 relevant Django tests and `manage.py check` passed. These checks establish mechanics
 and reachability; human trackpad feel, legibility and mode preference remain the
 review decision.
+
+The focused palette correction was browser-checked side by side in Moving,
+Paged and Stacked, with Regular and Tight. Exposed covered headers retained
+purple, indigo, pink, green, teal and blue (at least three distinct covered palettes
+in each comparison). Screenshots were inspected in both densities. Calculated
+contrast from browser-resolved gradient endpoints was at least 5.12:1 for titles;
+logistics contrast was at least 11.19:1 using the existing tinted-surface composite
+and filter. Foreground bands had no dimming filters. Native-wheel parked-pointer
+suppression and intentional hover remained functional. This iteration changes
+only palette treatment and its CSS cache version, with corresponding documentation.
 
 ## Compromises and boundaries
 

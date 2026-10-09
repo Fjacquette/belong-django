@@ -464,5 +464,6 @@ That should be enough to resume work without carrying a giant chat forward.
 - All four modes remain available. Experimental Regular/Tight overlap and mode
   persist in prototype-only browser storage; short stages use full-card scrolling.
   Moving keeps full foreground cards fitted at fractional positions and suppresses
-  stationary-pointer hover; covered cards use opaque neutral de-emphasis.
+  stationary-pointer hover; covered cards dim their original palettes while
+  retaining distinct hues.
 - Comparison, geometry evidence and compromises: docs/DISCOVERY_LAYOUT_PROTOTYPE.md.
