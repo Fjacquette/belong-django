@@ -935,11 +935,13 @@ private Activity metadata. Code administration uses existing Django admin contro
 
 ### Isolated Discover layout prototype (#92)
 
-`/?prototype=stack` is dev/test-only and is not an approved default. Separate
-prototype CSS/JS reuses unchanged card bands and dimensions, existing native radio,
-field and button families. Gutters move into panes only in this mode so Activities'
-scrollbar reaches the right browser edge. A sticky moving window exposes top bands
-and keeps its foreground card within pane height; selection/focus raises the whole
-card. Native scrolling is never intercepted. Narrow screens default to Spread out;
-short panes and no-JS use full cards. See docs/DISCOVERY_LAYOUT_PROTOTYPE.md for
-comparison, simulation limits and review questions. No production design rule changes.
+`/?prototype=stack` remains dev/test-only, unmerged pending UI judgment. Its compact
+segmented comparison strip and native Filters/Prototype disclosures stay outside an
+independently scrolling card viewport; panels overlay rather than consuming deck
+height. Card dimensions/top-band offsets come from existing design variables, and
+viewport height/width determine capacity. Only Paged has explicit set buttons;
+Moving uses continuous native scroll without interception/snapping. Gutters sit
+inside the pane so its scrollbar meets the browser edge. Default browser-only Demo
+supplements are clearly labeled, have no actions, and never write data. Normal
+Discover is unchanged. See docs/DISCOVERY_LAYOUT_PROTOTYPE.md for state snapshots,
+selection/focus behavior, mobile full-grid fallback and review compromises.

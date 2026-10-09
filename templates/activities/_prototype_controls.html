@@ -1,24 +1,31 @@
-<section class="space-y-2" aria-label="Layout experiment" data-prototype-controls>
-  <p class="text-sm"><strong>Layout prototype · #92</strong> <a class="ui-link" href="{% url 'activities:index' %}?{{ prototype_exit_query }}">Exit prototype</a></p>
+<section class="prototype-controls" aria-label="Layout prototype" data-prototype-controls>
   <fieldset data-prototype-modes hidden>
     <legend class="sr-only">Experimental card layout</legend>
-    <div class="ui-cluster">
-      <label class="ui-button ui-button--secondary"><input type="radio" name="prototype-mode" value="moving" checked> F: Moving stack</label>
-      <label class="ui-button ui-button--secondary"><input type="radio" name="prototype-mode" value="paged"> A: Paged stacks</label>
-      <label class="ui-button ui-button--secondary"><input type="radio" name="prototype-mode" value="stacked">Current Stacked</label>
-      <label class="ui-button ui-button--secondary"><input type="radio" name="prototype-mode" value="all">Spread out</label>
+    <div class="ui-segmented">
+      <label><input type="radio" name="prototype-mode" value="moving" class="sr-only" checked><span class="ui-segment">Moving</span></label>
+      <label><input type="radio" name="prototype-mode" value="paged" class="sr-only"><span class="ui-segment">Paged</span></label>
+      <label><input type="radio" name="prototype-mode" value="stacked" class="sr-only"><span class="ui-segment">Stacked</span></label>
+      <label><input type="radio" name="prototype-mode" value="all" class="sr-only"><span class="ui-segment">Spread out</span></label>
     </div>
   </fieldset>
-  <div class="ui-cluster" data-prototype-simulation hidden>
-    <label>Cards <select class="ui-field" data-simulation-count><option value="0">Real results</option><option>8</option><option>48</option><option>150</option><option>300</option></select></label>
-    <label class="ui-button ui-button--quiet"><input type="checkbox" data-simulation-batches> Simulate delayed batches (24 / 300ms)</label>
-  </div>
-  <p class="text-sm" data-prototype-notice>Real results: existing filters, cards and actions. Simulations are browser-only copies with actions disabled.</p>
-  <p class="text-sm" data-prototype-metrics aria-live="polite"></p>
+  <details class="prototype-options">
+    <summary class="ui-disclosure">Prototype</summary>
+    <div class="prototype-options-panel ui-menu-panel space-y-2">
+      <p class="text-sm">Moving scrolls continuously; Paged advances with Next set. Real cards work; labeled demo cards are inert browser-only supplements.</p>
+      <div data-prototype-simulation hidden>
+        <label>Collection <select class="ui-field" data-simulation-count><option value="0">Default: real + demo (64 minimum)</option><option value="real">Real matches only</option><option>8</option><option>48</option><option>150</option><option>300</option></select></label>
+        <label class="ui-facet__option"><input type="checkbox" data-simulation-batches> Delayed demo batches (24 / 300ms)</label>
+      </div>
+      <p class="text-sm" data-prototype-metrics></p>
+      {% if prototype_limit_reached %}<p class="text-sm">Real collection limited to 300 matching Activities for this experiment; narrow filters to explore others.</p>{% endif %}
+      <a class="ui-link" href="{% url 'activities:index' %}?{{ prototype_exit_query }}">Exit prototype</a>
+    </div>
+  </details>
+  <span class="text-sm" data-prototype-position></span>
   <div class="ui-cluster" data-prototype-navigation hidden>
-    <button type="button" class="ui-button ui-button--secondary" data-prototype-previous>Previous set</button>
-    <span data-prototype-position></span>
-    <button type="button" class="ui-button ui-button--secondary" data-prototype-next>Next set</button>
+    <button type="button" class="ui-button ui-button--secondary" data-prototype-previous aria-label="Previous set" title="Previous set"><span aria-hidden="true">←</span></button>
+    <button type="button" class="ui-button ui-button--secondary" data-prototype-next aria-label="Next set" title="Next set"><span aria-hidden="true">→</span></button>
   </div>
-  <noscript><p class="text-sm">Without JavaScript, real results use the ordinary full-card grid and page links. Simulations require JavaScript.</p></noscript>
+  <noscript><p class="text-sm">JavaScript is off: all authorized real matches (up to 300) use full cards. No demo cards are added.</p></noscript>
 </section>
+{% if prototype_demo %}<template data-prototype-demo-template><div data-stack-item>{% include 'activities/_card.html' with activity=prototype_demo %}</div></template>{% endif %}

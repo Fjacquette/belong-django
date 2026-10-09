@@ -19,6 +19,10 @@
       </aside>
       <div class="discover-divider" data-pane-divider role="separator" aria-label="Resize Friends pane" aria-orientation="vertical" aria-controls="discover-friends" tabindex="0" hidden></div>
       <section id="discover-activities" class="discover-pane discover-pane--activities flex flex-col gap-6 min-w-0" data-activity-frame data-card-min-width="{{ card_layout.min_width }}" aria-label="Activities" tabindex="0">
+      {% if prototype %}<div class="prototype-toolbar">
+        <details class="prototype-filters">
+          <summary class="ui-disclosure">Filters{% if query %} · {{ query }}{% endif %}</summary>
+          <div class="prototype-filter-panel ui-menu-panel">{% endif %}
       <form method="get" role="search" id="discovery-filters" data-query="{{ query|default:'' }}" class="discovery-toolbar">
         {% if prototype %}<input type="hidden" name="prototype" value="stack">{% endif %}
         <input type="hidden" name="hidden" value="{{ filter_params.hidden|default:'exclude' }}">
@@ -71,6 +75,9 @@
         <noscript><button type="submit" class="ui-button ui-button--secondary">Apply filters</button></noscript>
         <p id="location-feedback" role="status" class="empty:hidden text-sm text-belong-slate/80">{{ filter_warning }}</p>
       </form>
+      {% if prototype %}</div></details>
+        {% include 'activities/_prototype_controls.html' %}
+      </div>{% endif %}
       {% if active_context %}<div class="ui-cluster" aria-label="Discovery context">
         {% for context in active_context %}<a class="ui-button ui-button--quiet" href="{{ context.clear_url }}" aria-label="Clear {{ context.label }}">{{ context.label }} ×</a>{% endfor %}
       </div>{% endif %}
@@ -79,15 +86,14 @@
       <script src="{% static 'js/discovery.js' %}?v=context-3" defer></script>
       <script src="{% static 'js/discovery-layout.js' %}?v=panes-40" defer></script>
       {% if prototype %}
-      <link rel="stylesheet" href="{% static 'css/discovery-prototype.css' %}">
-      {% include 'activities/_prototype_controls.html' %}
-      <script src="{% static 'js/discovery-prototype.js' %}" defer></script>
+      <link rel="stylesheet" href="{% static 'css/discovery-prototype.css' %}?v=review-2">
+      <script src="{% static 'js/discovery-prototype.js' %}?v=review-2" defer></script>
       {% else %}<script src="{% static 'js/card-view.js' %}?v=panes-40" defer></script>{% endif %}
       <script src="{% static 'js/card-context.js' %}?v=share-61" defer></script>
       <script src="{% static 'js/card-fit.js' %}?v=body-13" defer></script>
 
-      <div data-activity-results>
-      {% if activities %}
+      <div data-activity-results{% if prototype %} class="prototype-results" data-prototype-scroll tabindex="0" aria-label="Activity cards"{% endif %}>
+      {% if activities or prototype %}
         <div class="activity-grid w-full"
              data-stack-root
              data-max-columns="{{ card_layout.max_stack_columns }}"
@@ -105,7 +111,7 @@
         <p class="text-belong-slate">No activities match. Try fewer filters or make something happen.</p>
       {% endif %}
 
-      {% if page_obj.has_other_pages %}
+      {% if not prototype and page_obj.has_other_pages %}
         <div class="flex justify-center">
           <div class="inline-flex overflow-hidden rounded-full border border-white/70 bg-white/70">
             {% if page_obj.has_previous %}
