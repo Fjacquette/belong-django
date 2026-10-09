@@ -45,10 +45,11 @@ Pointer focus does not relocate a navigation target before activation. Focused
 cards remain attached when their window scrolls away, with the retained index
 reported separately. Progress includes incoming rows, not just the base window.
 
-Covered cards retain their own palettes: title gradients mix the existing
-`--card-header-left/right` colors with 12% black, keeping white title text intact.
-Other bands retain their primary/secondary colors with saturation .9 and modest
-brightness reduction (.97 on logistics/description; .94 on image/action).
+Covered cards recede as opaque pastels: header stops mix their existing colors
+with 70% white, with dark #35173c title/link/menu text. Band 2 mixes per-card
+primary/secondary colors with 90% white and keeps black logistics text. These
+percentages are visual tuning hypotheses, not production tokens. Other covered
+bands retain the earlier modest saturation/brightness adjustment.
 Active, selected, focused and
 intentionally hovered cards retain the original palette. No opacity reduction
 causes bleed-through. Scroll clears pointer emphasis; actual subsequent mouse
@@ -95,15 +96,14 @@ relevant Django tests and `manage.py check` passed. These checks establish mecha
 and reachability; human trackpad feel, legibility and mode preference remain the
 review decision.
 
-The focused palette correction was browser-checked side by side in Moving,
-Paged and Stacked, with Regular and Tight. Exposed covered headers retained
-purple, indigo, pink, green, teal and blue (at least three distinct covered palettes
-in each comparison). Screenshots were inspected in both densities. Calculated
-contrast from browser-resolved gradient endpoints was at least 5.12:1 for titles;
-logistics contrast was at least 11.19:1 using the existing tinted-surface composite
-and filter. Foreground bands had no dimming filters. Native-wheel parked-pointer
-suppression and intentional hover remained functional. This iteration changes
-only palette treatment and its CSS cache version, with corresponding documentation.
+The pastel correction was checked in Moving/Paged/Stacked × Regular/Tight,
+with at least three different exposed covered palettes per comparison and six
+hues overall. Side-by-side screenshots were inspected. Browser-resolved title
+contrast and calculated tinted logistics contrast exceeded 4.5:1 throughout the
+sampled collection. Covered titles/menu icons use dark ink; foreground bands
+remain unfiltered. Native-wheel parked-pointer suppression and intentional hover
+still work. The 36 relevant tests and system check passed. This correction changes
+only covered palette styling, its CSS cache version and corresponding guidance.
 
 ## Compromises and boundaries
 

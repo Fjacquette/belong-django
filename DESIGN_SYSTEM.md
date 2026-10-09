@@ -950,9 +950,11 @@ Within this experiment only, Regular overlap exposes Bands 1+2; optional Tight
 exposes Band 1. Both use existing band tokens and keep every foreground card's
 five bands intact. Moving pins the current full foreground within the visible
 stage while covered headers continue translating at fractional scroll positions.
-Covered titles retain their per-card header gradient, mixed with 12% black
-without altering white title text. Other bands retain their original primary/
-secondary palette with modest saturation (.9) and brightness (.94/.97) reduction.
+Covered titles use opaque pastels from each header gradient stop (30% original
+color / 70% white), with dark belong-purpleDark title/link/menu ink. Covered
+logistics use a lighter coordinating primary/secondary tint (10% color / 90%
+white). These are prototype tuning values, not approved production tokens.
+Other covered bands retain modest saturation/brightness reduction.
 Active, selected, focused,
 and intentionally hovered cards retain the original palette. No card opacity is
 reduced. Prototype hover promotion requires actual pointer movement after scroll;

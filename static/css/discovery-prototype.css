@@ -32,13 +32,21 @@
 /* Override shared native hover only inside the experiment. */
 .prototype-main .activity-stack__layer:hover, .prototype-main .activity-stack__layer:focus-within { z-index:var(--stack-z,1); }
 .prototype-main [data-stack-item][data-prototype-raised] { z-index:100; }
-/* Dim the existing palette, never replace its hue or reduce card opacity. */
+/* Opaque pastels retain each palette; dark ink keeps covered facts readable. */
 .prototype-main [data-covered] .activity-card__band-1 {
   background:linear-gradient(90deg,
-    color-mix(in srgb, var(--card-header-left) 88%, black),
-    color-mix(in srgb, var(--card-header-right) 88%, black));
+    color-mix(in srgb, var(--card-header-left) 30%, white),
+    color-mix(in srgb, var(--card-header-right) 30%, white));
 }
-.prototype-main [data-covered] .activity-card__band-2,
+.prototype-main [data-covered] .activity-card__band-1,
+.prototype-main [data-covered] .activity-card__title-link,
+.prototype-main [data-covered] .card-context-menu__trigger { color:#35173c; }
+.prototype-main [data-covered] .card-context-menu__trigger > span { opacity:1; }
+.prototype-main [data-covered] .activity-card__band-2 {
+  background:linear-gradient(90deg,
+    color-mix(in srgb, var(--card-primary) 10%, white),
+    color-mix(in srgb, var(--card-secondary) 10%, white));
+}
 .prototype-main [data-covered] .activity-card__band-4 { filter:saturate(.9) brightness(.97); }
 .prototype-main [data-covered] .activity-card__band-3,
 .prototype-main [data-covered] .activity-card__band-5 { filter:saturate(.9) brightness(.94); }
