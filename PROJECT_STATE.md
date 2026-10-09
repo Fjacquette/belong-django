@@ -464,7 +464,7 @@ That should be enough to resume work without carrying a giant chat forward.
 - All four modes remain available. Experimental Regular/Tight overlap and mode
   persist in prototype-only browser storage; short stages use full-card scrolling.
   Moving keeps full foreground cards fitted at fractional positions and suppresses
-  hover promotion; explicit +/− header controls toggle one exposed card with
+  hover promotion; header-surface clicks and quiet chevron controls toggle one card with
   reachable dismissal. Deliberate browsing scroll/set changes dismiss exposure;
   resize/programmatic scroll preserve it. Covered cards retain light hue-preserving
   pastels and dark top-band text; Spread out remains unchanged.

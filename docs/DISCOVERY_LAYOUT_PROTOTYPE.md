@@ -39,10 +39,11 @@ Columns follow actual results width, gutters and Friends resizing. Density/resiz
 recompute capacity while retaining the browsing anchor and fractional progress;
 Paged re-partitions contiguous sets around its anchor. Neither changes the collection.
 
-The +/− header disclosure button explicitly opens/closes one full card. It is a
-separate native button, never a substitute for the title Details link, kebab or
-response action. Enter/Space toggles with aria-expanded and an accessible action
-name. The − remains reachable on the raised card; activating it restores the
+Click/tap the noninteractive exposed header surface to open/close one full card.
+A quiet borderless 14px chevron in a 40×44px native button provides a discoverable
+keyboard alternative without heavy header chrome. Neither surface activation nor
+the button intercepts the title Details link, kebab or response action. Enter/Space toggles with aria-expanded and an accessible action
+name. The same surface and upward chevron remain reachable on the raised card; activating it restores the
 resting stack and B/C headers. Selecting another card transfers exposure. Keyboard
 focus alone never exposes a card. HTMX response swaps restore the control/state.
 
@@ -121,6 +122,15 @@ in both densities. Single-activation title Details and kebab remain independent.
 A real RSVP POST in a disposable database saved with one activation and retained
 exposure/control after its HTMX replacement; no preview participation data changed.
 Spread out retains original cards/colors without visible exposure controls.
+
+The header-surface/chevron correction checked surface open/close and native
+Enter/Space through A/B/C, plus independent menu and title navigation, across
+Moving/Paged/Stacked × Regular/Tight at 1440×1100, 768×1100 (touch) and 375×1300
+(touch). The narrow tall stage permits three headers for this sequence; shorter
+stages retain their measured smaller capacity or full-card fallback. Header
+screenshots, including long real titles and visible menus, were inspected. The
+chevron target stays outside the title bounds and adds no visible border or +/−
+glyph. Demo header surfaces also toggle locally without server actions.
 
 ## Compromises and boundaries
 
