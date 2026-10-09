@@ -932,3 +932,14 @@ Setup only asks for a code if its emailed proof lacks valid admission; it always
 requires the existing email proof, identity and password fields. Native POST/CSRF
 works without JavaScript. Generic credential errors reveal no account, issuer or
 private Activity metadata. Code administration uses existing Django admin controls.
+
+### Isolated Discover layout prototype (#92)
+
+`/?prototype=stack` is dev/test-only and is not an approved default. Separate
+prototype CSS/JS reuses unchanged card bands and dimensions, existing native radio,
+field and button families. Gutters move into panes only in this mode so Activities'
+scrollbar reaches the right browser edge. A sticky moving window exposes top bands
+and keeps its foreground card within pane height; selection/focus raises the whole
+card. Native scrolling is never intercepted. Narrow screens default to Spread out;
+short panes and no-JS use full cards. See docs/DISCOVERY_LAYOUT_PROTOTYPE.md for
+comparison, simulation limits and review questions. No production design rule changes.

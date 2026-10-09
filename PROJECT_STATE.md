@@ -450,3 +450,12 @@ That should be enough to resume work without carrying a giant chat forward.
   experiment, payment implementation or D5 is authorized as the next task; #68 and
   real Janine pilot walkthrough blockers take priority. Retain unresolved merchant,
   priority/refund and recovery decisions for separately reprioritized future work.
+
+## Discover layout prototype (#92, awaiting UI judgment)
+
+- Opt-in dev/test `/?prototype=stack` compares native-scroll moving stacks, paged
+  stacks, current Stacked and Spread out with unchanged cards/query/business logic.
+- Browser-only 8/48/150/300-card simulations and delayed batches write no data;
+  production defaults/ranking/pagination are unchanged. Mobile defaults to full cards
+  in the experiment. Leave its PR unmerged pending human UI review.
+- Comparison, indicative performance and compromises: docs/DISCOVERY_LAYOUT_PROTOTYPE.md.

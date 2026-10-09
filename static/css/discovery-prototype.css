@@ -1,0 +1,18 @@
+/* Opt-in #92 experiment only. Card bands and ordinary Discover are untouched. */
+.prototype-main { padding-left: 0 !important; padding-right: 0 !important; }
+.prototype-main .discover-pane { padding-left: 24px; padding-right: 24px; }
+.prototype-main .discover-pane-switch { margin-inline: 24px; }
+@media (min-width:640px) { .prototype-main .discover-pane { padding-left:32px; padding-right:32px; } }
+@media (min-width:1024px) {
+  .prototype-main .discover-pane--friends { padding-left:40px; padding-right:8px; }
+  .prototype-main .discover-pane--activities { padding-left:8px; padding-right:40px; }
+}
+.prototype-track { position:relative; }
+.prototype-stage { position:sticky; top:0; display:grid; gap:24px; isolation:isolate; }
+.prototype-column { position:relative; height:100%; }
+.prototype-item { position:absolute; left:0; width:100%; top:var(--prototype-y); z-index:var(--prototype-z); }
+.prototype-item:hover, .prototype-item[data-selected] { z-index:100; }
+.prototype-item:focus-visible { outline:3px solid #843a96; border-radius:22px; }
+.prototype-stage { overflow:clip; }
+[data-simulated] .activity-card { pointer-events:none; }
+[data-simulated] { cursor:default; }

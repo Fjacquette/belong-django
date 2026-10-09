@@ -227,6 +227,9 @@ def _annotate_join_data(request: HttpRequest, activities: List[Activity]) -> Non
 
 @login_required
 def index(request: HttpRequest) -> HttpResponse:
+    prototype = request.GET.get("prototype") == "stack"
+    if prototype and settings.ENVIRONMENT not in {"dev", "test"}:
+        raise Http404
     activities_qs = visible_activities(request.user).select_related("host__profile__avatar_image", "category").prefetch_related("responses")
 
     params = canonical_filters(request.GET)
@@ -271,8 +274,12 @@ def index(request: HttpRequest) -> HttpResponse:
         _card_context(request, activity, params, hidden_organizers)
     pagination_params = params.copy()
     pagination_params.pop("page", None)
+    prototype_exit_params = params.copy()
+    prototype_exit_params.pop("prototype", None)
 
     context = {
+        "prototype": prototype,
+        "prototype_exit_query": prototype_exit_params.urlencode(),
         "page_obj": page_obj,
         "email_activity": next((a.j_email_activity for a in activities if a.j_email_activity), None),
         "next_path": request.get_full_path(),

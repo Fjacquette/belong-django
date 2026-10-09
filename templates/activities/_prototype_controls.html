@@ -1,0 +1,24 @@
+<section class="space-y-2" aria-label="Layout experiment" data-prototype-controls>
+  <p class="text-sm"><strong>Layout prototype · #92</strong> <a class="ui-link" href="{% url 'activities:index' %}?{{ prototype_exit_query }}">Exit prototype</a></p>
+  <fieldset data-prototype-modes hidden>
+    <legend class="sr-only">Experimental card layout</legend>
+    <div class="ui-cluster">
+      <label class="ui-button ui-button--secondary"><input type="radio" name="prototype-mode" value="moving" checked> F: Moving stack</label>
+      <label class="ui-button ui-button--secondary"><input type="radio" name="prototype-mode" value="paged"> A: Paged stacks</label>
+      <label class="ui-button ui-button--secondary"><input type="radio" name="prototype-mode" value="stacked">Current Stacked</label>
+      <label class="ui-button ui-button--secondary"><input type="radio" name="prototype-mode" value="all">Spread out</label>
+    </div>
+  </fieldset>
+  <div class="ui-cluster" data-prototype-simulation hidden>
+    <label>Cards <select class="ui-field" data-simulation-count><option value="0">Real results</option><option>8</option><option>48</option><option>150</option><option>300</option></select></label>
+    <label class="ui-button ui-button--quiet"><input type="checkbox" data-simulation-batches> Simulate delayed batches (24 / 300ms)</label>
+  </div>
+  <p class="text-sm" data-prototype-notice>Real results: existing filters, cards and actions. Simulations are browser-only copies with actions disabled.</p>
+  <p class="text-sm" data-prototype-metrics aria-live="polite"></p>
+  <div class="ui-cluster" data-prototype-navigation hidden>
+    <button type="button" class="ui-button ui-button--secondary" data-prototype-previous>Previous set</button>
+    <span data-prototype-position></span>
+    <button type="button" class="ui-button ui-button--secondary" data-prototype-next>Next set</button>
+  </div>
+  <noscript><p class="text-sm">Without JavaScript, real results use the ordinary full-card grid and page links. Simulations require JavaScript.</p></noscript>
+</section>
