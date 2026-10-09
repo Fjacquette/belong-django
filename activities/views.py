@@ -170,12 +170,14 @@ def _build_join_context(request: HttpRequest, activity: Activity) -> Dict[str, o
     activity.is_joined = current_response is not None
     activity.attendee_count = attendee_count
 
+    from .email_preferences import email_offer
     enrollment = enrollment_context(request, activity)
     activity.j_enrollment_state = enrollment.get('enrollment_state', '')
     registration = registration_context(request, activity)
     activity.j_registration_state = registration.get('registration_state', '')
     return {
         "activity": activity,
+        "email_activity": email_offer(request.user, activity),
         **poll_context(request,activity),
         **enrollment,
         **registration,
@@ -205,6 +207,7 @@ def _annotate_join_data(request: HttpRequest, activities: List[Activity]) -> Non
     for activity in activities:
         _decorate_activity(activity)
         context = _build_join_context(request, activity)
+        activity.j_email_activity = context["email_activity"]
         activity.j_invited = context["invited"]
         activity.j_attendee_count = context["attendee_count"]
         activity.j_response_count = context["response_count"]
@@ -271,6 +274,8 @@ def index(request: HttpRequest) -> HttpResponse:
 
     context = {
         "page_obj": page_obj,
+        "email_activity": next((a.j_email_activity for a in activities if a.j_email_activity), None),
+        "next_path": request.get_full_path(),
         "group_join_offer": current_offer(request.user),
         "offer_next_path": request.get_full_path(),
         "activities": activities,
@@ -447,6 +452,7 @@ def _render_join_region(request: HttpRequest, activity: Activity, notice="") -> 
     context['group_join_offer'] = current_offer(request.user, activity)
     context['offer_next_path'] = context['next_path']
     context['offer_oob'] = request.headers.get('HX-Request') == 'true'
+    context['email_oob'] = context['offer_oob'] and variant == 'card'
     if variant == "card":
         _decorate_activity(activity)
         _card_context(request, activity, canonical_filters(QueryDict(urlsplit(context["next_path"]).query)))

@@ -4,12 +4,13 @@ from . import views
 from . import drafts
 from . import polls, enrollment, registration, reservations
 from . import email_invitations
-from . import group_offers
+from . import group_offers, email_preferences
 from .announcements import activity_announce
 
 app_name = "activities"
 
 urlpatterns = [
+    path("activities/<int:pk>/email-preference/", email_preferences.enable, name="enable_activity_email"),
     path('activities/past/', drafts.history, name='history'),
     path('activities/<int:pk>/clone/', drafts.clone, name='clone'),
     path('activity-drafts/<int:pk>/', drafts.edit, name='draft'),

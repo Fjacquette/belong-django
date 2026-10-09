@@ -58,7 +58,10 @@
     {% if activity.uses_legacy_participation and activity.capacity %}<p class="text-sm">{{ committed_count }} / {{ activity.capacity }} committed{% if capacity_reached %} · Full{% endif %}. Only Count me in uses a place.</p>{% elif activity.accepts_responses and activity.capacity %}<p class="text-sm">{{ committed_count }} / {{ activity.capacity }} places secured{% if capacity_reached %} · Full{% endif %}.</p>{% endif %}
     {% if activity.accepts_responses or current_status %}<p class="text-sm" title="{{ response_counts_label }}">{{ response_count|default:0 }} response{{ response_count|pluralize }} · {{ response_counts_label }}</p>{% endif %}
   {% endif %}
-  {% if variant == 'detail' %}{% include 'activities/_participation_actions.html' %}{% endif %}
+  {% if variant == 'detail' %}
+    {% include 'activities/_email_opt_in.html' %}
+    {% include 'activities/_participation_actions.html' %}
+  {% endif %}
   {% if variant == 'detail' and activity.offers_external_actions %}
     <div class="ui-cluster text-sm">
       {% if activity.action1_url and activity.uses_legacy_participation or activity.action1_url and activity.action1_href != '#' %}<a href="{{ activity.action1_href }}" class="ui-link">{{ activity.action1_label|default:'More information' }}</a>{% endif %}

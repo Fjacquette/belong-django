@@ -104,6 +104,10 @@ Default posture: **do it now**. If product behavior needs backend/model work, bu
   text. Cancellation has priority and a separate budget; obsolete queued updates
   are suppressed. Bounded delivery retries use the management command; interrupted
   or ambiguous SMTP claims require reconciliation. Group updates remain in-app.
+  #90 offers explicit global-email opt-in beside eligible saved participation on
+  Details and outside Discover cards. Consent stays default off; declines, poll-only
+  answers and pending enrollment do not prompt. Existing Account settings disables
+  it, and notification snapshots/retries/eligibility are unchanged.
   No automatic cancellation announcement, inbox, read receipts or other channels.
 
 ## Product direction
