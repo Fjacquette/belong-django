@@ -218,8 +218,29 @@ class AccountEmailProof(models.Model):
     """Public signup/recovery proofs do not reserve an auth.User or store credentials."""
     email = models.EmailField()
     purpose = models.CharField(max_length=16)
+    beta_admission = models.ForeignKey('BetaAdmission', null=True, blank=True, on_delete=models.SET_NULL)
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     token_digest = models.CharField(max_length=64, unique=True)
     created_at = models.DateTimeField(default=timezone.now)
     expires_at = models.DateTimeField()
     used_at = models.DateTimeField(null=True, blank=True)
+
+
+class BetaAdmission(models.Model):
+    """Single-use email-bound account admission, separate from product permissions."""
+    kind = models.CharField(max_length=16, choices=[('code', 'Beta code'), ('group', 'Group invitation'), ('activity', 'Activity invitation')], default='code')
+    email = models.EmailField()
+    verifier = models.CharField(max_length=64, unique=True)
+    source_digest = models.CharField(max_length=64, blank=True)
+    group_invitation = models.ForeignKey('groups.GroupInvitation', null=True, blank=True, on_delete=models.SET_NULL)
+    activity_invitation = models.ForeignKey('activities.ActivityEmailInvitation', null=True, blank=True, on_delete=models.SET_NULL)
+    issued_by = models.ForeignKey(User, null=True, on_delete=models.SET_NULL, related_name='beta_admissions_issued')
+    issued_at = models.DateTimeField(default=timezone.now)
+    expires_at = models.DateTimeField()
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    revoked_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='beta_admissions_revoked')
+    redeemed_at = models.DateTimeField(null=True, blank=True)
+    redeemed_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='beta_admissions_redeemed')
+
+    def __str__(self):
+        return f'Beta admission {self.pk}'

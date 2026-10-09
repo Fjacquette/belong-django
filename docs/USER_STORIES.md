@@ -401,3 +401,14 @@ not add an eighth participation preset or authorize implementation in this itera
 For each future GitHub issue, reference (a) a story ID or named scenario, (b) user-visible behavior, (c) explicit exclusions, and (d) end-to-end acceptance. Do not convert historical examples into automatic commitments. When implementation diverges, record the decision in issue/PR and revise this document when it changes the durable model.
 
 **Pilot readiness is a real human test, not merely a passing automated suite.** The initial proof is that Janine and her hikers can independently make a hike happen and then want to do it again.
+
+
+## Invitation-only beta entry (#77)
+
+As a pilot hiker, I can use an email-bound beta code or an original authorized
+Group/Activity email invitation to verify my email and create an account. I never
+need a second code when my valid email invitation already includes admission.
+Creating an account does not broaden an Activity audience, RSVP, or join unrelated
+Groups. Existing people can still sign in when beta admission is enabled. Operators
+can issue/revoke single-use access without storing retrievable secrets. See
+[BETA_SIGNUP.md](BETA_SIGNUP.md) for the implementation and deployment boundary.

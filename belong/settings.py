@@ -30,6 +30,14 @@ if ENVIRONMENT not in {'dev', 'test', 'production'}:
     raise ImproperlyConfigured('BELONG_ENV must be dev, test, or production.')
 
 
+# Existing production deployments must choose explicitly; beta deployments set true.
+if ENVIRONMENT == 'production' and 'BELONG_BETA_MODE' not in CONFIG:
+    raise ImproperlyConfigured('Set BELONG_BETA_MODE explicitly: true for invitation-only beta, false for ordinary signup.')
+try:
+    BETA_MODE = config_bool(CONFIG.get('BELONG_BETA_MODE', 'false'), 'BELONG_BETA_MODE')
+except ValueError as error:
+    raise ImproperlyConfigured(str(error)) from error
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 

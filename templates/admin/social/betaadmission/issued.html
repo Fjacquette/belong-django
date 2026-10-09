@@ -1,0 +1,8 @@
+{% extends 'admin/base_site.html' %}
+{% block content %}
+<p>This single-use invitation is for {{ admission.email }} and expires {{ admission.expires_at }}. Send the code privately to that recipient with the signup link.</p>
+<p>The code is shown only once. It cannot be retrieved later.</p>
+<p><code>{{ code }}</code></p>
+<p><a href="{% url 'signup' %}">Belong signup</a></p>
+<p><a href="{% url 'admin:social_betaadmission_change' admission.pk %}">Inspect or revoke this invitation</a></p>
+{% endblock %}

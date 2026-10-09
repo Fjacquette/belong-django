@@ -18,6 +18,7 @@ class ConfigurationSecurityTests(SimpleTestCase):
     def test_missing_environment_fails_closed_and_invalid_environment_names_key(self):
         env = {k: v for k, v in os.environ.items() if k not in CONFIG_KEYS}
         env['DJANGO_SECRET_KEY'] = 'isolated-settings-test-only-key'
+        env['BELONG_BETA_MODE'] = 'false'
         code = "from unittest.mock import patch\nwith patch('belong.environment.read_local_config', return_value={}):\n import belong.settings as s\n assert not s.DEBUG and not s.ALLOW_LEGACY_ACCOUNTS\n"
         result = subprocess.run([sys.executable, '-c', code], env=env, capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)

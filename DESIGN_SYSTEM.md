@@ -920,3 +920,15 @@ is preselected, and no participation action enables consent. Reuse `text-sm`,
 `space-y-2`, `ui-link` and existing secondary controls; native POST works without
 JavaScript. Declines, poll votes alone, pending enrollment and cancelled Activities
 do not offer participant notices; enabled accounts are not prompted again.
+
+
+### Invitation-only beta signup (#77)
+
+Reuse the existing focused signup/setup cards, `ui-field` inputs and comfortable
+primary submit buttons. Signup explains invitation-only beta in one short paragraph;
+ordinary admission uses a password-style code field that never echoes submissions.
+A valid Group/Activity email invitation explains that no separate code is needed.
+Setup only asks for a code if its emailed proof lacks valid admission; it always
+requires the existing email proof, identity and password fields. Native POST/CSRF
+works without JavaScript. Generic credential errors reveal no account, issuer or
+private Activity metadata. Code administration uses existing Django admin controls.

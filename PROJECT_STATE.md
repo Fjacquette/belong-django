@@ -172,6 +172,21 @@ The browser-test review environment is:
 
 For normal implementation work, Codex must present the exact committed feature HEAD there before declaring the iteration done. Frank's normal review action should be only to reload the browser.
 
+## Beta admission (#77)
+
+- `BELONG_BETA_MODE=true` gates all public signup completion, including old proofs
+  and provisional-account recovery. Production requires an explicit true/false
+  configuration; dev/test remain ordinary signup unless explicitly enabled.
+- Superusers issue seven-day, email-bound, single-use codes through admin. Only keyed
+  verifiers and lifecycle metadata persist; the code is shown once, never retrievable.
+- Valid authorized Group/Activity email invitations explicitly grant beta admission
+  with existing email proof. Source validity/authority is rechecked at completion;
+  cross-browser continuation retains only the original invitation's rights.
+- Admission redemption and account creation/verification are one serialized transaction.
+  Abandonment or failed setup does not consume access. Existing login, recovery,
+  audiences, participation, memberships and default-off mail consent remain unchanged.
+  See docs/BETA_SIGNUP.md; payment work remains deferred under #87.
+
 ## Account foundation
 
 Email-first signup/login retains stable auth.User PKs/internal usernames. #46 moves
@@ -366,7 +381,7 @@ These are real concerns, not reasons to block the current vertical slices unless
 - activity creation is still too large/flat and should become progressive-disclosure;
 - discovery/query performance and N+1 behavior should be corrected as the UI/data set grows;
 - friendship integrity constraints need strengthening before a public pilot;
-- public signup must become invitation-controlled before public exposure;
+- configure #77 beta admission explicitly before public exposure;
 - production/Sage deployment hardening remains to be done before exposing the app publicly;
 - HTMX/CDN/deployment choices should be production-hardened when production work begins.
 
