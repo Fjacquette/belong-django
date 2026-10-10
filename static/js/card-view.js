@@ -24,10 +24,13 @@
   const save = (key, value) => { try { localStorage.setItem(key, value); } catch (_) {} };
   const stored = read('belong-card-view');
   const validModes = ['paged', 'stacked', 'all'];
-  let mode = validModes.includes(stored) ? stored : mobile.matches ? 'all' : 'paged';
+  let explicitMode = validModes.includes(stored);
+  let mode = explicitMode ? stored : mobile.matches ? 'all' : 'paged';
   let density = read('belong-card-density') === 'tight' ? 'tight' : 'regular';
   let first = 0, capacity = 1, renderedMode = '';
   const openLastSet = window.location.hash === '#discover-last-set';
+  // Keep range-width changes from repeatedly wrapping/unwrapping the toolbar.
+  range.style.minWidth = (String(total).length * 3 + 5) + 'ch';
 
   const token = name => parseFloat(getComputedStyle(root).getPropertyValue(name));
   const cardHeight = () => token('--card-height');
@@ -56,12 +59,22 @@
   function paint() {
     if (!root.clientWidth) return;
     const previousScroll = pane.scrollTop;
+    const focused = root.contains(document.activeElement) ? document.activeElement : null;
+    // Measure with the requested controls present, including their wrapped rows.
+    // The full-grid fallback may hide them only after deciding whether Paged fits.
+    controls.hidden = mode !== 'paged';
+    densitySelector.hidden = mode === 'all';
     const count = columns();
     const offset = overlap();
     const available = Math.max(0,
-      pane.getBoundingClientRect().bottom - root.getBoundingClientRect().top - 72);
+      pane.getBoundingClientRect().bottom - (root.getBoundingClientRect().top + previousScroll) - 72);
     // When a full card cannot fit, use the accessible full-card grid instead.
     const canPage = mode === 'paged' && available >= cardHeight();
+    if (canPage && renderedMode !== 'paged' && previousScroll > 0) {
+      const top = pane.getBoundingClientRect().top;
+      const anchor = items.findIndex(item => item.getBoundingClientRect().bottom > top);
+      if (anchor >= 0) first = anchor;
+    }
     renderedMode = canPage ? 'paged' : mode === 'paged' ? 'all' : mode;
     capacity = canPage ? count * (1 + Math.floor((available - cardHeight()) / offset)) : items.length;
     first = canPage ? Math.floor(Math.min(first, items.length - 1) / capacity) * capacity : first;
@@ -93,7 +106,9 @@
       previous.setAttribute('aria-label', previous.title);
       next.setAttribute('aria-label', next.title);
     }
-    pane.scrollTop = previousScroll;
+    // Paging must start below its toolbar; a scrolled grid is not extra capacity.
+    pane.scrollTop = canPage ? 0 : previousScroll;
+    if (focused && root.contains(focused)) focused.focus({preventScroll: true});
   }
 
   function move(direction) {
@@ -115,7 +130,13 @@
   next.addEventListener('click', () => move(1));
   modes.forEach(input => input.addEventListener('change', () => {
     if (!input.checked) return;
+    if (input.value === 'paged' && renderedMode !== 'paged') {
+      const top = Math.max(pane.getBoundingClientRect().top, root.getBoundingClientRect().top);
+      const anchor = items.findIndex(item => item.getBoundingClientRect().bottom > top);
+      if (anchor >= 0) first = anchor;
+    }
     mode = input.value;
+    explicitMode = true;
     save('belong-card-view', mode);
     paint();
   }));
@@ -127,9 +148,13 @@
   }));
   selector.hidden = false;
   window.addEventListener('belong:discovery-layout', paint);
+  new ResizeObserver(paint).observe(document.getElementById('discovery-filters'));
+  document.addEventListener('htmx:afterSettle', event => {
+    if (pane.contains(event.target)) paint();
+  });
   mobile.addEventListener('change', () => {
     // Device width is a default only; never erase an explicitly chosen mode.
-    if (!validModes.includes(read('belong-card-view'))) mode = mobile.matches ? 'all' : 'paged';
+    if (!explicitMode) mode = mobile.matches ? 'all' : 'paged';
     paint();
   });
   if (openLastSet) {

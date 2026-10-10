@@ -52,3 +52,19 @@ class ProductionDiscoverModeTests(TestCase):
         self.assertContains(response, 'name="card-density" value="tight"')
         self.assertNotContains(response, 'data-prototype-expose')
         self.assertTemplateUsed(response, 'activities/_card.html')
+
+    def test_three_filtered_batches_cover_every_matching_activity_once(self):
+        for number in range(53):
+            Activity.objects.create(host=self.user, title=f'Test walk extra {number}', description='A free walk')
+        expected = list(Activity.objects.filter(host=self.user).order_by('-starts_at', '-created_at').values_list('pk', flat=True))
+        found = []
+        for page in range(1, 4):
+            response = self.client.get(self.url, {'q': 'Test walk', 'page': page, 'hidden': 'include'})
+            found.extend(activity.pk for activity in response.context['activities'])
+            self.assertEqual(response.context['page_obj'].paginator.count, 105)
+            if page < 3:
+                self.assertContains(response, f'page={page + 1}')
+                self.assertContains(response, 'q=Test+walk')
+                self.assertContains(response, 'hidden=include')
+        self.assertEqual(found, expected)
+        self.assertEqual(len(set(found)), 105)

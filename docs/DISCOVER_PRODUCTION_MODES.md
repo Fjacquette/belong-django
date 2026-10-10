@@ -12,7 +12,7 @@ The client saves the mode in the existing `belong-card-view` local-storage key, 
 
 ## Retrieval versus display
 
-`activities/views.py` fetches **48 authorized, filtered results per server batch**, independent of the current viewport's visible set size. A Paged set capacity is calculated from rendered card height, stack offset, actual column count and available pane height. Its arrows move through that batch, then navigate to the next/previous server batch at the boundary. Returning to an earlier server batch uses a one-time `#discover-last-set` fragment to land at its last set. The range indicates positions across the full result count.
+`activities/views.py` fetches **48 authorized, filtered results per server batch**, independent of the current viewport's visible set size. A Paged set capacity is calculated from rendered card height, stack offset, actual column count and available pane height, measured with its toolbar controls visible. Pane scroll offset cannot inflate capacity. The range reserves stable width, and the view cluster wraps within even a 320px pane. Toolbar resize and settled HTMX changes remeasure available space. Card focus survives layout repaint; entering Paged anchors around the current visible result and restores the toolbar. Its arrows move through that batch, then navigate to the next/previous server batch at the boundary. Returning to an earlier server batch uses a one-time `#discover-last-set` fragment to land at its last set. The range indicates positions across the full result count.
 
 Stacked and Spread Out retain the standard server batch Previous/Next links. With JavaScript unavailable, the form and batch pager remain usable, and cards are ordinary full grid cards.
 
@@ -29,3 +29,24 @@ This 48-result batch is an **interim pilot tradeoff**, not a claim of ideal netw
 - Keep PR #94's Moving/pastel experiments out of production. Do not seed or overwrite the persistent preview database.
 
 This is a production candidate pending tests and human browser review; it is not authorization to merge.
+
+## Local validation and remaining query cost
+
+The implementation review exercises 12, 30, 70 and 105 matching results using a
+disposable database copy, including real existing photographs and purple, green,
+blue and rose palettes. Forward and reverse traversal checks every result exactly
+once across server batch boundaries in both densities, by mouse, keyboard and
+touch. Wide/tall/short desktop, tablet, 320/375px, legacy/default preferences,
+divider resizing, focus, no-JS batches and empty results are checked. Persistent
+browser-test runs ordinary Discover at the exact pushed commit without reseeding
+or replacing its data/configuration/assets. GitHub records the final preview SHA
+and complete-suite results.
+
+A measured legacy photographic fixture uses 37 SQL queries at a 12-card batch and
+109 at 48 cards. In that 48-card measurement, 48 queries retrieve images and 48
+additional response queries come from existing email-offer participant checks;
+the response prefetch is also present. Local test-client request times were about
+0.14s/0.13s respectively; these are differently warmed local observations, not a
+production latency comparison or performance guarantee. The larger bounded batch
+is usable locally but retains an explicit N+1 follow-up; this slice does not
+change participation/email authority or build a new retrieval architecture.

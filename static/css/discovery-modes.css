@@ -1,6 +1,9 @@
 /* #95: presentation controls only; keep original Activity card styling intact. */
 .discovery-view-cluster {
   flex-wrap: wrap;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
 }
 .discovery-paged-controls {
   display: inline-flex;
@@ -14,6 +17,7 @@
 .discovery-paged-controls [data-set-range] {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  text-align: center;
 }
 #card-density-selector[hidden],
 [data-paged-controls][hidden],
