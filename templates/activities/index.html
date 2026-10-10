@@ -53,7 +53,11 @@
           <legend class="sr-only">Card view</legend>
           <div class="ui-segmented">
             <label class="cursor-pointer">
-              <input type="radio" name="card-view" value="stacked" class="peer sr-only" checked>
+              <input type="radio" name="card-view" value="paged" class="peer sr-only" checked>
+              <span class="ui-segment">Paged</span>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="card-view" value="stacked" class="peer sr-only">
               <span class="ui-segment">Stacked</span>
             </label>
             <label class="cursor-pointer">
@@ -62,6 +66,27 @@
             </label>
           </div>
         </fieldset>
+        <fieldset id="card-density-selector" class="discovery-view" hidden>
+          <legend class="sr-only">Stack spacing</legend>
+          <div class="ui-segmented">
+            <label class="cursor-pointer">
+              <input type="radio" name="card-density" value="regular" class="peer sr-only" checked>
+              <span class="ui-segment">Regular</span>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="card-density" value="tight" class="peer sr-only">
+              <span class="ui-segment">Tight</span>
+            </label>
+          </div>
+        </fieldset>
+        <div data-paged-controls data-batch-start="{{ page_obj.start_index }}" data-total="{{ page_obj.paginator.count }}"
+             data-batch-previous="{% if page_obj.has_previous %}?{% if pagination_query %}{{ pagination_query }}&amp;{% endif %}page={{ page_obj.previous_page_number }}{% endif %}"
+             data-batch-next="{% if page_obj.has_next %}?{% if pagination_query %}{{ pagination_query }}&amp;{% endif %}page={{ page_obj.next_page_number }}{% endif %}"
+             class="ui-cluster discovery-paged-controls" hidden aria-label="Paged Activity navigation">
+          <button type="button" class="ui-button ui-button--secondary" data-set-previous aria-label="Previous set">←</button>
+          <span data-set-range class="text-sm text-belong-slate" aria-live="polite"></span>
+          <button type="button" class="ui-button ui-button--secondary" data-set-next aria-label="Next set">→</button>
+        </div>
         <button type="submit" form="discovery-filters" name="hidden" value="{% if filter_params.hidden == 'include' or filter_params.hidden == 'only' %}exclude{% else %}include{% endif %}" class="ui-button ui-button--quiet" aria-pressed="{% if filter_params.hidden == 'include' or filter_params.hidden == 'only' %}true{% else %}false{% endif %}">{% if filter_params.hidden == 'include' or filter_params.hidden == 'only' %}Hide hidden{% else %}Show hidden{% endif %}</button>
         </div>
         <input type="hidden" name="location_notice" value="">
@@ -77,7 +102,7 @@
       {% include 'activities/_group_join_offer.html' %}
       <script src="{% static 'js/discovery.js' %}?v=context-3" defer></script>
       <script src="{% static 'js/discovery-layout.js' %}?v=panes-40" defer></script>
-      <script src="{% static 'js/card-view.js' %}?v=panes-40" defer></script>
+      <script src="{% static 'js/card-view.js' %}?v=production-95" defer></script>
       <script src="{% static 'js/card-context.js' %}?v=share-61" defer></script>
       <script src="{% static 'js/card-fit.js' %}?v=body-13" defer></script>
 
@@ -101,7 +126,7 @@
       {% endif %}
 
       {% if page_obj.has_other_pages %}
-        <div class="flex justify-center">
+        <div data-server-pagination class="flex justify-center">
           <div class="inline-flex overflow-hidden rounded-full border border-white/70 bg-white/70">
             {% if page_obj.has_previous %}
               <a href="?{% if pagination_query %}{{ pagination_query }}&amp;{% endif %}page={{ page_obj.previous_page_number }}" class="px-4 py-2 text-sm text-belong-purple hover:bg-belong-purple/10">Previous</a>
