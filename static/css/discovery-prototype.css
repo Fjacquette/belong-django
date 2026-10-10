@@ -33,7 +33,8 @@
 .prototype-main .activity-stack__layer:hover, .prototype-main .activity-stack__layer:focus-within { z-index:var(--stack-z,1); }
 .prototype-main [data-stack-item][data-prototype-raised] { z-index:100; }
 /* Opaque pastels retain each palette; dark ink keeps covered facts readable. */
-.prototype-main [data-covered] .activity-card__band-1 {
+.prototype-main [data-covered] .activity-card__band-1,
+.prototype-main [data-covered] .activity-card__band-5 {
   background:linear-gradient(90deg,
     color-mix(in srgb, var(--card-header-left) 30%, white),
     color-mix(in srgb, var(--card-header-right) 30%, white));
@@ -47,12 +48,40 @@
     color-mix(in srgb, var(--card-primary) 10%, white),
     color-mix(in srgb, var(--card-secondary) 10%, white));
 }
-.prototype-main [data-covered] .activity-card__band-4 { filter:saturate(.9) brightness(.97); }
-.prototype-main [data-covered] .activity-card__band-3,
-.prototype-main [data-covered] .activity-card__band-5 { filter:saturate(.9) brightness(.94); }
+/* Every covered surface is opaque and pale; never fade the whole card/text.
+   Image opacity composites only against its own opaque white band, not neighbours. */
+.prototype-main [data-covered] .activity-card,
+.prototype-main [data-covered] .activity-card__band-4 {
+  background:linear-gradient(90deg,
+    color-mix(in srgb, var(--card-primary) 5%, white),
+    color-mix(in srgb, var(--card-secondary) 5%, white));
+  color:#35173c;
+}
+.prototype-main [data-covered] .activity-card__band-3 { background:white; }
+.prototype-main [data-covered] .activity-card__band-3 > img {
+  filter:saturate(.25);
+  opacity:.35;
+}
+.prototype-main [data-covered] .activity-card__band-3 > div {
+  background:linear-gradient(90deg,
+    color-mix(in srgb, var(--card-primary) 10%, white),
+    color-mix(in srgb, var(--card-secondary) 10%, white));
+  color:#35173c;
+}
+.prototype-main [data-covered] .activity-card__avatar { background:white; }
+.prototype-main [data-covered] .activity-card__avatar img { filter:saturate(.25); opacity:.35; }
+.prototype-main [data-covered] .activity-card__band-5 { color:#35173c; }
+.prototype-main [data-covered] .ui-response--card {
+  color:#35173c;
+  border-color:color-mix(in srgb, var(--card-accent) 30%, white);
+  background:white;
+}
+.prototype-main [data-covered] .ui-response--card[aria-pressed="true"] {
+  background:color-mix(in srgb, var(--card-accent) 20%, white);
+}
 .prototype-item:focus-visible { outline:3px solid #843a96; border-radius:22px; }
-[data-simulated] .activity-card { pointer-events:none; }
-[data-simulated] { cursor:default; }
+
+
 [data-prototype-navigation][hidden], [data-prototype-density][hidden], [data-prototype-modes][hidden], [data-prototype-simulation][hidden] { display:none; }
 
 [data-simulated] .activity-card__cta { color:white; }
@@ -61,6 +90,5 @@
   .prototype-options-panel { left:0; right:auto; }
 }
 
-/* Only noninteractive header surfaces toggle; native links/menus stay independent. */
-[data-stack-root]:not([data-rendered-mode="all"]) .activity-card__band-1 { cursor:pointer; }
-[data-simulated] .activity-card__band-1 { pointer-events:auto; }
+/* All visible noninteractive card surfaces toggle; native actions stay independent. */
+[data-stack-root]:not([data-rendered-mode="all"]) .activity-card { cursor:pointer; }

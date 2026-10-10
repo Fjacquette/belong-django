@@ -39,8 +39,9 @@ Columns follow actual results width, gutters and Friends resizing. Density/resiz
 recompute capacity while retaining the browsing anchor and fractional progress;
 Paged re-partitions contiguous sets around its anchor. Neither changes the collection.
 
-Click/tap the existing noninteractive exposed header surface to open/close one
-full card. No button, icon, chevron, glyph or visible header indicator is injected.
+Click/tap any visible noninteractive card area (header, photo, body or footer) to
+open/close one
+full card. No button, icon, chevron, glyph or visible card indicator is injected.
 The title Details link, kebab and response actions remain independent.
 
 Keyboard users focus the existing card group and press Enter/Space to toggle it.
@@ -67,8 +68,13 @@ Spread out and the short-stage full-card fallback do not toggle exposure.
 Covered cards recede as opaque pastels: header stops mix their existing colors
 with 70% white, with dark #35173c title/link/menu text. Band 2 mixes per-card
 primary/secondary colors with 90% white and keeps black logistics text. These
-percentages are visual tuning hypotheses, not production tokens. Other covered
-bands retain the earlier modest saturation/brightness adjustment.
+percentages are visual tuning hypotheses, not production tokens. Footer stops use
+the same 30% color / 70% white as the header; body/background stops use 5%
+color / 95% white. Image-free summaries use 10% color / 90% white with dark text.
+Photos/avatars retain 25% saturation and composite at 35% opacity against their
+own opaque white surface. CTA text stays dark on white with pale accent borders;
+saved selections retain a 20% accent / 80% white fill. Text and whole cards never
+use opacity, so adjacent cards cannot bleed through.
 In browse mode natural foreground cards retain the original palette. While one
 card is explicitly exposed, it alone has full-color emphasis; covered cards stay
 pastel. Closing restores the correct natural foreground. No wrapper opacity or
@@ -139,6 +145,23 @@ including long real titles and menus, were inspected. Header child structure
 remains the original title zone and native menu, with no injected control/icon.
 The tall narrow stage allows several headers; shorter stages retain their measured
 capacity or full-card fallback. Demo surfaces toggle locally without server actions.
+
+The whole-card correction uses existing photographic cards: Firefighter flashover
+training (purple), Wednesday night paddle (green), Chill Overwatch 2 (blue), and
+Stroll the Street (rose). A–D tests cover all three overlap modes and both densities
+by mouse, keyboard and touch, including photo/body activation, same-card return,
+underlying-header hit-testing and native menu/Details actions. Desktop also checks
+the noninteractive footer gutter; touch keeps native CTA targets independent.
+An isolated render of each actual card, retaining its geometry and live covered
+state, allows pixel comparisons even where another card obscures it in the stack.
+Covered photos gain over 40 RGB brightness points and retain under 30% of their
+original chroma (mean per-pixel max RGB minus min RGB). Header/logistics/body/footer
+background samples retain under 40% chroma and lighten. Selected-card interior
+pixels match the original across all five bands; rounded-edge antialiasing is
+excluded. Side-by-side original/covered photos and real stacked screenshots were
+inspected. A real invited RSVP/pressed CTA and HTMX replacement are checked only
+in a disposable database; persistent participation is untouched. These are visual
+mechanics checks, not a replacement for human acceptance of the proposed tuning.
 
 ## Compromises and boundaries
 

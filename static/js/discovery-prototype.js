@@ -52,20 +52,20 @@
     dismiss();
     if (!closing) {
       selected = item; item.dataset.selected = '';
-      exposureStatus.textContent = `${item.dataset.prototypeTitle} shown in full. Activate the same header again to return to stack.`;
+      exposureStatus.textContent = `${item.dataset.prototypeTitle} shown in full. Activate the same card again to return to stack.`;
     }
     if (stage) draw(); else paint();
   }
   function prepare(item) {
-    const header = item.querySelector('.activity-card__band-1');
-    if (header.dataset.exposurePrepared) return;
-    header.dataset.exposurePrepared = 'true';
+    const card = item.querySelector('.activity-card');
+    if (card.dataset.exposurePrepared) return;
+    card.dataset.exposurePrepared = 'true';
     item.dataset.prototypeTitle = item.querySelector('h2').textContent.trim();
     // Keep a group with native interactive descendants, not a button containing
     // links/menus. The existing card surface is the keyboard focus target.
     item.setAttribute('role', 'group');
-    header.addEventListener('click', event => {
-      if (root.dataset.renderedMode === 'all' || event.target.closest('a,button,input,summary,label,details,form')) return;
+    card.addEventListener('click', event => {
+      if (root.dataset.renderedMode === 'all' || event.target.closest('a[href],button,input,select,textarea,summary,label,details,form,[role=button],[role=link]')) return;
       toggle(item);
     });
   }
@@ -259,7 +259,7 @@
     const source = originals.length ? originals[index % originals.length] : fallback;
     const item = source.cloneNode(true);
     item.removeAttribute('data-selected');
-    item.querySelector('.activity-card__band-1').removeAttribute('data-exposure-prepared');
+    item.querySelector('.activity-card').removeAttribute('data-exposure-prepared');
     item.dataset.simulated = 'true';
     item.querySelectorAll('[id]').forEach(node=>node.removeAttribute('id'));
     item.querySelectorAll('form').forEach(form=>form.remove());
