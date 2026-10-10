@@ -44,6 +44,7 @@ from .models import (
 from social.models import Friendship, UserProfile
 
 PAGE_SIZE = 12
+PROTOTYPE_LIMIT = 300
 RESPONSE_LABELS = dict(ActivityResponseStatus.choices)
 CARD_RESPONSE_LABELS = {'committed': 'Going', 'declined': "Can't make it", 'question': 'Have a question',
                         'more': 'Tell me more', 'vote': 'Vote on details', 'interested': 'Past response'}
@@ -227,6 +228,9 @@ def _annotate_join_data(request: HttpRequest, activities: List[Activity]) -> Non
 
 @login_required
 def index(request: HttpRequest) -> HttpResponse:
+    prototype = request.GET.get("prototype") == "stack"
+    if prototype and settings.ENVIRONMENT not in {"dev", "test"}:
+        raise Http404
     activities_qs = visible_activities(request.user).select_related("host__profile__avatar_image", "category").prefetch_related("responses")
 
     params = canonical_filters(request.GET)
@@ -258,11 +262,19 @@ def index(request: HttpRequest) -> HttpResponse:
 
     activities_qs = activities_qs.order_by("-starts_at", "-created_at")
 
-    paginator = Paginator(activities_qs, PAGE_SIZE)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
-
-    activities = list(with_invitation_state(page_obj.object_list, request.user))
+    prototype_limit_reached = False
+    if prototype:
+        # Keep the authorized/filtered query unchanged; only the experiment's
+        # collection boundary differs from normal Discover pagination.
+        source = with_invitation_state(activities_qs, request.user)
+        activities = list(source[:PROTOTYPE_LIMIT + 1])
+        prototype_limit_reached = len(activities) > PROTOTYPE_LIMIT
+        activities = activities[:PROTOTYPE_LIMIT]
+        page_obj = None
+    else:
+        paginator = Paginator(activities_qs, PAGE_SIZE)
+        page_obj = paginator.get_page(request.GET.get("page"))
+        activities = list(with_invitation_state(page_obj.object_list, request.user))
     hidden_set = set(hidden_ids.values_list("activity_id", flat=True))
     for activity in activities:
         activity.is_hidden = activity.pk in hidden_set
@@ -271,8 +283,24 @@ def index(request: HttpRequest) -> HttpResponse:
         _card_context(request, activity, params, hidden_organizers)
     pagination_params = params.copy()
     pagination_params.pop("page", None)
+    prototype_exit_params = params.copy()
+    prototype_exit_params.pop("prototype", None)
+
+    prototype_demo = None
+    if prototype and not activities:
+        # Unsaved neutral card source inside an inert HTML template only. JS
+        # removes every action before a demo copy can enter the document.
+        prototype_demo = Activity(pk=0, host=request.user, title="A walk together",
+                                  description="Browser-only layout demo. No participation actions.",
+                                  cost_type="free", audience="everyone")
+        _decorate_activity(prototype_demo)
+        prototype_demo.context_actions = []
 
     context = {
+        "prototype_demo": prototype_demo,
+        "prototype_limit_reached": prototype_limit_reached,
+        "prototype": prototype,
+        "prototype_exit_query": prototype_exit_params.urlencode(),
         "page_obj": page_obj,
         "email_activity": next((a.j_email_activity for a in activities if a.j_email_activity), None),
         "next_path": request.get_full_path(),

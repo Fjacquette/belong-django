@@ -1,0 +1,40 @@
+<section class="prototype-controls" aria-label="Layout prototype" data-prototype-controls>
+  <p class="sr-only" id="prototype-exposure-help" hidden>Focus the card and press Enter or Space to show it in full or return it to the stack. Its title link and menu work independently.</p>
+  <span class="sr-only" role="status" data-prototype-exposure-status hidden></span>
+  <fieldset data-prototype-modes hidden>
+    <legend class="sr-only">Experimental card layout</legend>
+    <div class="ui-segmented">
+      <label><input type="radio" name="prototype-mode" value="moving" class="sr-only" checked><span class="ui-segment">Moving</span></label>
+      <label><input type="radio" name="prototype-mode" value="paged" class="sr-only"><span class="ui-segment">Paged</span></label>
+      <label><input type="radio" name="prototype-mode" value="stacked" class="sr-only"><span class="ui-segment">Stacked</span></label>
+      <label><input type="radio" name="prototype-mode" value="all" class="sr-only"><span class="ui-segment">Spread out</span></label>
+    </div>
+  </fieldset>
+  <fieldset data-prototype-density hidden>
+    <legend class="sr-only">Experimental overlap density</legend>
+    <div class="ui-segmented">
+      <label><input type="radio" name="prototype-density" value="regular" class="sr-only" checked><span class="ui-segment">Regular</span></label>
+      <label><input type="radio" name="prototype-density" value="tight" class="sr-only"><span class="ui-segment">Tight</span></label>
+    </div>
+  </fieldset>
+  <details class="prototype-options">
+    <summary class="ui-disclosure">Prototype</summary>
+    <div class="prototype-options-panel ui-menu-panel space-y-2">
+      <p class="text-sm">Regular exposes title and logistics; Tight exposes titles only. Moving scrolls continuously; Paged advances with Next set. Real cards work; labeled demo cards are inert browser-only supplements.</p>
+      <div data-prototype-simulation hidden>
+        <label>Collection <select class="ui-field" data-simulation-count><option value="0">Default: real + demo (64 minimum)</option><option value="real">Real matches only</option><option>8</option><option>48</option><option>150</option><option>300</option></select></label>
+        <label class="ui-facet__option"><input type="checkbox" data-simulation-batches> Delayed demo batches (24 / 300ms)</label>
+      </div>
+      <p class="text-sm" data-prototype-metrics></p>
+      {% if prototype_limit_reached %}<p class="text-sm">Real collection limited to 300 matching Activities for this experiment; narrow filters to explore others.</p>{% endif %}
+      <a class="ui-link" href="{% url 'activities:index' %}?{{ prototype_exit_query }}">Exit prototype</a>
+    </div>
+  </details>
+  <span class="text-sm" data-prototype-position></span>
+  <div class="ui-cluster" data-prototype-navigation hidden>
+    <button type="button" class="ui-button ui-button--secondary" data-prototype-previous aria-label="Previous set" title="Previous set"><span aria-hidden="true">←</span></button>
+    <button type="button" class="ui-button ui-button--secondary" data-prototype-next aria-label="Next set" title="Next set"><span aria-hidden="true">→</span></button>
+  </div>
+  <noscript><p class="text-sm">JavaScript is off: all authorized real matches (up to 300) use full cards. No demo cards are added.</p></noscript>
+</section>
+{% if prototype_demo %}<template data-prototype-demo-template><div data-stack-item>{% include 'activities/_card.html' with activity=prototype_demo %}</div></template>{% endif %}

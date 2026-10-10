@@ -932,3 +932,44 @@ Setup only asks for a code if its emailed proof lacks valid admission; it always
 requires the existing email proof, identity and password fields. Native POST/CSRF
 works without JavaScript. Generic credential errors reveal no account, issuer or
 private Activity metadata. Code administration uses existing Django admin controls.
+
+### Isolated Discover layout prototype (#92)
+
+`/?prototype=stack` remains dev/test-only, unmerged pending UI judgment. Its compact
+segmented comparison strip and native Filters/Prototype disclosures stay outside an
+independently scrolling card viewport; panels overlay rather than consuming deck
+height. Card dimensions/top-band offsets come from existing design variables, and
+viewport height/width determine capacity. Only Paged has explicit set buttons;
+Moving uses continuous native scroll without interception/snapping. Gutters sit
+inside the pane so its scrollbar meets the browser edge. Default browser-only Demo
+supplements are clearly labeled, have no actions, and never write data. Normal
+Discover is unchanged. See docs/DISCOVERY_LAYOUT_PROTOTYPE.md for state snapshots,
+selection/focus behavior, mobile full-grid fallback and review compromises.
+
+Within this experiment only, Regular overlap exposes Bands 1+2; optional Tight
+exposes Band 1. Both use existing band tokens and keep every foreground card's
+five bands intact. Moving pins the current full foreground within the visible
+stage while covered headers continue translating at fractional scroll positions.
+Covered titles use opaque pastels from each header gradient stop (30% original
+color / 70% white), with dark belong-purpleDark title/link/menu ink. Covered
+logistics use a lighter coordinating primary/secondary tint (10% color / 90%
+white). These are prototype tuning values, not approved production tokens.
+Covered footer stops use the same 30% color / 70% white as the header.
+Body/background stops use 5% color / 95% white; image-free summaries use 10%
+color / 90% white. Photos and avatars retain 25% saturation and composite at
+35% opacity against their own opaque white surface. Text is never faded. Covered
+CTA text is dark on white, with pale accent borders; a saved selection retains a
+20% accent / 80% white fill. No whole-card opacity or neighbour bleed-through.
+In browse mode the natural foreground retains its original palette. While a card
+is explicitly exposed, only that card has full-color emphasis; closing restores
+the natural foreground. Hover/focus alone never raises or expands cards.
+Any visible noninteractive card surface toggles exposure: no injected
+button, icon, chevron, glyph or other visible card indicator. The existing card
+is a focusable group, with Enter/Space handling only on the group itself; its title
+link, menu and actions retain their own semantics. Off-header screen-reader-only
+instructions and a status announcement describe exposure/return. A group is used
+instead of a button role to avoid flattening/nesting its interactive descendants.
+The same card surface stays reachable to return the raised card to the stack.
+Deliberate browse scrolling dismisses exposure;
+programmatic scroll and resize do not. Paged set changes dismiss it too.
+Prototype-local mode/density preferences never write normal Discover's preference.

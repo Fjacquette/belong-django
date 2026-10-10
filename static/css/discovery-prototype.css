@@ -1,0 +1,94 @@
+/* Opt-in #92 only: controls stay outside the independently scrolling deck. */
+.prototype-main { padding-left:0 !important; padding-right:0 !important; }
+.prototype-main .discover-pane { padding-left:24px; padding-right:24px; }
+.prototype-main .discover-pane-switch { margin-inline:24px; }
+.prototype-toolbar, .prototype-controls { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.prototype-toolbar { position:relative; z-index:250; margin-right:24px; }
+.prototype-controls { display:contents; }
+.prototype-controls .ui-segment { padding-inline:8px; font-size:12px; }
+.prototype-filters, .prototype-options { position:relative; }
+.prototype-filter-panel, .prototype-options-panel { position:absolute; top:calc(100% + 8px); left:0; width:min(580px, calc(100vw - 48px)); padding:16px; max-height:60dvh; overflow:auto; }
+.prototype-options-panel { left:auto; right:0; width:min(360px, calc(100vw - 48px)); }
+/* Only JS enables the fixed-height workspace; no-JS keeps normal document flow. */
+.discover-page .prototype-main .discover-pane--activities { padding-right:0; padding-bottom:0; overflow:hidden; gap:8px; }
+.prototype-results { min-height:0; }
+.discover-page .prototype-results { flex:1; overflow-y:auto; overscroll-behavior-y:contain; padding-right:24px; padding-bottom:72px; }
+.prototype-results:focus-visible { outline:2px solid #843a96; outline-offset:-2px; }
+@media (min-width:640px) {
+  .prototype-main .discover-pane { padding-left:32px; padding-right:32px; }
+  .prototype-toolbar { margin-right:32px; }
+  .discover-page .prototype-results { padding-right:32px; }
+}
+@media (min-width:1024px) {
+  .prototype-main .discover-pane--friends { padding-left:40px; padding-right:8px; }
+  .prototype-main .discover-pane--activities { padding-left:8px; }
+  .prototype-toolbar { margin-right:40px; }
+  .discover-page .prototype-results { padding-right:40px; }
+}
+.prototype-track { position:relative; }
+.prototype-stage { position:sticky; top:0; display:grid; gap:var(--stack-gap); isolation:isolate; overflow:clip; }
+.prototype-column { position:relative; height:100%; }
+.prototype-item { position:absolute; left:0; width:100%; top:var(--prototype-y); z-index:var(--prototype-z); }
+/* Override shared native hover only inside the experiment. */
+.prototype-main .activity-stack__layer:hover, .prototype-main .activity-stack__layer:focus-within { z-index:var(--stack-z,1); }
+.prototype-main [data-stack-item][data-prototype-raised] { z-index:100; }
+/* Opaque pastels retain each palette; dark ink keeps covered facts readable. */
+.prototype-main [data-covered] .activity-card__band-1,
+.prototype-main [data-covered] .activity-card__band-5 {
+  background:linear-gradient(90deg,
+    color-mix(in srgb, var(--card-header-left) 30%, white),
+    color-mix(in srgb, var(--card-header-right) 30%, white));
+}
+.prototype-main [data-covered] .activity-card__band-1,
+.prototype-main [data-covered] .activity-card__title-link,
+.prototype-main [data-covered] .card-context-menu__trigger { color:#35173c; }
+.prototype-main [data-covered] .card-context-menu__trigger > span { opacity:1; }
+.prototype-main [data-covered] .activity-card__band-2 {
+  background:linear-gradient(90deg,
+    color-mix(in srgb, var(--card-primary) 10%, white),
+    color-mix(in srgb, var(--card-secondary) 10%, white));
+}
+/* Every covered surface is opaque and pale; never fade the whole card/text.
+   Image opacity composites only against its own opaque white band, not neighbours. */
+.prototype-main [data-covered] .activity-card,
+.prototype-main [data-covered] .activity-card__band-4 {
+  background:linear-gradient(90deg,
+    color-mix(in srgb, var(--card-primary) 5%, white),
+    color-mix(in srgb, var(--card-secondary) 5%, white));
+  color:#35173c;
+}
+.prototype-main [data-covered] .activity-card__band-3 { background:white; }
+.prototype-main [data-covered] .activity-card__band-3 > img {
+  filter:saturate(.25);
+  opacity:.35;
+}
+.prototype-main [data-covered] .activity-card__band-3 > div {
+  background:linear-gradient(90deg,
+    color-mix(in srgb, var(--card-primary) 10%, white),
+    color-mix(in srgb, var(--card-secondary) 10%, white));
+  color:#35173c;
+}
+.prototype-main [data-covered] .activity-card__avatar { background:white; }
+.prototype-main [data-covered] .activity-card__avatar img { filter:saturate(.25); opacity:.35; }
+.prototype-main [data-covered] .activity-card__band-5 { color:#35173c; }
+.prototype-main [data-covered] .ui-response--card {
+  color:#35173c;
+  border-color:color-mix(in srgb, var(--card-accent) 30%, white);
+  background:white;
+}
+.prototype-main [data-covered] .ui-response--card[aria-pressed="true"] {
+  background:color-mix(in srgb, var(--card-accent) 20%, white);
+}
+.prototype-item:focus-visible { outline:3px solid #843a96; border-radius:22px; }
+
+
+[data-prototype-navigation][hidden], [data-prototype-density][hidden], [data-prototype-modes][hidden], [data-prototype-simulation][hidden] { display:none; }
+
+[data-simulated] .activity-card__cta { color:white; }
+@media (max-width:639px) {
+  .prototype-options { position:static; }
+  .prototype-options-panel { left:0; right:auto; }
+}
+
+/* All visible noninteractive card surfaces toggle; native actions stay independent. */
+[data-stack-root]:not([data-rendered-mode="all"]) .activity-card { cursor:pointer; }
