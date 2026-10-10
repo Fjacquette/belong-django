@@ -1,4 +1,34 @@
-/* #95: presentation controls only; keep original Activity card styling intact. */
+/* Production Discover: find first, then choose how to browse the results. */
+.discovery-toolbar {
+  flex-direction: column;
+  align-items: stretch;
+}
+.discovery-find-row,
+.discovery-browse-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.discovery-find-row .discovery-search {
+  flex: 1 1 280px;
+}
+.discovery-find-row .discovery-facets {
+  flex: 0 1 auto;
+}
+.discovery-find-row > .ui-button--quiet {
+  min-height: 40px;
+  padding: 8px;
+  font-size: 12px;
+}
+.discovery-browse-row:not(:has(#card-view-selector:not([hidden]))) {
+  display: none;
+}
+.discovery-browse-row:has(#card-view-selector:not([hidden])) {
+  border-top: 1px solid rgb(132 58 150 / 15%);
+  padding-top: 8px;
+}
 .discovery-view-cluster {
   flex-wrap: wrap;
   flex: 0 1 auto;
@@ -9,15 +39,23 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  margin-left: auto;
 }
 .discovery-paged-controls .ui-button {
-  min-height: 32px;
-  padding: 4px 10px;
+  min-height: 40px;
+  min-width: 40px;
+  padding: 8px 10px;
 }
 .discovery-paged-controls [data-set-range] {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   text-align: center;
+}
+.discovery-pager-label {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .discovery-pager-label { display: inline; }
 }
 #card-density-selector[hidden],
 [data-paged-controls][hidden],

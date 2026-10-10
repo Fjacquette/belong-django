@@ -244,23 +244,20 @@ with a separate quiet recovery control.
 
 ### Discovery toolbar layout
 
-Discovery controls should read as one compact toolbar, not several unrelated rows.
+Discovery controls use two compact semantic rows, with standard 40px targets and
+consistent 8px gaps:
 
-Desktop target:
-- search field + Search
-- When / Where / Cost / Open to facet triggers
-- Paged / Stacked / Spread out view selector, with Regular / Tight spacing for stacks
-- quiet hidden-activity recovery only where it can fit without forcing an otherwise
-  unnecessary row
+- **Find activities**: flexible search field + Search, When / Where / Cost / Open to
+  facets, then quiet Show hidden / Hide hidden recovery.
+- **Browse results**: Paged / Stacked / Spread out and, for overlapping modes,
+  Regular / Tight on the left; Previous / visible range / Next in a separate,
+  right-aligned cluster. Desktop pager buttons may include text beside the arrows.
 
-Use the standard 40px control height and consistent 8px gaps within a row. Prefer one
-row when the available content width permits. When wrapping is necessary, wrap by
-semantic cluster with the **same row gap and vertical rhythm**; do not create three
-unevenly spaced bands through arbitrary margins/padding.
-
-Search should consume flexible width; facet triggers and view controls should remain
-content-sized. On narrow mobile layouts, deliberate wrapping is expected, but rows
-must still align cleanly and use consistent spacing.
+A subtle separator distinguishes the rows without adding panels. Search stays
+visible and flexibly wide; facets remain content-sized. On narrow panes, wrap
+within each row in that order, keeping each control cluster intact and the pager
+aligned to the right. Do not combine finding, layout, density and navigation into
+one undifferentiated flex-wrap row. Remeasure card capacity after toolbar wrapping.
 
 This tiered model is intentional: Belong is designed for people whose mobility and
 means may be constrained. A free or $5 activity within a mile is materially different
@@ -617,9 +614,10 @@ checkbox targets. Triggers show a selected count (or the cost shorthand) and an
 active border/background. Mobile uses two columns; desktop uses a compact cluster.
 Checkbox changes submit immediately and preserve the applied search text, open
 facet and keyboard position. Search/Enter commits text. Without JS, Apply filters
-submits the same checkbox values. Search, facets and view/recovery clusters use
-one wrapping `discovery-toolbar`, 40px controls and uniform 8px gaps. The view and
-quiet Show hidden controls wrap together, so recovery never occupies its own row.
+submits the same checkbox values. Search, facets and hidden recovery share the
+Find activities row. Layout/density and the right-aligned pager share the Browse
+results row, with 40px controls and
+uniform 8px gaps; each semantic row wraps independently.
 
 Repeated `when`, `where`, `cost`, and `audience` parameters are the canonical
 facet state and survive pagination and response changes. Empty facets are unrestricted.

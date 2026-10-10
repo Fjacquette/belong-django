@@ -2,7 +2,7 @@
 
 Three user-selectable modes are retained for the first pilot:
 
-- **Paged** (desktop default for new visitors): geometry-based sets of overlapping cards; use the unobtrusive Previous/Next set arrows beside the layout selector. The foreground card is always complete. If the available pane cannot accommodate a full card, the mode uses ordinary full-card rendering instead of clipping.
+- **Paged** (desktop default for new visitors): geometry-based sets of overlapping cards; use Previous/Next beside the visible range in the right-aligned Browse results pager. The foreground card is always complete. If the available pane cannot accommodate a full card, the mode uses ordinary full-card rendering instead of clipping.
 - **Stacked:** familiar continuous vertical piles, with the existing behavior of bringing a card to the front on hover/focus.
 - **Spread Out** (mobile default for new visitors): existing continuous full-card grid.
 
@@ -12,7 +12,7 @@ The client saves the mode in the existing `belong-card-view` local-storage key, 
 
 ## Retrieval versus display
 
-`activities/views.py` fetches **48 authorized, filtered results per server batch**, independent of the current viewport's visible set size. A Paged set capacity is calculated from rendered card height, stack offset, actual column count and available pane height, measured with its toolbar controls visible. Pane scroll offset cannot inflate capacity. The range reserves stable width, and the view cluster wraps within even a 320px pane. Toolbar resize and settled HTMX changes remeasure available space. Card focus survives layout repaint; entering Paged anchors around the current visible result and restores the toolbar. Its arrows move through that batch, then navigate to the next/previous server batch at the boundary. Returning to an earlier server batch uses a one-time `#discover-last-set` fragment to land at its last set. The range indicates positions across the full result count.
+`activities/views.py` fetches **48 authorized, filtered results per server batch**, independent of the current viewport's visible set size. A Paged set capacity is calculated from rendered card height, stack offset, actual column count and available pane height, measured with its toolbar controls visible. Pane scroll offset cannot inflate capacity. The range reserves stable width, and the two semantic toolbar rows wrap independently within even a 320px pane. Find activities keeps search, facets and hidden recovery together; Browse results separates layout/density from the right-aligned pager. Toolbar resize and settled HTMX changes remeasure available space. Card focus survives layout repaint; entering Paged anchors around the current visible result and restores the toolbar. Its arrows move through that batch, then navigate to the next/previous server batch at the boundary. Returning to an earlier server batch uses a one-time `#discover-last-set` fragment to land at its last set. The range indicates positions across the full result count.
 
 Stacked and Spread Out retain the standard server batch Previous/Next links. With JavaScript unavailable, the form and batch pager remain usable, and cards are ordinary full grid cards.
 
