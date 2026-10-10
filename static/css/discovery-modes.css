@@ -1,0 +1,22 @@
+/* #95: presentation controls only; keep original Activity card styling intact. */
+.discovery-view-cluster {
+  flex-wrap: wrap;
+}
+.discovery-paged-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.discovery-paged-controls .ui-button {
+  min-height: 32px;
+  padding: 4px 10px;
+}
+.discovery-paged-controls [data-set-range] {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+#card-density-selector[hidden],
+[data-paged-controls][hidden],
+[data-server-pagination][hidden] {
+  display: none !important;
+}
