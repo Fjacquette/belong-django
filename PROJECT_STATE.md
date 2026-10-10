@@ -308,6 +308,15 @@ next task. Beta access #77 supports pilot timing; broader follow-ups come afterw
 
 ### Discovery iteration
 
+Production Discover candidate #95 / PR #96 supports Paged (desktop default),
+Stacked and Spread out (mobile default), with remembered Regular/Tight spacing
+for stack modes. Existing layout preferences survive. Geometry-sized Paged sets
+traverse bounded 48-result server batches; short panes use scrolling full cards.
+Original card colors, images, native actions and authorization remain intact.
+PR #94's Moving/de-emphasis experiment stays separate and unmerged. PR #96 awaits
+human browser review; see docs/DISCOVER_PRODUCTION_MODES.md for mechanics and
+query-cost limitations.
+
 **#19 is complete and merged.**
 Discover now uses four immediate multi-select facets: When, Where, Cost, Open to.
 Selections OR within a facet and AND across facets; empty means unrestricted.

@@ -91,7 +91,7 @@ class FacetTests(TestCase):
         self.assertEqual(self.ids({'when': [], 'cost': [], 'where': [], 'audience': []}), {friend.pk, public.pk, extended.pk})
 
     def test_repeated_facets_survive_pagination_and_plain_response_redirect(self):
-        for n in range(15):
+        for n in range(51):
             self.activity(f'Match {n}', cost_type='paid', cost_amount=5, starts_at=NOW)
         params = {'q': 'Match', 'when': ['today', 'tomorrow'], 'cost': ['free', '1_10'], 'hidden': 'include'}
         page = self.page(params)
