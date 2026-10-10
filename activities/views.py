@@ -43,7 +43,7 @@ from .models import (
 )
 from social.models import Friendship, UserProfile
 
-PAGE_SIZE = 12
+# Discovery result retrieval batch, independent of the viewport-sized Paged sets.\nPAGE_SIZE = 48
 RESPONSE_LABELS = dict(ActivityResponseStatus.choices)
 CARD_RESPONSE_LABELS = {'committed': 'Going', 'declined': "Can't make it", 'question': 'Have a question',
                         'more': 'Tell me more', 'vote': 'Vote on details', 'interested': 'Past response'}
