@@ -249,7 +249,7 @@ Discovery controls should read as one compact toolbar, not several unrelated row
 Desktop target:
 - search field + Search
 - When / Where / Cost / Open to facet triggers
-- Stacked / Spread out view selector
+- Paged / Stacked / Spread out view selector, with Regular / Tight spacing for stacks
 - quiet hidden-activity recovery only where it can fit without forcing an otherwise
   unnecessary row
 
@@ -270,7 +270,7 @@ rather than collapsing cost to Free/Paid or distance to Nearby/Not nearby.
 ### Mutually exclusive view selector
 Purpose: choose exactly one display mode.
 Use radio/segmented semantics and an obvious selected segment.
-Examples: Stacked / Spread out.
+Examples: Paged / Stacked / Spread out; Regular / Tight density is a separate exclusive choice for stacks.
 
 ## 5. Typography
 
@@ -516,12 +516,16 @@ visual proportions must remain stable as the result count changes.
   space rather than inflating cards.
 - Keep the first card/column aligned to the activity-results frame rather than
   centering a lone card in a way that breaks alignment with search/results controls.
-- Stacked and Spread out modes use the same underlying card width; view mode changes
+- Paged, Stacked and Spread out modes use the same underlying card width; view mode changes
   overlap/layout only, not card proportions.
-- **Stacked mode must expose all of Bands 1 and 2 on every card in the pile.** The
-  stack offset should therefore equal (or closely track) the combined height of the
-  first two bands. A covered card must still reveal activity name, when/where,
-  organizer, audience, and cost.
+- In **Regular** density, overlapping cards expose Bands 1 and 2 on every card in
+  the pile. The offset closely tracks the combined height of the first two bands.
+  In **Tight** density, overlapping cards expose only Band 1; the full card is
+  unchanged. Tight intentionally trades logistics-at-a-glance for denser scanning.
+- **Paged** uses explicit viewport-sized sets rather than a fixed count of 12 cards.
+  Its foreground cards must remain fully visible; short viewports fall back to
+  full-card scrolling. These modes retain the original card colors and native
+  actions; no extra exposure controls or pastel/de-emphasis behavior ship.
 - Filtering from many results to one or zero must not cause surrounding controls,
   Who's around, gutters, or card geometry to jump unpredictably.
 
@@ -932,3 +936,13 @@ Setup only asks for a code if its emailed proof lacks valid admission; it always
 requires the existing email proof, identity and password fields. Native POST/CSRF
 works without JavaScript. Generic credential errors reveal no account, issuer or
 private Activity metadata. Code administration uses existing Django admin controls.
+
+
+### Production Discover layout decision (#95)
+
+The first pilot supports **Paged**, **Stacked**, and **Spread Out**. Paged + Regular
+is the default on desktop for an unconfigured user; Spread Out is the narrow/mobile
+default. Explicitly chosen mode and density persist in browser preferences; retain
+existing Stacked/Spread Out preferences from earlier versions. Moving remains an
+unmerged experiment (#94), not production behavior. See
+[production Discover modes](docs/DISCOVER_PRODUCTION_MODES.md).
