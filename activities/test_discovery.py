@@ -104,7 +104,7 @@ class DiscoveryTests(TestCase):
         self.assertEqual(self.client.post(url, {'hidden':'1'}).status_code, 302)
 
     def test_pagination_preserves_all_discovery_state(self):
-        for n in range(15):
+        for n in range(51):
             Activity.objects.create(host=self.host, title=f'Match {n}', description='Match', category=self.category,
                                     starts_at=NOW, location_gps='40,-75', location_type='online', cost_type='free')
         params = {'q':'Match','category':'outdoors','when':'today','where':'online','cost':'free','hidden':'include'}
